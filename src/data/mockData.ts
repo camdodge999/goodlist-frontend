@@ -1,0 +1,257 @@
+import { Store } from "@/types/stores";
+import { User } from "@/types/users";   
+
+export const mockStores: Store[] = [
+  {
+    id: 1,
+    userId: 2,
+    storeName: "Thai Fashion Boutique",
+    bankAccount: "123-456-7890",
+    contactInfo: {
+      line: "@thaifashion",
+      facebook: "thaifashionboutique",
+      phone: "081-234-5678",
+      address: "123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
+    },
+    description: "ร้านเสื้อผ้าแฟชั่นคุณภาพดี ราคาเป็นมิตร",
+    isVerified: true,
+    isBanned: false,
+    createdAt: "2023-01-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/fashion-boutique.jpg",
+  },
+  {
+    id: 2,
+    userId: 2,
+    storeName: "Bangkok Electronics",
+    bankAccount: "098-765-4321",
+    contactInfo: {
+      line: "@bkkelectronics",
+      facebook: "bkkelectronics",
+      phone: "082-345-6789",
+      address: "456 ถนนเพชรบุรี แขวงทุ่งพญาไท เขตราชเทวี กรุงเทพฯ 10400",
+    },
+    description: "ร้านจำหน่ายอุปกรณ์อิเล็กทรอนิกส์ครบวงจร",
+    isVerified: false,
+    isBanned: false,
+    createdAt: "2023-02-15T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/electronics.jpg",
+  },
+  {
+    id: 3,
+    userId: 3,
+    storeName: "Thai Food Market",
+    bankAccount: "555-555-5555",
+    contactInfo: {
+      line: "@thaifoodmarket",
+      facebook: "thaifoodmarket",
+      phone: "083-456-7890",
+      address: "789 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพฯ 10310",
+    },
+    description: "ร้านจำหน่ายอาหารไทยและวัตถุดิบคุณภาพ",
+    isVerified: true,
+    isBanned: false,
+    createdAt: "2023-03-20T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/food-market.jpg",
+  },
+  {
+    id: 4,
+    userId: 4,
+    storeName: "Bangkok Books",
+    bankAccount: "111-222-3333",
+    contactInfo: {
+      line: "@bkkbooks",
+      facebook: "bangkokbooks",
+      phone: "084-567-8901",
+      address: "321 ถนนพระราม 3 แขวงช่องนนทรี เขตยานนาวา กรุงเทพฯ 10120",
+    },
+    description: "ร้านหนังสือภาษาอังกฤษและภาษาไทย",
+    isVerified: true,
+    isBanned: false,
+    createdAt: "2023-04-10T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/books.jpg",
+  },
+  {
+    id: 5,
+    userId: 5,
+    storeName: "Thai Art Gallery",
+    bankAccount: "444-555-6666",
+    contactInfo: {
+      line: "@thaiart",
+      facebook: "thaiartgallery",
+      phone: "085-678-9012",
+      address: "654 ถนนสีลม แขวงสีลม เขตบางรัก กรุงเทพฯ 10500",
+    },
+    description: "แกลเลอรี่ศิลปะไทยร่วมสมัย",
+    isVerified: false,
+    isBanned: false,
+    createdAt: "2023-05-15T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/art-gallery.jpg",
+  },
+  {
+    id: 6,
+    userId: 6,
+    storeName: "Bangkok Sports",
+    bankAccount: "777-888-9999",
+    contactInfo: {
+      line: "@bkksports",
+      facebook: "bangkoksports",
+      phone: "086-789-0123",
+      address: "987 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพฯ 10900",
+    },
+    description: "ร้านกีฬาและอุปกรณ์ออกกำลังกาย",
+    isVerified: true,
+    isBanned: false,
+    createdAt: "2023-06-20T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/sports.jpg",
+  },
+  {
+    id: 7,
+    userId: 7,
+    storeName: "Thai Beauty Shop",
+    bankAccount: "000-111-2222",
+    contactInfo: {
+      line: "@thaibeauty",
+      facebook: "thaibeautyshop",
+      phone: "087-890-1234",
+      address: "147 ถนนเพชรบุรี แขวงทุ่งพญาไท เขตราชเทวี กรุงเทพฯ 10400",
+    },
+    description: "ร้านเครื่องสำอางและผลิตภัณฑ์ความงาม",
+    isVerified: false,
+    isBanned: false,
+    createdAt: "2023-07-25T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/beauty-shop.jpg",
+  },
+  {
+    id: 8,
+    userId: 8,
+    storeName: "Bangkok Pets",
+    bankAccount: "333-444-5555",
+    contactInfo: {
+      line: "@bkkpets",
+      facebook: "bangkokpets",
+      phone: "088-901-2345",
+      address: "258 ถนนพระราม 2 แขวงบางแค เขตบางแค กรุงเทพฯ 10160",
+    },
+    description: "ร้านสัตว์เลี้ยงและอุปกรณ์เลี้ยงสัตว์",
+    isVerified: true,
+    isBanned: false,
+    createdAt: "2023-08-30T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+    imageUrl: "/images/stores/pets.jpg",
+  },
+];
+
+export const mockUsers: User[] = [
+  {
+    id: 1,
+    displayName: "admin goodlist",
+    email: "admin@goodlist.com",
+    role: "admin",
+    createdAt: "2023-01-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 2,
+    displayName: "Chanin",
+    email: "14chaninkrewkerdmee@gmail.com",
+    role: "user",
+    createdAt: "2023-02-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 3,
+    displayName: "Jane Smith",
+    email: "jane@example.com",
+    role: "user",
+    createdAt: "2023-03-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 4,
+    displayName: "Sarah Wilson",
+    email: "sarah@example.com",
+    role: "user",
+    createdAt: "2023-04-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 5,
+    displayName: "Mike Brown",
+    email: "mike@example.com",
+    role: "user",
+    createdAt: "2023-05-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 6,
+    displayName: "Lisa Chen",
+    email: "lisa@example.com",
+    role: "user",
+    createdAt: "2023-06-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 7,
+    displayName: "Tom Anderson",
+    email: "tom@example.com",
+    role: "user",
+    createdAt: "2023-07-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 8,
+    displayName: "Emma Davis",
+    email: "emma@example.com",
+    role: "user",
+    createdAt: "2023-08-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+  {
+    id: 9,
+    displayName: "David Lee",
+    email: "david@example.com",
+    role: "user",
+    createdAt: "2023-09-01T00:00:00Z",
+    updatedAt: "2023-12-31T00:00:00Z",
+  },
+];
+
+export const mockReports = [];
+
+export const mockStoreAudits = [
+  {
+    id: 1,
+    storeId: 1,
+    action: "verified",
+    description: "ร้านค้าผ่านการตรวจสอบ",
+    actorId: 1,
+    createdAt: "2023-01-02T00:00:00Z",
+  },
+  {
+    id: 2,
+    storeId: 3,
+    action: "verified",
+    description: "ร้านค้าผ่านการตรวจสอบ",
+    actorId: 1,
+    createdAt: "2023-03-21T00:00:00Z",
+  },
+];
+
+// Current user state
+export const mockUser = {
+  isLoggedIn: true,
+  user: mockUsers[1], // Chanin
+};
+
+// Admin user state
+export const mockAdminUser = {
+  isLoggedIn: true,
+  user: mockUsers[0], // John Doe (admin)
+};

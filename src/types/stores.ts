@@ -1,9 +1,9 @@
 export interface ContactInfo {
-  line: string;
-  facebook: string;
-  phone: string;
-  address: string;
-}
+  line?: string;
+  facebook?: string;
+  phone?: string;
+  address?: string;
+};
 
 export interface Store {
   id: number;

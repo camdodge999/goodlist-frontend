@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/sheet";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import logo from "@images/logo.png";
 
 // Define types for NavItem and User
 type NavItem = {
@@ -87,7 +88,7 @@ export default async function NavBar() {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5">
             <Image
-              src="/images/logo.png"
+              src={logo}
               alt="Goodlistseller logo"
               width={48}
               height={48}

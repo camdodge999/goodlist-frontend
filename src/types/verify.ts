@@ -1,9 +1,4 @@
-export interface ContactInfo {
-  line: string;
-  facebook: string;
-  phone: string;
-  address: string;
-}
+import { ContactInfo } from "./stores";
 
 export interface VerificationFormData {
   storeName: string;

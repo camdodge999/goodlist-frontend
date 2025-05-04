@@ -14,6 +14,8 @@ import Spinner from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import SuccessDialog from "./SuccessDialog";
+import ErrorDialog from "./ErrorDialog";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -40,6 +42,10 @@ export default function SignupForm() {
   const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
+  const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const validateOTP = (otpCode: string): boolean => {
     // Demo validation - in production this would be a server call
@@ -47,30 +53,15 @@ export default function SignupForm() {
   }
 
   const handleOtpChange = (index: number, value: string): void => {
-    if (value.length > 1) {
-      // Handle paste
-      const pastedValues = value.split("").slice(0, 6);
-      const newOtpValues = [...otpValues];
-      pastedValues.forEach((val, i) => {
-        if (i < 6) {
-          newOtpValues[i] = val;
-        }
-      });
-      setOtpValues(newOtpValues);
-      setOtp(newOtpValues.join(""));
-      return;
-    }
-
     const newOtpValues = [...otpValues];
     newOtpValues[index] = value;
     setOtpValues(newOtpValues);
     setOtp(newOtpValues.join(""));
   };
 
-  const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
-      // This functionality is now handled by the shadcn ui component
-    }
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>): void => {
+    // This is a placeholder since the shadcn InputOTP component handles this internally
+    // No implementation needed
   };
 
   const validateForm = (): boolean => {
@@ -125,7 +116,8 @@ export default function SignupForm() {
         });
         setFieldErrors(errors);
         if (errors.acceptedTerms) {
-          setError(errors.acceptedTerms);
+          setErrorMessage(errors.acceptedTerms);
+          setShowErrorDialog(true);
         }
       }
       return false;
@@ -138,14 +130,16 @@ export default function SignupForm() {
       
       // Use our validateOTP helper
       if (!validateOTP(otp)) {
-        setError("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+        setErrorMessage("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+        setShowErrorDialog(true);
         return false;
       }
       
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
-        setError(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
+        setErrorMessage(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
+        setShowErrorDialog(true);
       }
       return false;
     }
@@ -254,13 +248,19 @@ export default function SignupForm() {
       });
       
       if (response.ok) {
-        router.push("/profile");
+        // Close OTP modal
+        setShowOtpModal(false);
+        // Show success dialog
+        setSuccessMessage("สมัครสมาชิกสำเร็จ! คุณสามารถเข้าสู่ระบบได้ทันที");
+        setShowSuccessDialog(true);
       } else {
-        setError("อีเมลนี้มีผู้ใช้งานแล้ว");
+        setErrorMessage("อีเมลนี้มีผู้ใช้งานแล้ว");
+        setShowErrorDialog(true);
       }
     } catch (_) {
       // Ignore the error variable name but handle the error
-      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setShowErrorDialog(true);
     } finally {
       setIsVerifying(false);
     }
@@ -276,7 +276,8 @@ export default function SignupForm() {
       setOtpSent(true);
     } catch (_) {
       // Ignore the error variable name but handle the error
-      setError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+      setErrorMessage("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+      setShowErrorDialog(true);
     } finally {
       setIsSendingOtp(false);
     }
@@ -290,8 +291,27 @@ export default function SignupForm() {
     setOtpSent(false);
   };
 
+  const handleSuccessDialogClose = () => {
+    router.push("/profile");
+  };
+
   return (
     <>
+      <SuccessDialog 
+        isOpen={showSuccessDialog}
+        setIsOpen={setShowSuccessDialog}
+        title="สมัครสมาชิกสำเร็จ"
+        message={successMessage}
+        buttonText="ไปที่หน้าโปรไฟล์"
+        onButtonClick={handleSuccessDialogClose}
+      />
+
+      <ErrorDialog 
+        isOpen={showErrorDialog}
+        setIsOpen={setShowErrorDialog}
+        message={errorMessage}
+      />
+
       <TermsModal 
         showTerms={showTerms}
         setShowTerms={setShowTerms}
@@ -490,14 +510,6 @@ export default function SignupForm() {
               </label>
             </div>
           </div>
-
-          {error && (
-            <div
-              className="text-red-500 text-sm text-center"
-            >
-              {error}
-            </div>
-          )}
 
           <div>
             <Button

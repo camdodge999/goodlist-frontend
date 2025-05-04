@@ -10,7 +10,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Description } from "@radix-ui/react-dialog";
 
 interface TermsModalProps {
   showTerms: boolean;

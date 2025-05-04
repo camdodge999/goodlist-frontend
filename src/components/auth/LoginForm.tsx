@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import SuccessDialog from "./SuccessDialog";
+import ErrorDialog from "./ErrorDialog";
 
 export default function LoginForm(): JSX.Element {
   const router = useRouter();
@@ -23,6 +25,10 @@ export default function LoginForm(): JSX.Element {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
+  const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const validateForm = (): boolean => {
     try {
@@ -61,12 +67,16 @@ export default function LoginForm(): JSX.Element {
       });
 
       if (result?.error) {
-        setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        setErrorMessage("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        setShowErrorDialog(true);
       } else if (result?.ok) {
-        router.push("/profile");
+        setSuccessMessage("เข้าสู่ระบบสำเร็จ");
+        setShowSuccessDialog(true);
+        // Router will redirect after dialog is closed
       }
     } catch (err) {
-      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setShowErrorDialog(true);
     } finally {
       setIsLoading(false);
     }
@@ -108,101 +118,116 @@ export default function LoginForm(): JSX.Element {
     setFormInput({ ...formInput, password: e.target.value });
   };
 
+  const handleSuccessDialogClose = () => {
+    router.push("/profile");
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50"
-    >
-      <div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          เข้าสู่ระบบ
-        </h2>
-        <p
-          className="mt-2 text-center text-sm text-gray-600"
-        >
-          หรือ{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
-          >
-            สมัครสมาชิก
-          </Link>
-        </p>
-      </div>
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <div>
-            <Input
-              id="email"
-              name="email"
-              placeholder="อีเมล"
-              value={formInput.email}
-              onChange={handleEmailChange}
-              className={fieldErrors.email ? "ring-2 ring-red-500" : ""}
-            />
-            {fieldErrors.email && (
-              <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
-            )}
-          </div>
-          <div>
-            <div className="relative">
-              <Input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="รหัสผ่าน"
-                value={formInput.password}
-                onChange={handlePasswordChange}
-                className={fieldErrors.password ? "ring-2 ring-red-500" : ""}
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
-              </button>
-            </div>
-            {fieldErrors.password && (
-              <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>
-            )}
-          </div>
-        </div>
+    <>
+      <SuccessDialog 
+        isOpen={showSuccessDialog}
+        setIsOpen={setShowSuccessDialog}
+        title="เข้าสู่ระบบสำเร็จ"
+        message={successMessage}
+        buttonText="ไปที่หน้าโปรไฟล์"
+        onButtonClick={handleSuccessDialogClose}
+      />
 
-        {error && (
-          <div className="text-red-500 text-sm text-center">
-            {error}
-          </div>
-        )}
-
+      <ErrorDialog 
+        isOpen={showErrorDialog}
+        setIsOpen={setShowErrorDialog}
+        message={errorMessage}
+      />
+    
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50"
+      >
         <div>
-          <Button 
-            type="submit" 
-            disabled={isLoading} 
-            variant="primary"
-            className="w-full cursor-pointer"
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            เข้าสู่ระบบ
+          </h2>
+          <p
+            className="mt-2 text-center text-sm text-gray-600"
           >
-            {isLoading && <Spinner className="mr-2" />}
-            {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-          </Button>
+            หรือ{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
+            >
+              สมัครสมาชิก
+            </Link>
+          </p>
         </div>
-
-        <div className="mt-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link 
-                href="/reset-password"
-                className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer"
-              >
-                ลืมรหัสผ่าน?
-              </Link>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <Input
+                id="email"
+                name="email"
+                placeholder="อีเมล"
+                value={formInput.email}
+                onChange={handleEmailChange}
+                className={fieldErrors.email ? "ring-2 ring-red-500" : ""}
+              />
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
+              )}
+            </div>
+            <div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="รหัสผ่าน"
+                  value={formInput.password}
+                  onChange={handlePasswordChange}
+                  className={fieldErrors.password ? "ring-2 ring-red-500" : ""}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>
+              )}
             </div>
           </div>
-        </div>
-      </form>
-    </motion.div>
+
+          <div>
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              variant="primary"
+              className="w-full cursor-pointer"
+            >
+              {isLoading && <Spinner className="mr-2" />}
+              {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+            </Button>
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <Link 
+                  href="/reset-password"
+                  className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer"
+                >
+                  ลืมรหัสผ่าน?
+                </Link>
+              </div>
+            </div>
+          </div>
+        </form>
+      </motion.div>
+    </>
   );
 } 

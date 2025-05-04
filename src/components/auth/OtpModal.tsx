@@ -6,6 +6,9 @@ import {
   InputOTPGroup, 
   InputOTPSlot 
 } from "@/components/ui/input-otp";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import Spinner from "@/components/ui/Spinner";
 
 interface OtpModalProps {
   email: string;
@@ -36,7 +39,7 @@ export default function OtpModal({
   const otpValue = otpValues.join("");
   
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -46,28 +49,18 @@ export default function OtpModal({
       >
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-gray-900">ยืนยันตัวตน</h3>
-          <button
+          <Button
             onClick={onClose}
             aria-label="ปิด"
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <p className="text-sm text-gray-600">
             โปรดกรอกรหัสยืนยัน (OTP) ที่ส่งไปยัง {email}
           </p>
@@ -79,14 +72,18 @@ export default function OtpModal({
               onChange={(value) => {
                 // Convert the new value to array of characters
                 const newOtpValues = value.split('');
+                
                 // Pad array with empty strings if it's shorter than 6
                 while (newOtpValues.length < 6) {
                   newOtpValues.push('');
                 }
-                // Call the original change handler for each position
-                newOtpValues.forEach((val, index) => {
-                  onOtpChange(index, val);
-                });
+                
+                // Call the original change handler for each position that changed
+                for (let i = 0; i < 6; i++) {
+                  if (otpValues[i] !== newOtpValues[i]) {
+                    onOtpChange(i, newOtpValues[i] || '');
+                  }
+                }
               }}
               containerClassName="gap-2 justify-center"
             >
@@ -103,25 +100,29 @@ export default function OtpModal({
           )}
 
           <div className="flex flex-col space-y-3">
-            <button
+            <Button
               onClick={onVerify}
-              disabled={isVerifying || !otpSent}
-              className="w-full py-2.5 px-4 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isVerifying || !otpSent || otpValue.length !== 6}
+              variant="primary"
+              className="w-full cursor-pointer flex justify-center items-center gap-2"
             >
+              {isVerifying && <Spinner className="mr-2" />}
               {isVerifying ? "กำลังตรวจสอบ..." : "ยืนยัน"}
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={onSendOtp}
               disabled={isSendingOtp || otpSent}
-              className="w-full py-2.5 px-4 text-sm font-medium rounded-lg text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="outline"
+              className="w-full cursor-pointer flex justify-center items-center gap-2"
             >
+              {isSendingOtp && <Spinner className="mr-2" />}
               {isSendingOtp
                 ? "กำลังส่ง..."
                 : otpSent
                 ? "ส่งรหัสยืนยันแล้ว"
                 : "ส่งรหัสยืนยัน"}
-            </button>
+            </Button>
           </div>
 
           <p className="text-xs text-gray-500 text-center">

@@ -1,27 +1,41 @@
-import React from 'react';
-import Link from 'next/link';
-import { ResetPasswordSuccessProps } from '@/types/auth';
+"use client";
 
-const ResetPasswordSuccess: React.FC<ResetPasswordSuccessProps> = ({ onBackToLogin }) => {
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEnvelopeOpen } from '@fortawesome/free-solid-svg-icons';
+
+interface ResetPasswordSuccessProps {
+  onBackToLogin: () => void;
+}
+
+export default function ResetPasswordSuccess({ onBackToLogin }: ResetPasswordSuccessProps) {
   return (
-    <div>
-      <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-        ส่งอีเมลรีเซ็ตรหัสผ่านเรียบร้อยแล้ว
-      </h2>
-      <p className="mt-2 text-center text-sm text-gray-600">
-        กรุณาตรวจสอบอีเมลของคุณเพื่อรีเซ็ตรหัสผ่าน
-      </p>
-      <div className="mt-6">
-        <Link
-          href="/login"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50 text-center"
+    >
+      <div className="flex flex-col items-center justify-center space-y-6">
+        <div className="text-green-500 text-6xl">
+          <FontAwesomeIcon icon={faEnvelopeOpen} />
+        </div>
+        
+        <h2 className="text-3xl font-bold text-gray-900">ส่งอีเมลสำเร็จ</h2>
+        
+        <p className="text-lg text-gray-600">
+          กรุณาตรวจสอบกล่องข้อความของคุณเพื่อรีเซ็ตรหัสผ่าน
+        </p>
+        
+        <Button 
+          variant="primary"
           onClick={onBackToLogin}
+          className="mt-4 min-w-[200px] cursor-pointer"
         >
           กลับไปหน้าเข้าสู่ระบบ
-        </Link>
+        </Button>
       </div>
-    </div>
+    </motion.div>
   );
-};
-
-export default ResetPasswordSuccess; 
+} 

@@ -3,13 +3,12 @@
 import { useState, FormEvent, type JSX } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { loginSchema } from "@/validators/user.schema";
 import { ZodError } from "zod";
+import { signIn } from "next-auth/react";
 
 export default function LoginForm(): JSX.Element {
-  const { login } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -47,13 +46,18 @@ export default function LoginForm(): JSX.Element {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        router.push("/profile");
-      } else {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
         setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      } else if (result?.ok) {
+        router.push("/profile");
       }
-    } catch (_) {
+    } catch (err) {
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsLoading(false);
@@ -104,9 +108,7 @@ export default function LoginForm(): JSX.Element {
             <input
               id="email"
               name="email"
-              type="email"
-              required
-              className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
+              className={`appearance-none relative block w-full px-3 py-2.5 border-2 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
                 fieldErrors.email ? "ring-2 ring-red-500" : ""
               }`}
               placeholder="อีเมล"
@@ -129,8 +131,7 @@ export default function LoginForm(): JSX.Element {
               id="password"
               name="password"
               type="password"
-              required
-              className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
+              className={`appearance-none relative block w-full px-3 py-2.5 border-2 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
                 fieldErrors.password ? "ring-2 ring-red-500" : ""
               }`}
               placeholder="รหัสผ่าน"
@@ -190,6 +191,19 @@ export default function LoginForm(): JSX.Element {
             {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
         </motion.div>
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link 
+                href="/reset-password"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                ลืมรหัสผ่าน?
+              </Link>
+            </div>
+          </div>
+        </div>
       </form>
     </motion.div>
   );

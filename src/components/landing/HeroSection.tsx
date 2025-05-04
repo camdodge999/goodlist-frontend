@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from "next/link";
-import Image from "next/image";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faStore, 
@@ -9,7 +8,6 @@ import {
 import ContentWidth from "@/components/layout/ContentWidth";
 import { Button } from "@/components/ui/button";
 import { Session } from "next-auth";
-import heroBg from "@images/hero-bg.jpg";
 
 interface HeroSectionProps {
   session: Session | null;
@@ -21,13 +19,6 @@ export function HeroSection({ session }: HeroSectionProps) {
       <div className="relative isolate min-h-screen overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 -z-10">
-          <Image
-            src={heroBg}
-            alt="Background"
-            fill
-            className="object-cover animate-subtle-zoom"
-            priority
-          />
           {/* Animated gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/95 via-blue-700/90 to-blue-800/95 animate-gradient" />
 

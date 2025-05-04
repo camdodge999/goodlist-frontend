@@ -15,8 +15,9 @@ import ProfileSettings from "@/components/profile/ProfileSettings";
 import OtpModal from "@/components/profile/OtpModal";
 
 // Types
-import { ProfileFormData, PasswordFormData, ProfileTabProps } from "@/types/profile";
+import { ProfileTabProps } from "@/types/profile";
 import { Store } from "@/types/stores";
+import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -35,18 +36,18 @@ export default function ProfilePage() {
   const [lastEmailChange, setLastEmailChange] = useState<Date | null>(null);
   const [canChangeEmail, setCanChangeEmail] = useState(true);
   const [tempEmail, setTempEmail] = useState("");
-  const inputRefs = Array(6)
-    .fill(0)
-    .map(() => useRef<HTMLInputElement>(null));
 
-  const [formData, setFormData] = useState<ProfileFormData>({
+  // Create individual refs for each OTP input
+  const inputRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
+
+  const [formData, setFormData] = useState<ProfileFormSchema>({
     name: "",
     email: "",
     phone: "",
     address: "",
   });
 
-  const [passwordData, setPasswordData] = useState<PasswordFormData>({
+  const [passwordData, setPasswordData] = useState<PasswordFormSchema>({
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -94,8 +95,8 @@ export default function ProfilePage() {
         // Filter stores owned by the current user
         const stores = mockStores.filter((store) => store.userId === user.id);
         setUserStores(stores);
-      } catch (error) {
-        console.error("Error fetching user stores:", error);
+      } catch (err) {
+        console.error("Error fetching user stores:", err);
       }
     };
 
@@ -157,7 +158,7 @@ export default function ProfilePage() {
 
       // Focus the last input
       const lastInputIndex = Math.min(pastedValues.length - 1, 5);
-      inputRefs[lastInputIndex].current?.focus();
+      inputRefs[lastInputIndex]?.current?.focus();
       return;
     }
 
@@ -168,14 +169,14 @@ export default function ProfilePage() {
 
     // Auto-focus next input
     if (value && index < 5) {
-      inputRefs[index + 1].current?.focus();
+      inputRefs[index + 1]?.current?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otpValues[index] && index > 0) {
       // Move to previous input on backspace
-      inputRefs[index - 1].current?.focus();
+      inputRefs[index - 1]?.current?.focus();
     }
   };
 
@@ -292,23 +293,6 @@ export default function ProfilePage() {
   };
 
   const handleChangePassword = async () => {
-    if (!passwordData.oldPassword) {
-      setPasswordError("กรุณากรอกรหัสผ่านเดิม");
-      return;
-    }
-    if (!passwordData.newPassword) {
-      setPasswordError("กรุณากรอกรหัสผ่านใหม่");
-      return;
-    }
-    if (passwordData.newPassword.length < 6) {
-      setPasswordError("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
-      return;
-    }
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError("รหัสผ่านใหม่ไม่ตรงกัน");
-      return;
-    }
-
     setIsChangingPassword(true);
     setPasswordError("");
 
@@ -365,7 +349,6 @@ export default function ProfilePage() {
         <OtpModal
           email={tempEmail}
           otpValues={otpValues}
-          inputRefs={inputRefs}
           error={error}
           isVerifying={isVerifying}
           isSendingOtp={isSendingOtp}

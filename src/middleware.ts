@@ -6,7 +6,7 @@ import { withAuth } from "next-auth/middleware";
 
 // Configuration object for paths and rules
 const PATH_CONFIG = {
-  publicPaths: ["/login", "/signup", "/forgot-password", "/api/auth/error", "/"],
+  publicPaths: ["/login", "/signup", "/forgot-password", "/api/auth/error", "/", "/reset-password"],
   protectedPaths: ["/admin", "/verify"],
   protectedBasePath: "/admin",
   unauthorizedPath: "/unauthorized",

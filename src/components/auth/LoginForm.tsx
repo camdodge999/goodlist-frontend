@@ -113,7 +113,7 @@ export default function LoginForm(): JSX.Element {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl z-50"
+      className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50"
     >
       <div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

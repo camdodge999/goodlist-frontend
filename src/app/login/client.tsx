@@ -29,7 +29,7 @@ export default function LoginClientPage() {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="absolute inset-0 bg-cover bg-center z-0"></div>
             <div className="absolute inset-0 bg-blue-900 opacity-40 z-10"></div>
-                <LoginForm />
+            <LoginForm />
         </div>
     );
 } 

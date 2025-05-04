@@ -6,9 +6,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Description } from "@radix-ui/react-dialog";
 
 interface TermsModalProps {
   showTerms: boolean;
@@ -22,12 +24,15 @@ export default function TermsModal({
   setAcceptedTerms,
 }: TermsModalProps) {
   return (
-    <Dialog open={showTerms} onOpenChange={setShowTerms}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+    <Dialog open={showTerms} onOpenChange={setShowTerms} aria-label="ข้อกำหนดและเงื่อนไขการใช้งาน">
+      <DialogContent className="max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-800">
             ข้อกำหนดและเงื่อนไขการใช้งาน
           </DialogTitle>
+          <DialogDescription id="terms-description" className="sr-only">
+          ข้อกำหนดและเงื่อนไขการใช้งานเว็บไซต์ Goodlistseller.com ที่ผู้ใช้บริการต้องยอมรับ
+          </DialogDescription>
         </DialogHeader>
 
         <div className="prose max-w-none text-gray-700 space-y-6 my-4">
@@ -53,7 +58,7 @@ export default function TermsModal({
 
           <div className="text-sm text-gray-600 mb-4">
             การกดยอมรับหมายถึงผู้ใช้บริการยินยอมตามนโยบาย พ.ร.บ.
-            คุ้มครองข้อมูลส่วนบุคคล โดยมีรายละเอียดในลิงค์นี้
+            คุ้มครองข้อมูลส่วนบุคคล โดยมีรายละเอียดในลิงก์นี้
           </div>
         </div>
 

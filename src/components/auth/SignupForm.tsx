@@ -291,7 +291,7 @@ export default function SignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-primary-400 to-primary-600 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <>
       <TermsModal 
         showTerms={showTerms}
         setShowTerms={setShowTerms}
@@ -319,7 +319,7 @@ export default function SignupForm() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl"
+        className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50"
       >
         <div>
           <h2
@@ -504,7 +504,7 @@ export default function SignupForm() {
               type="submit"
               variant="primary"
               disabled={isLoading}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer flex items-center justify-center"
             >
               {isLoading ? (
                 <Spinner />
@@ -514,6 +514,6 @@ export default function SignupForm() {
           </div>
         </form>
       </motion.div>
-    </div>
+    </>
   );
 } 

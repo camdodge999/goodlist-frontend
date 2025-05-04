@@ -1,18 +1,21 @@
-import React, { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+// Note: This component requires the following dependencies:
+// npm install react-hook-form @hookform/resolvers
+
+import React, { useRef, useState, FormEvent, ChangeEvent } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 
 // Components
 import FileInput from "./FileInput";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { FormLabel } from "@/components/ui/form-label";
+import { FormMessage } from "@/components/ui/form-message";
+import { Button } from "@/components/ui/button";
+import { ErrorMessage } from "@/components/ui/error-message";
 
-// Schemas
-import { 
-  verificationFormSchema, 
-  fileValidationSchema,
-  VerificationFormSchema
-} from "@/validators/store.schema";
+// Types and validation
+import { VerificationFormSchema } from "@/validators/store.schema";
 
 interface VerificationFormProps {
   initialData?: Partial<VerificationFormSchema>;
@@ -30,26 +33,22 @@ export default function VerificationForm({
   initialData,
   onSubmit 
 }: VerificationFormProps) {
-  // Form state using react-hook-form
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors } 
-  } = useForm<VerificationFormSchema>({
-    resolver: zodResolver(verificationFormSchema),
-    defaultValues: initialData || {
-      storeName: "",
-      email: "",
-      bankAccount: "",
-      taxId: "",
-      contactInfo: {
-        line: "",
-        facebook: "",
-        phone: "",
-        address: "",
-      },
+  // Form state using useState for each field
+  const [formData, setFormData] = useState<VerificationFormSchema>({
+    storeName: initialData?.storeName || "",
+    email: initialData?.email || "",
+    bankAccount: initialData?.bankAccount || "",
+    taxId: initialData?.taxId || "",
+    contactInfo: {
+      line: initialData?.contactInfo?.line || "",
+      facebook: initialData?.contactInfo?.facebook || "",
+      phone: initialData?.contactInfo?.phone || "",
+      address: initialData?.contactInfo?.address || "",
     }
   });
+
+  // Error state
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // File state
   const [storeImage, setStoreImage] = useState<File | null>(null);
@@ -57,79 +56,201 @@ export default function VerificationForm({
   const [idCard, setIdCard] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
   
   // File refs
   const storeImageRef = useRef<HTMLInputElement | null>(null);
   const registrationDocRef = useRef<HTMLInputElement | null>(null);
   const idCardRef = useRef<HTMLInputElement | null>(null);
 
+  // Handle input changes
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (name.includes('.')) {
+      // Handle nested properties like contactInfo.line
+      const [parent, child] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent as keyof typeof prev] as object,
+          [child]: value
+        }
+      }));
+    } else {
+      // Handle top-level properties
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+
+    // Clear the error for this field when it's changed
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
   // File handlers
   const handleStoreImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB");
-        return;
-      }
-      // Check file type
-      const validTypes = ["image/jpeg", "image/png"];
-      if (!validTypes.includes(file.type)) {
-        alert("รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น");
-        return;
-      }
-      setStoreImage(file);
+    
+    // Clear previous errors
+    setFileErrors(prev => ({...prev, storeImage: ""}));
+    
+    if (!file) {
+      setStoreImage(null);
+      return;
     }
+    
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setFileErrors(prev => ({...prev, storeImage: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
+      return;
+    }
+    
+    // Check file type
+    const validTypes = ["image/jpeg", "image/png"];
+    if (!validTypes.includes(file.type)) {
+      setFileErrors(prev => ({...prev, storeImage: "รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น"}));
+      return;
+    }
+    
+    setStoreImage(file);
   };
 
   const handleRegistrationDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB");
-        return;
-      }
-      // Check file type
-      if (file.type !== "application/pdf") {
-        alert("รองรับเฉพาะไฟล์ PDF เท่านั้น");
-        return;
-      }
-      setRegistrationDoc(file);
+    
+    // Clear previous errors
+    setFileErrors(prev => ({...prev, registrationDoc: ""}));
+    
+    if (!file) {
+      setRegistrationDoc(null);
+      return;
     }
+    
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setFileErrors(prev => ({...prev, registrationDoc: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
+      return;
+    }
+    
+    // Check file type
+    if (file.type !== "application/pdf") {
+      setFileErrors(prev => ({...prev, registrationDoc: "รองรับเฉพาะไฟล์ PDF เท่านั้น"}));
+      return;
+    }
+    
+    setRegistrationDoc(file);
   };
 
   const handleIdCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB");
-        return;
-      }
-      // Check file type
-      const validTypes = ["image/jpeg", "image/png"];
-      if (!validTypes.includes(file.type)) {
-        alert("รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น");
-        return;
-      }
-      setIdCard(file);
+    
+    // Clear previous errors
+    setFileErrors(prev => ({...prev, idCard: ""}));
+    
+    if (!file) {
+      setIdCard(null);
+      return;
     }
+    
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setFileErrors(prev => ({...prev, idCard: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
+      return;
+    }
+    
+    // Check file type
+    const validTypes = ["image/jpeg", "image/png"];
+    if (!validTypes.includes(file.type)) {
+      setFileErrors(prev => ({...prev, idCard: "รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น"}));
+      return;
+    }
+    
+    setIdCard(file);
   };
   
+  // Validate form
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Validate required fields
+    if (!formData.storeName) {
+      newErrors['storeName'] = 'กรุณากรอกชื่อร้านค้า';
+    }
+
+    if (!formData.email) {
+      newErrors['email'] = 'กรุณากรอกอีเมล';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors['email'] = 'รูปแบบอีเมลไม่ถูกต้อง';
+    }
+
+    if (!formData.bankAccount) {
+      newErrors['bankAccount'] = 'กรุณากรอกเลขบัญชีธนาคาร';
+    }
+
+    if (!formData.contactInfo.line) {
+      newErrors['contactInfo.line'] = 'กรุณากรอก Line ID';
+    }
+
+    if (!formData.contactInfo.facebook) {
+      newErrors['contactInfo.facebook'] = 'กรุณากรอก Facebook Page';
+    }
+
+    if (!formData.contactInfo.phone) {
+      newErrors['contactInfo.phone'] = 'กรุณากรอกเบอร์โทรศัพท์';
+    } else if (!/^\d{9,10}$/.test(formData.contactInfo.phone.replace(/[^0-9]/g, ''))) {
+      newErrors['contactInfo.phone'] = 'เบอร์โทรศัพท์ไม่ถูกต้อง';
+    }
+
+    if (!formData.contactInfo.address) {
+      newErrors['contactInfo.address'] = 'กรุณากรอกที่อยู่';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // Form submit handler
-  const handleFormSubmit = async (formData: VerificationFormSchema) => {
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setError("");
+    setFileErrors({});
+
+    // Validate form fields
+    if (!validateForm()) {
+      return;
+    }
+
+    // Validate required files
+    const newFileErrors: Record<string, string> = {};
+    let hasFileErrors = false;
+
+    if (!storeImage) {
+      newFileErrors.storeImage = "กรุณาอัพโหลดรูปร้านค้า";
+      hasFileErrors = true;
+    }
+
+    if (!idCard) {
+      newFileErrors.idCard = "กรุณาอัพโหลดบัตรประชาชน";
+      hasFileErrors = true;
+    }
+
+    if (hasFileErrors) {
+      setFileErrors(newFileErrors);
+      setError("กรุณาอัพโหลดไฟล์ที่จำเป็นทั้งหมด");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Validate required files
-      if (!storeImage || !idCard) {
-        setError("กรุณาอัพโหลดรูปร้านค้าและบัตรประชาชน");
-        setIsSubmitting(false);
-        return;
-      }
-
       await onSubmit(formData, {
         storeImage,
         registrationDoc,
@@ -146,177 +267,152 @@ export default function VerificationForm({
     }
   };
 
+  // Error getter helper
+  const getErrorMessage = (field: string) => {
+    return errors[field] || "";
+  };
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)}>
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <FontAwesomeIcon 
-                icon={faExclamationCircle} 
-                className="h-5 w-5 text-red-400" 
-              />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
+    <form onSubmit={handleFormSubmit}>
+      <ErrorMessage message={error} />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
-          <label
-            htmlFor="storeName"
-            className="block text-sm font-medium text-gray-700"
-          >
-            ชื่อร้านค้า <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
+          <FormLabel htmlFor="storeName" required>
+            ชื่อร้านค้า
+          </FormLabel>
+          <Input
             id="storeName"
-            className={`mt-1 block w-full border ${
-              errors.storeName ? "border-red-300" : "border-gray-300"
-            } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-            {...register("storeName")}
+            name="storeName"
+            value={formData.storeName}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('storeName') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('storeName')}
           />
-          {errors.storeName && (
-            <p className="mt-1 text-sm text-red-600">{errors.storeName.message}</p>
+          {getErrorMessage('storeName') && (
+            <FormMessage variant="error">{getErrorMessage('storeName')}</FormMessage>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
-          >
-            อีเมล <span className="text-red-500">*</span>
-          </label>
-          <input
+          <FormLabel htmlFor="email" required>
+            อีเมล
+          </FormLabel>
+          <Input
             type="email"
             id="email"
-            className={`mt-1 block w-full border ${
-              errors.email ? "border-red-300" : "border-gray-300"
-            } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-            {...register("email")}
+            name="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('email') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('email')}
           />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+          {getErrorMessage('email') && (
+            <FormMessage variant="error">{getErrorMessage('email')}</FormMessage>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="bankAccount"
-            className="block text-sm font-medium text-gray-700"
-          >
-            เลขบัญชีธนาคาร <span className="text-red-500">*</span>
-          </label>
-          <input
+          <FormLabel htmlFor="bankAccount" required>
+            เลขบัญชีธนาคาร
+          </FormLabel>
+          <Input
             type="text"
             id="bankAccount"
-            className={`mt-1 block w-full border ${
-              errors.bankAccount ? "border-red-300" : "border-gray-300"
-            } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-            {...register("bankAccount")}
+            name="bankAccount"
+            value={formData.bankAccount}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('bankAccount') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('bankAccount')}
           />
-          {errors.bankAccount && (
-            <p className="mt-1 text-sm text-red-600">{errors.bankAccount.message}</p>
+          {getErrorMessage('bankAccount') && (
+            <FormMessage variant="error">{getErrorMessage('bankAccount')}</FormMessage>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="taxId"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <FormLabel htmlFor="taxId">
             เลขประจำตัวผู้เสียภาษี (ถ้ามี)
-          </label>
-          <input
+          </FormLabel>
+          <Input
             type="text"
             id="taxId"
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            {...register("taxId")}
+            name="taxId"
+            value={formData.taxId}
+            onChange={handleInputChange}
+            className="mt-1"
           />
         </div>
 
         <div>
-          <label
-            htmlFor="line"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Line ID <span className="text-red-500">*</span>
-          </label>
-          <input
+          <FormLabel htmlFor="line" required>
+            Line ID
+          </FormLabel>
+          <Input
             type="text"
             id="line"
-            className={`mt-1 block w-full border ${
-              errors.contactInfo?.line ? "border-red-300" : "border-gray-300"
-            } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-            {...register("contactInfo.line")}
+            name="contactInfo.line"
+            value={formData.contactInfo.line}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('contactInfo.line') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('contactInfo.line')}
           />
-          {errors.contactInfo?.line && (
-            <p className="mt-1 text-sm text-red-600">{errors.contactInfo.line.message}</p>
+          {getErrorMessage('contactInfo.line') && (
+            <FormMessage variant="error">{getErrorMessage('contactInfo.line')}</FormMessage>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="facebook"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Facebook Page <span className="text-red-500">*</span>
-          </label>
-          <input
+          <FormLabel htmlFor="facebook" required>
+            Facebook Page
+          </FormLabel>
+          <Input
             type="text"
             id="facebook"
-            className={`mt-1 block w-full border ${
-              errors.contactInfo?.facebook ? "border-red-300" : "border-gray-300"
-            } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-            {...register("contactInfo.facebook")}
+            name="contactInfo.facebook"
+            value={formData.contactInfo.facebook}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('contactInfo.facebook') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('contactInfo.facebook')}
           />
-          {errors.contactInfo?.facebook && (
-            <p className="mt-1 text-sm text-red-600">{errors.contactInfo.facebook.message}</p>
+          {getErrorMessage('contactInfo.facebook') && (
+            <FormMessage variant="error">{getErrorMessage('contactInfo.facebook')}</FormMessage>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="phone"
-            className="block text-sm font-medium text-gray-700"
-          >
-            เบอร์โทรศัพท์ <span className="text-red-500">*</span>
-          </label>
-          <input
+          <FormLabel htmlFor="phone" required>
+            เบอร์โทรศัพท์
+          </FormLabel>
+          <Input
             type="tel"
             id="phone"
-            className={`mt-1 block w-full border ${
-              errors.contactInfo?.phone ? "border-red-300" : "border-gray-300"
-            } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-            {...register("contactInfo.phone")}
+            name="contactInfo.phone"
+            value={formData.contactInfo.phone}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('contactInfo.phone') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('contactInfo.phone')}
           />
-          {errors.contactInfo?.phone && (
-            <p className="mt-1 text-sm text-red-600">{errors.contactInfo.phone.message}</p>
+          {getErrorMessage('contactInfo.phone') && (
+            <FormMessage variant="error">{getErrorMessage('contactInfo.phone')}</FormMessage>
           )}
         </div>
 
         <div className="sm:col-span-2">
-          <label
-            htmlFor="address"
-            className="block text-sm font-medium text-gray-700"
-          >
-            ที่อยู่ <span className="text-red-500">*</span>
-          </label>
-          <textarea
+          <FormLabel htmlFor="address" required>
+            ที่อยู่
+          </FormLabel>
+          <Textarea
             id="address"
+            name="contactInfo.address"
             rows={3}
-            className={`mt-1 block w-full border ${
-              errors.contactInfo?.address ? "border-red-300" : "border-gray-300"
-            } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-            {...register("contactInfo.address")}
-          ></textarea>
-          {errors.contactInfo?.address && (
-            <p className="mt-1 text-sm text-red-600">{errors.contactInfo.address.message}</p>
+            value={formData.contactInfo.address}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('contactInfo.address') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('contactInfo.address')}
+          />
+          {getErrorMessage('contactInfo.address') && (
+            <FormMessage variant="error">{getErrorMessage('contactInfo.address')}</FormMessage>
           )}
         </div>
       </div>
@@ -333,8 +429,9 @@ export default function VerificationForm({
           description="PNG, JPG ขนาดไม่เกิน 5MB"
           acceptTypes="image/jpeg, image/png"
           onChange={handleStoreImageChange}
-          fileRef={storeImageRef}
+          fileRef={storeImageRef as unknown as React.RefObject<HTMLInputElement>}
           selectedFile={storeImage}
+          error={fileErrors.storeImage}
         />
 
         {/* Business Registration Document */}
@@ -344,8 +441,9 @@ export default function VerificationForm({
           description="PDF ขนาดไม่เกิน 5MB"
           acceptTypes="application/pdf"
           onChange={handleRegistrationDocChange}
-          fileRef={registrationDocRef}
+          fileRef={registrationDocRef as unknown as React.RefObject<HTMLInputElement>}
           selectedFile={registrationDoc}
+          error={fileErrors.registrationDoc}
         />
 
         {/* ID Card */}
@@ -355,8 +453,9 @@ export default function VerificationForm({
           description="PNG, JPG ขนาดไม่เกิน 5MB"
           acceptTypes="image/jpeg, image/png"
           onChange={handleIdCardChange}
-          fileRef={idCardRef}
+          fileRef={idCardRef as unknown as React.RefObject<HTMLInputElement>}
           selectedFile={idCard}
+          error={fileErrors.idCard}
         />
       </div>
 
@@ -372,13 +471,13 @@ export default function VerificationForm({
         </div>
 
         <div className="flex justify-end">
-          <button
+          <Button
             type="submit"
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
             disabled={isSubmitting}
           >
             {isSubmitting ? "กำลังส่งเอกสาร..." : "ส่งเอกสารยืนยันตัวตน"}
-          </button>
+          </Button>
         </div>
       </div>
     </form>

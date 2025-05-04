@@ -269,7 +269,10 @@ export default async function NavBar() {
                 asChild
                 className="transition-all duration-200 hover:shadow-md"
               >
-                <Link href="/signup">สมัครสมาชิก</Link>
+                <Link href="/signup">
+                  <FontAwesomeIcon icon={faUserPlus} className="h-5 w-5 mr-3" />
+                  <span>สมัครสมาชิก</span>
+                </Link>
               </Button>
             </>
           )}

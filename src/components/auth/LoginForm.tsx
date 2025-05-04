@@ -1,24 +1,32 @@
 "use client";
 
-import { useState, FormEvent, type JSX } from "react";
+import { useState, FormEvent, type JSX, ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { loginSchema } from "@/validators/user.schema";
+import { LoginFormValues, loginSchema } from "@/validators/user.schema";
 import { ZodError } from "zod";
 import { signIn } from "next-auth/react";
+import Spinner from "@/components/ui/Spinner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 
 export default function LoginForm(): JSX.Element {
   const router = useRouter();
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [formInput, setFormInput] = useState<LoginFormValues>({
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const validateForm = (): boolean => {
     try {
-      loginSchema.parse({ email, password });
+      loginSchema.parse(formInput); 
       setFieldErrors({});
       return true;
     } catch (err) {
@@ -47,8 +55,8 @@ export default function LoginForm(): JSX.Element {
 
     try {
       const result = await signIn("credentials", {
-        email,
-        password,
+        email: formInput.email,
+        password: formInput.password,
         redirect: false,
       });
 
@@ -64,26 +72,54 @@ export default function LoginForm(): JSX.Element {
     }
   };
 
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    // Reset email-specific error when typing
+    if (fieldErrors.email) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.email;
+        return newErrors;
+      });
+    }
+    
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+    
+    setFormInput({ ...formInput, email: e.target.value });
+  };
+
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    // Reset password-specific error when typing
+    if (fieldErrors.password) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.password;
+        return newErrors;
+      });
+    }
+    
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+    
+    setFormInput({ ...formInput, password: e.target.value });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl"
+      transition={{ duration: 0.25 }}
+      className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl z-50"
     >
       <div>
-        <motion.h2
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6 text-center text-3xl font-extrabold text-gray-900"
-        >
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           เข้าสู่ระบบ
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+        </h2>
+        <p
           className="mt-2 text-center text-sm text-gray-600"
         >
           หรือ{" "}
@@ -93,111 +129,73 @@ export default function LoginForm(): JSX.Element {
           >
             สมัครสมาชิก
           </Link>
-        </motion.p>
+        </p>
       </div>
       <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
         <div className="space-y-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <label htmlFor="email" className="sr-only">
-              อีเมล
-            </label>
-            <input
+          <div>
+            <Input
               id="email"
               name="email"
-              className={`appearance-none relative block w-full px-3 py-2.5 border-2 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                fieldErrors.email ? "ring-2 ring-red-500" : ""
-              }`}
               placeholder="อีเมล"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formInput.email}
+              onChange={handleEmailChange}
+              className={fieldErrors.email ? "ring-2 ring-red-500" : ""}
             />
             {fieldErrors.email && (
               <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
             )}
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <label htmlFor="password" className="sr-only">
-              รหัสผ่าน
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className={`appearance-none relative block w-full px-3 py-2.5 border-2 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                fieldErrors.password ? "ring-2 ring-red-500" : ""
-              }`}
-              placeholder="รหัสผ่าน"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+          </div>
+          <div>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="รหัสผ่าน"
+                value={formInput.password}
+                onChange={handlePasswordChange}
+                className={fieldErrors.password ? "ring-2 ring-red-500" : ""}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
+              </button>
+            </div>
             {fieldErrors.password && (
               <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>
             )}
-          </motion.div>
+          </div>
         </div>
 
         {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-red-500 text-sm text-center"
-          >
+          <div className="text-red-500 text-sm text-center">
             {error}
-          </motion.div>
+          </div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="group relative w-full flex justify-center py-2.5 px-4 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        <div>
+          <Button 
+            type="submit" 
+            disabled={isLoading} 
+            variant="primary"
+            className="w-full cursor-pointer"
           >
-            {isLoading ? (
-              <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              </span>
-            ) : null}
+            {isLoading && <Spinner className="mr-2" />}
             {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-          </button>
-        </motion.div>
+          </Button>
+        </div>
 
         <div className="mt-4">
           <div className="flex items-center justify-between">
             <div className="text-sm">
               <Link 
                 href="/reset-password"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer"
               >
                 ลืมรหัสผ่าน?
               </Link>

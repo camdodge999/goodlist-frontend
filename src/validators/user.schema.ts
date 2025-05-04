@@ -3,8 +3,19 @@ import { z } from "zod";
 // Email validation schema
 export const emailSchema = z
   .string()
-  .min(1, { message: "กรุณากรอกอีเมล" })
-  .email({ message: "รูปแบบอีเมลไม่ถูกต้อง" });
+  .refine(
+    (val) => {
+      const validEmail = val.trim().length > 0 && val !== "";
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      
+      return validEmail && emailRegex.test(val.trim());
+    },
+    (val) => ({ 
+      message: val.trim().length === 0 
+        ? "กรุณากรอกอีเมล" 
+        : "รูปแบบอีเมลไม่ถูกต้อง" 
+    })
+  )
 
 // Password validation schema
 export const passwordSchema = z

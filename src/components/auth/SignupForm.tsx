@@ -3,14 +3,19 @@
 import { useState, type KeyboardEvent, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import OtpModal from "./OtpModal";
+import TermsModal from "./TermsModal";
 import { registrationSchema, otpSchema } from "@/validators/user.schema";
 import { ZodError } from "zod";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import Spinner from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/button";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faTimes, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 
 export default function SignupForm() {
-  const { register } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -26,6 +31,20 @@ export default function SignupForm() {
   const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
   const [otpSent, setOtpSent] = useState<boolean>(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false
+  });
+  const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+
+  const validateOTP = (otpCode: string): boolean => {
+    // Demo validation - in production this would be a server call
+    return otpCode === "000000";
+  }
 
   const handleOtpChange = (index: number, value: string): void => {
     if (value.length > 1) {
@@ -56,6 +75,38 @@ export default function SignupForm() {
 
   const validateForm = (): boolean => {
     try {
+      // Check if all password requirements are met
+      const allPasswordRequirementsMet = 
+        passwordValidation.hasMinLength && 
+        passwordValidation.hasUppercase && 
+        passwordValidation.hasLowercase && 
+        passwordValidation.hasNumber;
+      
+      // If password requirements are not met, don't proceed with form validation
+      if (password && !allPasswordRequirementsMet) {
+        const errors: Record<string, string> = {};
+        
+        if (!passwordValidation.hasMinLength) {
+          errors.password = "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร";
+        } else if (!passwordValidation.hasUppercase) {
+          errors.password = "รหัสผ่านต้องมีตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว";
+        } else if (!passwordValidation.hasLowercase) {
+          errors.password = "รหัสผ่านต้องมีตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว";
+        } else if (!passwordValidation.hasNumber) {
+          errors.password = "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว";
+        }
+        
+        setFieldErrors(errors);
+        return false;
+      }
+      
+      // Check if passwords match
+      if (password && confirmPassword && password !== confirmPassword) {
+        setFieldErrors({ confirmPassword: "รหัสผ่านไม่ตรงกัน" });
+        return false;
+      }
+      
+      // Proceed with schema validation
       registrationSchema.parse({
         email,
         password,
@@ -84,6 +135,13 @@ export default function SignupForm() {
   const validateOtp = (): boolean => {
     try {
       otpSchema.parse(otp);
+      
+      // Use our validateOTP helper
+      if (!validateOTP(otp)) {
+        setError("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+        return false;
+      }
+      
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
@@ -94,18 +152,76 @@ export default function SignupForm() {
   };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
-    setEmail(value);
+    // Reset email-specific error when typing
+    if (fieldErrors.email) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.email;
+        return newErrors;
+      });
+    }
+    
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+    
+    setEmail(e.target.value);
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
-    setPassword(value);
+    const newPassword = e.target.value;
+    
+    // Reset password-specific error when typing
+    if (fieldErrors.password) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.password;
+        return newErrors;
+      });
+    }
+    
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+    
+    // Validate password in real-time
+    setPasswordValidation({
+      hasMinLength: newPassword.length >= 8,
+      hasUppercase: /[A-Z]/.test(newPassword),
+      hasLowercase: /[a-z]/.test(newPassword),
+      hasNumber: /[0-9]/.test(newPassword)
+    });
+    
+    setPassword(newPassword);
   };
 
   const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
-    setConfirmPassword(value);
+    const newConfirmPassword = e.target.value;
+    
+    // Reset confirm password-specific error when typing
+    if (fieldErrors.confirmPassword) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.confirmPassword;
+        return newErrors;
+      });
+    }
+    
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+    
+    // Check if passwords match in real-time
+    if (newConfirmPassword.length > 0) {
+      setPasswordsMatch(newConfirmPassword === password);
+    } else {
+      setPasswordsMatch(null);
+    }
+    
+    setConfirmPassword(newConfirmPassword);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -124,17 +240,20 @@ export default function SignupForm() {
       return;
     }
 
-    if (otp !== "000000") {
-      setError("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
-      return;
-    }
-
     setIsVerifying(true);
     setError("");
 
     try {
-      const success = await register(email, password);
-      if (success) {
+      // Call your authentication service
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (response.ok) {
         router.push("/profile");
       } else {
         setError("อีเมลนี้มีผู้ใช้งานแล้ว");
@@ -171,67 +290,14 @@ export default function SignupForm() {
     setOtpSent(false);
   };
 
-  const TermsModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8">
-        <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h2 className="text-2xl font-bold text-gray-800">
-            ข้อกำหนดและเงื่อนไขการใช้งาน
-          </h2>
-          <button
-            onClick={() => setShowTerms(false)}
-            aria-label="ปิด"
-            className="text-gray-500 hover:text-gray-700 text-xl"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="prose max-w-none text-gray-700 space-y-6">
-          {/* Terms content - truncated for brevity */}
-          <div className="text-center mb-8">
-            <h3 className="text-xl font-semibold text-gray-900">
-              เว็บไซต์: Goodlistseller.com
-            </h3>
-          </div>
-          
-          {/* Terms sections - truncated */}
-          <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-              การใช้งานเว็บไซต์
-            </h3>
-            <p className="leading-relaxed">
-              ตลอดเว็บไซต์นี้ คำว่า &quot;ผู้ใช้บริการ&quot; หมายถึงบุคคลใด ๆ
-              ที่เข้าถึงเว็บไซต์นี้ไม่ว่าด้วยวิธีใดก็ตาม
-              การใช้เว็บไซต์นี้ต้องเป็นไปตามข้อกำหนดและเงื่อนไขการใช้งานนี้
-              ซึ่งผู้ใช้บริการควรอ่านอย่างละเอียด
-              การใช้เว็บไซต์หรือเข้าเยี่ยมชมหน้าใด ๆ
-              ถือว่าท่านยอมรับเงื่อนไขทั้งหมดแล้ว
-            </p>
-          </section>
-
-          <div className="mt-8 pt-6 border-t">
-            <p className="text-sm text-gray-600 mb-4">
-              การกดยอมรับหมายถึงผู้ใช้บริการยินยอมตามนโยบาย พ.ร.บ.
-              คุ้มครองข้อมูลส่วนบุคคล โดยมีรายละเอียดในลิงค์นี้
-            </p>
-            <button
-              onClick={() => {
-                setAcceptedTerms(true);
-                setShowTerms(false);
-              }}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
-            >
-              ยอมรับข้อกำหนดและเงื่อนไข
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      {showTerms && <TermsModal />}
+    <div className="min-h-screen bg-gradient-to-r from-primary-400 to-primary-600 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <TermsModal 
+        showTerms={showTerms}
+        setShowTerms={setShowTerms}
+        setAcceptedTerms={setAcceptedTerms}
+      />
+      
       {showOtpModal && (
         <OtpModal
           email={email}
@@ -252,22 +318,16 @@ export default function SignupForm() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.25 }}
         className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl"
       >
         <div>
-          <motion.h2
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+          <h2
             className="mt-6 text-center text-3xl font-extrabold text-gray-900"
           >
             สมัครสมาชิก
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+          </h2>
+          <p
             className="mt-2 text-center text-sm text-gray-600"
           >
             หรือ{" "}
@@ -277,159 +337,181 @@ export default function SignupForm() {
             >
               เข้าสู่ระบบ
             </Link>
-          </motion.p>
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
+            <div>
               <label htmlFor="email" className="sr-only">
                 อีเมล
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
-                type="email"
-                required
-                className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                  fieldErrors.email ? "ring-2 ring-red-500" : ""
-                }`}
                 placeholder="อีเมล"
                 value={email}
                 onChange={handleEmailChange}
+                className={fieldErrors.email ? "ring-2 ring-red-500" : ""}
               />
               {fieldErrors.email && (
                 <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <label htmlFor="password" className="sr-only">
-                รหัสผ่าน
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                  fieldErrors.password ? "ring-2 ring-red-500" : ""
-                }`}
-                placeholder="รหัสผ่าน"
-                value={password}
-                onChange={handlePasswordChange}
-              />
-              {fieldErrors.password && (
-                <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>
+            <div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="รหัสผ่าน"
+                  value={password}
+                  onChange={handlePasswordChange}
+                  className={fieldErrors.password ? "ring-2 ring-red-500" : ""}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
+                </button>
+              </div>
+                
+              {/* Password requirements */}
+              {(
+                <div className="mt-2 mb-4 p-3 bg-gray-50 rounded-md border text-sm space-y-2">
+                  <h4 className="font-medium text-gray-700">รหัสผ่านต้องประกอบด้วย :</h4>
+                  <ul className="space-y-1">
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasMinLength ? faCheck : faTimes}
+                        className={`mr-2 ${
+                          passwordValidation.hasMinLength ? "text-green-500" : "text-red-500"
+                        }`}
+                      />
+                      <span>อย่างน้อย 8 ตัวอักษร</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasUppercase ? faCheck : faTimes}
+                        className={`mr-2 ${
+                          passwordValidation.hasUppercase ? "text-green-500" : "text-red-500"
+                        }`}
+                      />
+                      <span>ตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasLowercase ? faCheck : faTimes}
+                        className={`mr-2 ${
+                          passwordValidation.hasLowercase ? "text-green-500" : "text-red-500"
+                        }`}
+                      />
+                      <span>ตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasNumber ? faCheck : faTimes}
+                        className={`mr-2 ${
+                          passwordValidation.hasNumber ? "text-green-500" : "text-red-500"
+                        }`}
+                      />
+                      <span>ตัวเลขอย่างน้อย 1 ตัว</span>
+                    </li>
+                  </ul>
+                </div>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <label htmlFor="confirmPassword" className="sr-only">
-                ยืนยันรหัสผ่าน
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                  fieldErrors.confirmPassword ? "ring-2 ring-red-500" : ""
-                }`}
-                placeholder="ยืนยันรหัสผ่าน"
-                value={confirmPassword}
-                onChange={handleConfirmPasswordChange}
-              />
+            <div>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="ยืนยันรหัสผ่าน"
+                  value={confirmPassword}
+                  onChange={handleConfirmPasswordChange}
+                  className={fieldErrors.confirmPassword ? "ring-2 ring-red-500" : ""}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  <FontAwesomeIcon icon={showConfirmPassword ? faEyeSlash : faEye} className="w-5 h-5" />
+                </button>
+              </div>
               {fieldErrors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-500">
                   {fieldErrors.confirmPassword}
                 </p>
               )}
-            </motion.div>
+              
+              {/* Password matching indicator */}
+              {passwordsMatch !== null && (
+                <div className="mt-1 flex items-center text-sm">
+                  <FontAwesomeIcon
+                    icon={passwordsMatch ? faCheck : faTimes}
+                    className={`mr-2 ${
+                      passwordsMatch ? "text-green-500" : "text-red-500"
+                    }`}
+                  />
+                  <span className={passwordsMatch ? "text-green-600" : "text-red-500"}>
+                    {passwordsMatch ? "รหัสผ่านตรงกัน" : "รหัสผ่านไม่ตรงกัน"}
+                  </span>
+                </div>
+              )}
+            </div>
 
-            <div className="flex items-center">
-              <input
+            <div className="flex items-center space-x-2 cursor-pointer">
+              <Checkbox
                 id="terms"
-                name="terms"
-                type="checkbox"
                 checked={acceptedTerms}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setAcceptedTerms(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="cursor-pointer"
+                onCheckedChange={(checked: boolean | "indeterminate") => setAcceptedTerms(checked === true)}
               />
               <label
                 htmlFor="terms"
-                className="ml-2 block text-sm text-gray-900"
+                className="text-sm text-gray-900 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 ฉันยอมรับ{" "}
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => setShowTerms(true)}
-                  className="text-blue-600 hover:text-blue-500 underline"
+                  className="h-auto p-0 text-blue-600 hover:text-blue-500 underline cursor-pointer"
                 >
                   ข้อกำหนดและเงื่อนไขการใช้งาน
-                </button>
+                </Button>
               </label>
             </div>
           </div>
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            <div
               className="text-red-500 text-sm text-center"
             >
               {error}
-            </motion.div>
+            </div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <button
+          <div>
+            <Button
               type="submit"
+              variant="primary"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2.5 px-4 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full cursor-pointer"
             >
               {isLoading ? (
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </span>
+                <Spinner />
               ) : null}
               {isLoading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
-            </button>
-          </motion.div>
+            </Button>
+          </div>
         </form>
       </motion.div>
     </div>

@@ -33,7 +33,7 @@ declare module "next-auth" {
   interface User {
     token?: string;
     role?: { name?: string };
-    username?: string;
+    email?: string;
   }
 }
 
@@ -42,14 +42,14 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        username: { label: "Username", type: "text", placeholder: "username" },
+        email: { label: "Email", type: "text", placeholder: "email" },
         password: { label: "Password", type: "password" },
         csrfToken: { label: "csrfToken", type: "hidden" },
       },
       async authorize(credentials) {
         try {
           // Early validation of required fields
-          if (!credentials?.username || !credentials?.password || !credentials?.csrfToken) {
+          if (!credentials?.email || !credentials?.password || !credentials?.csrfToken) { 
             throw new Error("Missing required credentials");
           }
 
@@ -63,7 +63,7 @@ export const authOptions: NextAuthOptions = {
                 "X-Requested-With": "XMLHttpRequest",
               },
               body: JSON.stringify({
-                username: credentials.username,
+                email: credentials.email,
                 password: credentials.password,
               }),
             }
@@ -81,9 +81,9 @@ export const authOptions: NextAuthOptions = {
 
           // Ensure the returned object matches the ExtendedUser type
           const user: ExtendedUser = {
-            id: userData.id || credentials.username, // Ensure id is always a string
+            id: userData.id || credentials.email, // Ensure id is always a string
             token: userData.token,
-            username: credentials.username,
+            email: credentials.email,
             name: userData.name || undefined, // Optional name
           };
 
@@ -113,7 +113,7 @@ export const authOptions: NextAuthOptions = {
             token.id = decoded.id;
           }
           if (decoded && decoded.role) {
-            token.role = decoded.role;
+            token.role = decoded.role.name;
           }
         } catch (error) {
           console.error("Failed to decode token:", error);

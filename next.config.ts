@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "api.uacj.chaninkrew.com",
+        hostname: "api.goodlist.chaninkrew.com",
         port: "3000",
         pathname: "/**",
       },

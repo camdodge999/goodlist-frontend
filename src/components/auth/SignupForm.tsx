@@ -248,6 +248,25 @@ export default function SignupForm() {
     }
 
     setShowOtpModal(true);
+
+    try{
+       // Call your authentication service
+       const response = await fetch(`api/user/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          displayName,
+          email,
+          password
+        }),
+      });
+    } catch (error) {
+      console.error("Error registering user:", error);
+      setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setShowErrorDialog(true);
+    }
   };
 
   const handleVerifyOtp = async (): Promise<void> => {
@@ -260,7 +279,7 @@ export default function SignupForm() {
 
     try {
       // Call your authentication service
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      const response = await fetch(`/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

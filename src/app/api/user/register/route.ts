@@ -6,12 +6,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   try {
     const body = await request.json();
 
+    console.log(body);
     // Validate request body
-    if (!body.name) {
+    if (!body.displayName || !body.email || !body.password) {
       return NextResponse.json(
         { 
           status: "error", 
-          message: "User name is required", 
+          message: "Display name, email, and password are required", 
           details: {} 
         },
         { status: 400 }
@@ -26,6 +27,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       body: body,
     });
 
+    console.log(result);
+
     if(result.status === "success"){
       return NextResponse.json({
         status: "success",
@@ -36,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       return NextResponse.json(
         { 
           status: "error", 
-          message: result.message || "Failed to create permission", 
+          message: result.message || "Failed to create user", 
           details: {} 
         },
         { status: 400 }
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     }
 
   } catch (error) {
-    console.error("Error creating role:", error);
+    console.error("Error creating user:", error);
     return NextResponse.json(
       { 
         status: "error", 

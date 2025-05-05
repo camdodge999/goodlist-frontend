@@ -6,7 +6,7 @@ import { withAuth } from "next-auth/middleware";
 
 // Configuration object for paths and rules
 const PATH_CONFIG = {
-  publicPaths: ["/login", "/signup", "/forgot-password", "/api/auth/error", "/", "/reset-password"],
+  publicPaths: ["/login", "/signup", "/forgot-password", "/api/auth/error", "/", "/reset-password", "api/user/register"],
   protectedPaths: ["/admin", "/verify"],
   protectedBasePath: "/admin",
   unauthorizedPath: "/unauthorized",
@@ -88,7 +88,7 @@ export default withAuth(
     }
     
     // Skip middleware for auth API routes
-    if (pathname.startsWith("/api/auth/") && pathname !== "/api/auth/monitor-token") {
+    if (pathname.startsWith("/api/auth/") || pathname === "/api/user/register") {
       return NextResponse.next();
     }
     

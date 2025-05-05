@@ -17,6 +17,16 @@ export const emailSchema = z
     })
   )
 
+// Display name validation schema
+export const displayNameSchema = z
+  .string()
+  .min(1, { message: "กรุณากรอกชื่อผู้ใช้งาน" })
+  .max(50, { message: "ชื่อผู้ใช้งานต้องไม่เกิน 50 ตัวอักษร" })
+  .refine(
+    (val) => /^[a-zA-Z0-9ก-๙\s]+$/.test(val),
+    { message: "ชื่อผู้ใช้งานต้องประกอบด้วยตัวอักษรภาษาไทย ภาษาอังกฤษ ตัวเลข และช่องว่างเท่านั้น" }
+  );
+
 // Password validation schema
 export const passwordSchema = z
   .string()
@@ -35,6 +45,7 @@ export const loginSchema = z.object({
 // Registration schema
 export const registrationSchema = z
   .object({
+    displayName: displayNameSchema,
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, { message: "กรุณายืนยันรหัสผ่าน" }),

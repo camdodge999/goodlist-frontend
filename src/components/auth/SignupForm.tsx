@@ -13,12 +13,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Spinner from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faEye, faEyeSlash, faUser, faEnvelope, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
 import SuccessDialog from "./SuccessDialog";
 import ErrorDialog from "./ErrorDialog";
 
 export default function SignupForm() {
   const router = useRouter();
+  const [displayName, setDisplayName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -67,16 +68,25 @@ export default function SignupForm() {
   const validateForm = (): boolean => {
     try {
       // Check if all password requirements are met
-      const allPasswordRequirementsMet = 
-        passwordValidation.hasMinLength && 
-        passwordValidation.hasUppercase && 
-        passwordValidation.hasLowercase && 
+      const allPasswordRequirementsMet =
+        passwordValidation.hasMinLength &&
+        passwordValidation.hasUppercase &&
+        passwordValidation.hasLowercase &&
         passwordValidation.hasNumber;
+
+      // Proceed with schema validation
+      registrationSchema.parse({
+        displayName,
+        email,
+        password,
+        confirmPassword,
+        acceptedTerms,
+      });
       
       // If password requirements are not met, don't proceed with form validation
       if (password && !allPasswordRequirementsMet) {
         const errors: Record<string, string> = {};
-        
+
         if (!passwordValidation.hasMinLength) {
           errors.password = "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร";
         } else if (!passwordValidation.hasUppercase) {
@@ -86,24 +96,17 @@ export default function SignupForm() {
         } else if (!passwordValidation.hasNumber) {
           errors.password = "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว";
         }
-        
+
         setFieldErrors(errors);
         return false;
       }
-      
+
       // Check if passwords match
       if (password && confirmPassword && password !== confirmPassword) {
         setFieldErrors({ confirmPassword: "รหัสผ่านไม่ตรงกัน" });
         return false;
       }
-      
-      // Proceed with schema validation
-      registrationSchema.parse({
-        email,
-        password,
-        confirmPassword,
-        acceptedTerms,
-      });
+
       setFieldErrors({});
       return true;
     } catch (err) {
@@ -127,14 +130,14 @@ export default function SignupForm() {
   const validateOtp = (): boolean => {
     try {
       otpSchema.parse(otp);
-      
+
       // Use our validateOTP helper
       if (!validateOTP(otp)) {
         setErrorMessage("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
         setShowErrorDialog(true);
         return false;
       }
-      
+
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
@@ -143,6 +146,24 @@ export default function SignupForm() {
       }
       return false;
     }
+  };
+
+  const handleDisplayNameChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    // Reset displayName-specific error when typing
+    if (fieldErrors.displayName) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.displayName;
+        return newErrors;
+      });
+    }
+
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+
+    setDisplayName(e.target.value);
   };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -154,18 +175,18 @@ export default function SignupForm() {
         return newErrors;
       });
     }
-    
+
     // Reset general error
     if (error) {
       setError("");
     }
-    
+
     setEmail(e.target.value);
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const newPassword = e.target.value;
-    
+
     // Reset password-specific error when typing
     if (fieldErrors.password) {
       setFieldErrors(prev => {
@@ -174,12 +195,12 @@ export default function SignupForm() {
         return newErrors;
       });
     }
-    
+
     // Reset general error
     if (error) {
       setError("");
     }
-    
+
     // Validate password in real-time
     setPasswordValidation({
       hasMinLength: newPassword.length >= 8,
@@ -187,13 +208,13 @@ export default function SignupForm() {
       hasLowercase: /[a-z]/.test(newPassword),
       hasNumber: /[0-9]/.test(newPassword)
     });
-    
+
     setPassword(newPassword);
   };
 
   const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const newConfirmPassword = e.target.value;
-    
+
     // Reset confirm password-specific error when typing
     if (fieldErrors.confirmPassword) {
       setFieldErrors(prev => {
@@ -202,19 +223,19 @@ export default function SignupForm() {
         return newErrors;
       });
     }
-    
+
     // Reset general error
     if (error) {
       setError("");
     }
-    
+
     // Check if passwords match in real-time
     if (newConfirmPassword.length > 0) {
       setPasswordsMatch(newConfirmPassword === password);
     } else {
       setPasswordsMatch(null);
     }
-    
+
     setConfirmPassword(newConfirmPassword);
   };
 
@@ -244,9 +265,13 @@ export default function SignupForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          displayName,
+          email,
+          password
+        }),
       });
-      
+
       if (response.ok) {
         // Close OTP modal
         setShowOtpModal(false);
@@ -254,7 +279,8 @@ export default function SignupForm() {
         setSuccessMessage("สมัครสมาชิกสำเร็จ! คุณสามารถเข้าสู่ระบบได้ทันที");
         setShowSuccessDialog(true);
       } else {
-        setErrorMessage("อีเมลนี้มีผู้ใช้งานแล้ว");
+        const errorData = await response.json();
+        setErrorMessage(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
         setShowErrorDialog(true);
       }
     } catch (_) {
@@ -297,7 +323,7 @@ export default function SignupForm() {
 
   return (
     <>
-      <SuccessDialog 
+      <SuccessDialog
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
         title="สมัครสมาชิกสำเร็จ"
@@ -306,18 +332,18 @@ export default function SignupForm() {
         onButtonClick={handleSuccessDialogClose}
       />
 
-      <ErrorDialog 
+      <ErrorDialog
         isOpen={showErrorDialog}
         setIsOpen={setShowErrorDialog}
         message={errorMessage}
       />
 
-      <TermsModal 
+      <TermsModal
         showTerms={showTerms}
         setShowTerms={setShowTerms}
         setAcceptedTerms={setAcceptedTerms}
       />
-      
+
       {showOtpModal && (
         <OtpModal
           email={email}
@@ -333,8 +359,8 @@ export default function SignupForm() {
           onSendOtp={handleSendOtp}
         />
       )}
-      
-      {/* Rest of the form content */}
+
+      {/* Form content */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -362,32 +388,65 @@ export default function SignupForm() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+                ชื่อผู้ใช้งาน
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
+                </div>
+                <Input
+                  id="displayName"
+                  name="displayName"
+                  placeholder="กรอกชื่อผู้ใช้งานของคุณ"
+                  value={displayName}
+                  onChange={handleDisplayNameChange}
+                  className={`pl-10 ${fieldErrors.displayName ? "ring-2 ring-red-500" : ""}`}
+                />
+              </div>
+              {fieldErrors.displayName && (
+                <p className="mt-1 text-sm text-red-500">{fieldErrors.displayName}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 อีเมล
               </label>
-              <Input
-                id="email"
-                name="email"
-                placeholder="อีเมล"
-                value={email}
-                onChange={handleEmailChange}
-                className={fieldErrors.email ? "ring-2 ring-red-500" : ""}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
+                </div>
+                <Input
+                  id="email"
+                  name="email"
+                  placeholder="กรอกอีเมลของคุณ"
+                  value={email}
+                  onChange={handleEmailChange}
+                  className={`pl-10 ${fieldErrors.email ? "ring-2 ring-red-500" : ""}`}
+                />
+              </div>
               {fieldErrors.email && (
                 <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
               )}
             </div>
 
             <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                รหัสผ่าน
+              </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faLock} className="w-5 h-5" />
+                </div>
                 <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="รหัสผ่าน"
+                  placeholder="กรอกรหัสผ่านของคุณ"
                   value={password}
                   onChange={handlePasswordChange}
-                  className={fieldErrors.password ? "ring-2 ring-red-500" : ""}
+                  className={`pl-10 ${fieldErrors.password ? "ring-2 ring-red-500" : ""}`}
                 />
                 <button
                   type="button"
@@ -398,7 +457,7 @@ export default function SignupForm() {
                   <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
                 </button>
               </div>
-                
+
               {/* Password requirements */}
               {(
                 <div className="mt-2 mb-4 p-3 bg-gray-50 rounded-md border text-sm space-y-2">
@@ -407,36 +466,32 @@ export default function SignupForm() {
                     <li className="flex items-center">
                       <FontAwesomeIcon
                         icon={passwordValidation.hasMinLength ? faCheck : faTimes}
-                        className={`mr-2 ${
-                          passwordValidation.hasMinLength ? "text-green-500" : "text-red-500"
-                        }`}
+                        className={`mr-2 ${passwordValidation.hasMinLength ? "text-green-500" : "text-red-500"
+                          }`}
                       />
                       <span>อย่างน้อย 8 ตัวอักษร</span>
                     </li>
                     <li className="flex items-center">
                       <FontAwesomeIcon
                         icon={passwordValidation.hasUppercase ? faCheck : faTimes}
-                        className={`mr-2 ${
-                          passwordValidation.hasUppercase ? "text-green-500" : "text-red-500"
-                        }`}
+                        className={`mr-2 ${passwordValidation.hasUppercase ? "text-green-500" : "text-red-500"
+                          }`}
                       />
                       <span>ตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว</span>
                     </li>
                     <li className="flex items-center">
                       <FontAwesomeIcon
                         icon={passwordValidation.hasLowercase ? faCheck : faTimes}
-                        className={`mr-2 ${
-                          passwordValidation.hasLowercase ? "text-green-500" : "text-red-500"
-                        }`}
+                        className={`mr-2 ${passwordValidation.hasLowercase ? "text-green-500" : "text-red-500"
+                          }`}
                       />
                       <span>ตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว</span>
                     </li>
                     <li className="flex items-center">
                       <FontAwesomeIcon
                         icon={passwordValidation.hasNumber ? faCheck : faTimes}
-                        className={`mr-2 ${
-                          passwordValidation.hasNumber ? "text-green-500" : "text-red-500"
-                        }`}
+                        className={`mr-2 ${passwordValidation.hasNumber ? "text-green-500" : "text-red-500"
+                          }`}
                       />
                       <span>ตัวเลขอย่างน้อย 1 ตัว</span>
                     </li>
@@ -446,44 +501,27 @@ export default function SignupForm() {
             </div>
 
             <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                ยืนยันรหัสผ่าน
+              </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faLockOpen} className="w-5 h-5" />
+                </div>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="ยืนยันรหัสผ่าน"
+                  placeholder="กรอกรหัสผ่านอีกครั้ง"
                   value={confirmPassword}
                   onChange={handleConfirmPasswordChange}
-                  className={fieldErrors.confirmPassword ? "ring-2 ring-red-500" : ""}
+                  className={`pl-10 ${fieldErrors.confirmPassword ? "ring-2 ring-red-500" : ""}`}
                 />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                >
-                  <FontAwesomeIcon icon={showConfirmPassword ? faEyeSlash : faEye} className="w-5 h-5" />
-                </button>
               </div>
               {fieldErrors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-500">
                   {fieldErrors.confirmPassword}
                 </p>
-              )}
-              
-              {/* Password matching indicator */}
-              {passwordsMatch !== null && (
-                <div className="mt-1 flex items-center text-sm">
-                  <FontAwesomeIcon
-                    icon={passwordsMatch ? faCheck : faTimes}
-                    className={`mr-2 ${
-                      passwordsMatch ? "text-green-500" : "text-red-500"
-                    }`}
-                  />
-                  <span className={passwordsMatch ? "text-green-600" : "text-red-500"}>
-                    {passwordsMatch ? "รหัสผ่านตรงกัน" : "รหัสผ่านไม่ตรงกัน"}
-                  </span>
-                </div>
               )}
             </div>
 
@@ -498,7 +536,7 @@ export default function SignupForm() {
                 htmlFor="terms"
                 className="text-sm text-gray-900 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                ฉันยอมรับ{" "}
+                <span className="cursor-pointer">ฉันยอมรับ</span>
                 <Button
                   type="button"
                   variant="link"
@@ -515,7 +553,7 @@ export default function SignupForm() {
             <Button
               type="submit"
               variant="primary"
-              disabled={isLoading}
+              disabled={isLoading || !acceptedTerms}
               className="w-full cursor-pointer flex items-center justify-center"
             >
               {isLoading ? (

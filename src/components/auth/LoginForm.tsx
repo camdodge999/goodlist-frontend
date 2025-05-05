@@ -11,7 +11,7 @@ import Spinner from "@/components/ui/Spinner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
 import SuccessDialog from "./SuccessDialog";
 import ErrorDialog from "./ErrorDialog";
 
@@ -164,28 +164,43 @@ export default function LoginForm(): JSX.Element {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <Input
-                id="email"
-                name="email"
-                placeholder="อีเมล"
-                value={formInput.email}
-                onChange={handleEmailChange}
-                className={fieldErrors.email ? "ring-2 ring-red-500" : ""}
-              />
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                อีเมล
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
+                </div>
+                <Input
+                  id="email"
+                  name="email"
+                  placeholder="กรอกอีเมลของคุณ"
+                  value={formInput.email}
+                  onChange={handleEmailChange}
+                  className={`pl-10 ${fieldErrors.email ? "ring-2 ring-red-500" : ""}`}
+                />
+              </div>
               {fieldErrors.email && (
                 <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
               )}
             </div>
+            
             <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                รหัสผ่าน
+              </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faLock} className="w-5 h-5" />
+                </div>
                 <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="รหัสผ่าน"
+                  placeholder="กรอกรหัสผ่านของคุณ"
                   value={formInput.password}
                   onChange={handlePasswordChange}
-                  className={fieldErrors.password ? "ring-2 ring-red-500" : ""}
+                  className={`pl-10 ${fieldErrors.password ? "ring-2 ring-red-500" : ""}`}
                 />
                 <button
                   type="button"

@@ -88,7 +88,7 @@ export default withAuth(
     }
     
     // Skip middleware for auth API routes
-    if (pathname.startsWith("/api/auth/") || pathname === "/api/user/register") {
+    if (pathname.startsWith("/api/auth/") || pathname === "/api/user/register" || pathname === "/api/user/register/verify") {
       return NextResponse.next();
     }
     

@@ -17,6 +17,7 @@ interface OtpModalProps {
   isVerifying: boolean;
   isSendingOtp: boolean;
   otpSent: boolean;
+  refNumber: string;
   onOtpChange: (index: number, value: string) => void;
   onKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
   onVerify: () => Promise<void>;
@@ -31,10 +32,11 @@ export default function OtpModal({
   isVerifying,
   isSendingOtp,
   otpSent,
+  refNumber,
   onOtpChange,
   onVerify,
   onClose,
-  onSendOtp
+  onSendOtp,
 }: OtpModalProps): React.ReactElement {
   const otpValue = otpValues.join("");
   
@@ -95,6 +97,14 @@ export default function OtpModal({
             </InputOTP>
           </div>
 
+          {
+            refNumber && (
+              <p className="text-sm text-center text-gray-500">
+                รหัสอ้างอิง: {refNumber}
+              </p>
+            )
+          }
+
           {error && (
             <p className="text-sm text-center text-red-500">{error}</p>
           )}
@@ -102,7 +112,7 @@ export default function OtpModal({
           <div className="flex flex-col space-y-3">
             <Button
               onClick={onVerify}
-              disabled={isVerifying || !otpSent || otpValue.length !== 6}
+              disabled={isVerifying || otpSent || otpValue.length !== 6}
               variant="primary"
               className="w-full cursor-pointer flex justify-center items-center gap-2"
             >

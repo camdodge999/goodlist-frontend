@@ -33,6 +33,7 @@ export default function SignupForm() {
   const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
   const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
   const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [otpToken, setOtpToken] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [passwordValidation, setPasswordValidation] = useState({
     hasMinLength: false,
@@ -47,7 +48,7 @@ export default function SignupForm() {
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
-
+  const [refNumber, setRefNumber] = useState<string>("");
   const validateOTP = (otpCode: string): boolean => {
     // Demo validation - in production this would be a server call
     return otpCode === "000000";
@@ -129,14 +130,8 @@ export default function SignupForm() {
 
   const validateOtp = (): boolean => {
     try {
-      otpSchema.parse(otp);
-
-      // Use our validateOTP helper
-      if (!validateOTP(otp)) {
-        setErrorMessage("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
-        setShowErrorDialog(true);
-        return false;
-      }
+      console.log(otpValues.join(""));
+      otpSchema.parse(otpValues.join(""));
 
       return true;
     } catch (err) {
@@ -262,6 +257,10 @@ export default function SignupForm() {
           password
         }),
       });
+
+      const { data } = await response.json();
+      setRefNumber(data.refNumber);
+      setOtpToken(data.otpToken);
     } catch (error) {
       console.error("Error registering user:", error);
       setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
@@ -270,6 +269,7 @@ export default function SignupForm() {
   };
 
   const handleVerifyOtp = async (): Promise<void> => {
+    console.log(validateOtp());
     if (!validateOtp()) {
       return;
     }
@@ -279,15 +279,15 @@ export default function SignupForm() {
 
     try {
       // Call your authentication service
-      const response = await fetch(`/auth/register`, {
+      const response = await fetch(`/api/user/register/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          displayName,
-          email,
-          password
+          email: email,
+          otpCode: otpValues.join(""),
+          otpToken: otpToken,
         }),
       });
 
@@ -366,6 +366,7 @@ export default function SignupForm() {
       {showOtpModal && (
         <OtpModal
           email={email}
+          refNumber={refNumber} 
           otpValues={otpValues}
           error={error}
           isVerifying={isVerifying}

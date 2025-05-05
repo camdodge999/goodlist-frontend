@@ -69,9 +69,10 @@ export const authOptions: NextAuthOptions = {
             }
           );
 
+          
           const result = await response.json();
 
-          if (result.status !== "success") {
+          if (result.statusCode !== 200) {
             console.error(result.message && "Authentication failed");
             return null;
           }

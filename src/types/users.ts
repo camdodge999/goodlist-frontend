@@ -6,3 +6,11 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
+
+
+export interface UserResponse {
+  displayName: string;
+  email: string;
+  refNumber: string;
+  otpToken: string;
+}

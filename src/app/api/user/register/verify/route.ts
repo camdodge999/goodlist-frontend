@@ -7,11 +7,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   try {
     const body = await request.json();
     // Validate request body
-    if (!body.displayName || !body.email || !body.password) {
+    if (!body.email || !body.otpCode || !body.otpToken) {
       return NextResponse.json(
         { 
           statusCode: 400,
-          message: "Display name, email, and password are required", 
+          message: "Email, OTP code and OTP token are required", 
           data: undefined
         },
         { status: 400 }
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     // Send request to backend
     const result = await fetchWithAuth<BodyResponse<UserResponse>>({
       request,
-      url: `${process.env.NEXTAUTH_BACKEND_URL}/auth/register`,
+      url: `${process.env.NEXTAUTH_BACKEND_URL}/auth/register/verify`,
       method: 'POST',
       body: body,
     });

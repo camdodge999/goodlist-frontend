@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent } from "react";
+import { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { emailSchema } from "@/validators/user.schema";
-import { ZodError } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/Spinner";
 import SuccessDialog from "./SuccessDialog";
 import ErrorDialog from "./ErrorDialog";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useReactActionState, getFieldError } from "@/utils/forms/useReactActionState";
+
+// Don't import at module level to avoid the Promise issue
+// import { resetPasswordAction } from "@/app/api/auth/actions";
 
 interface ResetPasswordFormProps {
   onSuccess: () => void;
@@ -17,59 +21,53 @@ interface ResetPasswordFormProps {
 
 export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   const [email, setEmail] = useState<string>("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [action, setAction] = useState<any>(null);
 
-  const validateForm = (): boolean => {
-    try {
-      emailSchema.parse(email);
-      setFieldErrors({});
-      return true;
-    } catch (err) {
-      if (err instanceof ZodError) {
-        const errors: Record<string, string> = {};
-        err.errors.forEach((error) => {
-          errors.email = error.message;
-        });
-        setFieldErrors(errors);
-      }
-      return false;
+  // Dynamically import the action to avoid the Promise issue
+  useEffect(() => {
+    const loadAction = async () => {
+      const { resetPasswordAction } = await import("@/app/api/auth/actions");
+      setAction(resetPasswordAction);
+    };
+    loadAction();
+  }, []);
+
+  // Use the server action state hook with React's useActionState
+  const { 
+    execute, 
+    isPending, 
+    errors, 
+    errorMessage: actionErrorMessage,
+    successMessage: actionSuccessMessage
+  } = useReactActionState(action || (async () => ({ status: "error", message: "Action not loaded" })), {
+    onSuccess: () => {
+      setSuccessMessage(actionSuccessMessage || `เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมล ${email} กรุณาตรวจสอบกล่องข้อความของคุณ`);
+      setShowSuccessDialog(true);
+    },
+    onError: () => {
+      setErrorMessage(actionErrorMessage || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setShowErrorDialog(true);
     }
-  };
+  });
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    // Reset email-specific error when typing
-    if (fieldErrors.email) {
-      setFieldErrors({});
-    }
-    
     setEmail(e.target.value);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
+    if (!action) return;
     
-    setIsLoading(true);
-
-    try {
-      // Simulate API call to request password reset
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      // Show success dialog
-      setShowSuccessDialog(true);
-    } catch (err) {
-      setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-      setShowErrorDialog(true);
-    } finally {
-      setIsLoading(false);
-    }
+    // Create FormData object from the form
+    const formData = new FormData(e.currentTarget);
+    
+    // Execute the server action
+    await execute(formData);
   };
 
   const handleSuccessDialogClose = () => {
@@ -83,7 +81,7 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
         title="ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว"
-        message={`เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมล ${email} กรุณาตรวจสอบกล่องข้อความของคุณ`}
+        message={successMessage}
         buttonText="ตกลง"
         onButtonClick={handleSuccessDialogClose}
       />
@@ -101,7 +99,7 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
         className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50"
       >
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
             รีเซ็ตรหัสผ่าน
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -117,29 +115,36 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="อีเมล"
-              value={email}
-              onChange={handleEmailChange}
-              className={fieldErrors.email ? "ring-2 ring-red-500" : ""}
-            />
-            {fieldErrors.email && (
-              <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              อีเมล
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
+              </div>
+              <Input
+                id="email"
+                name="email"
+                placeholder="กรอกอีเมลของคุณ"
+                value={email}
+                onChange={handleEmailChange}
+                className={`pl-10 ${getFieldError("email", errors) ? "ring-2 ring-red-500" : ""}`}
+              />
+            </div>
+            {getFieldError("email", errors) && (
+              <p className="mt-1 text-sm text-red-500">{getFieldError("email", errors)}</p>
             )}
           </div>
 
           <div>
             <Button 
               type="submit" 
-              disabled={isLoading} 
+              disabled={isPending || !action} 
               variant="primary"
               className="w-full cursor-pointer"
             >
-              {isLoading && <Spinner className="mr-2" />}
-              {isLoading ? "กำลังส่งคำขอ..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
+              {isPending && <Spinner className="mr-2" />}
+              {isPending ? "กำลังส่งคำขอ..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
             </Button>
           </div>
         </form>

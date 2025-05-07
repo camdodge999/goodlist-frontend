@@ -4,16 +4,15 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoginForm from "@/components/auth/LoginForm";
-import Image from "next/image";
 
 export default function LoginClientPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
 
     useEffect(() => {
         // If the user is already logged in, redirect to profile
         if (status === "authenticated") {
-            router.push("/profile");
+            router.push("/");
         }
     }, [status, router]);
 

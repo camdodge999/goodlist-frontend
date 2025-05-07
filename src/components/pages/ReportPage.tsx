@@ -46,10 +46,10 @@ export default function ReportPage() {
   // Filter stores based on search query
   const filteredStores = mockStores.filter(
     (store) =>
-      (store.store_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.contact_info.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      store.is_verified && // Only show verified stores
-      !store.is_banned // Don't show banned stores
+      (store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        store.contactInfo.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      store.isVerified && // Only show verified stores
+      !store.isBanned // Don't show banned stores
   );
 
   // Close dropdown when clicking outside
@@ -213,17 +213,17 @@ export default function ReportPage() {
                             )}
                             onClick={() => {
                               setSelectedStore(store);
-                              setSearchQuery(store.store_name);
+                              setSearchQuery(store.storeName);
                               setIsDropdownOpen(false);
                             }}
                           >
                             <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
                               <Image
                                 src={
-                                  store.image_url ||
+                                  store.imageUrl ||
                                   "/images/stores/default-store.jpg"
                                 }
-                                alt={store.store_name}
+                                alt={store.storeName}
                                 fill
                                 className="object-cover"
                                 sizes="40px"
@@ -231,13 +231,13 @@ export default function ReportPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900 truncate">
-                                {store.store_name}
+                                {store.storeName}
                               </p>
                               <p className="text-xs text-gray-500 truncate">
-                                {JSON.parse(store.contact_info).line}
+                                {JSON.parse(store.contactInfo).line}
                               </p>
                             </div>
-                            {store.is_verified && (
+                            {store.isVerified && (
                               <div className="flex-shrink-0">
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                                   ยืนยันแล้ว

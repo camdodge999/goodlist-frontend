@@ -2,86 +2,84 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { mockUsers } from "@/data/mockData";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Check for existing session on mount
+  // Update loading state based on NextAuth session status
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      // Verify user still exists in mock data
-      const existingUser = mockUsers.find((u) => u.id === parsedUser.id);
-      if (existingUser) {
-        setUser(parsedUser);
-      } else {
-        // Clear invalid session
-        localStorage.removeItem("user");
-      }
+    if (status !== "loading") {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, []);
+  }, [status]);
 
   const login = async (email, password) => {
-    // Find the user in mock data
-    const existingUser = mockUsers.find((u) => u.email === email);
-
-    // For demo purposes, all passwords are "password123"
-    if (existingUser && password === "password123") {
-      setUser(existingUser);
-      // Store user data in localStorage
-      localStorage.setItem("user", JSON.stringify(existingUser));
-      return true;
-    }
-    return false;
-  };
-
-  const register = async (email, password) => {
-    // Check if email already exists
-    const existingUser = mockUsers.find((u) => u.email === email);
-    if (existingUser) {
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
+      
+      return !result?.error;
+    } catch (error) {
+      console.error("Login error:", error);
       return false;
     }
-
-    // Create new user
-    const newUser = {
-      id: mockUsers.length + 1,
-      email,
-      role: "user",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    // Add to mock data
-    mockUsers.push(newUser);
-    return true;
   };
 
-  const logout = () => {
-    setUser(null);
-    // Only clear user data from localStorage
-    localStorage.removeItem("user");
-    // Redirect to login page using Next.js router
+  const register = async (userData) => {
+    try {
+      // Make a POST request to your registration API endpoint
+      const response = await fetch("/api/user/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Registration error:", error);
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    await signOut({ redirect: false });
     router.push("/login");
   };
 
   const checkAuth = () => {
-    return !!user;
+    return !!session?.user;
   };
 
-  // Don't render children until we've checked localStorage
+  // Don't render children until we've checked session status
   if (isLoading) {
     return null; // or a loading spinner if you prefer
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, checkAuth }}>
+    <AuthContext.Provider 
+      value={{ 
+        user: session?.user || null, 
+        login, 
+        register, 
+        logout, 
+        checkAuth,
+        isAuthenticated: !!session?.user 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

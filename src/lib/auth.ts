@@ -1,20 +1,26 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { DefaultSession, NextAuthOptions, User } from "next-auth";
 import jwt from "jsonwebtoken";
-
+import { UserRole } from "@/types/users";
 // Properly extend the User type to include token and role
 interface ExtendedUser extends User {
   token?: string;
-  role?: { name?: string };
-  username?: string;
+  role?: UserRole;
+  displayName?: string;
+  image?: string;
+  phoneNumber?: string;
+  address?: string;
 }
 
 // Define the token type for better type safety
 interface JWTToken {
-  id?: string;
-  name?: string;
-  token?: string;
-  role?: { name?: string };
+  id?: number;
+  displayName?: string;
+  image?: string;
+  phoneNumber?: string;
+  address?: string;
+  email?: string;
+  role?: UserRole;
   iat?: number;
   exp?: number;
 }
@@ -25,15 +31,16 @@ declare module "next-auth" {
     user: {
       id?: string;
       token?: string;
-      role?: { name?: string };
-      username?: string;
+      role?: UserRole;
+      displayName?: string;
     } & DefaultSession["user"]
   }
 
   interface User {
     token?: string;
-    role?: { name?: string };
+    role?: UserRole;
     email?: string;
+    displayName?: string;
   }
 }
 
@@ -80,12 +87,16 @@ export const authOptions: NextAuthOptions = {
           // Handle successful authentication
           const userData = result.data;
 
+          const userDataDecoded = jwt.decode(userData.token) as JWTToken;
+
           // Ensure the returned object matches the ExtendedUser type
           const user: ExtendedUser = {
-            id: userData.id || credentials.email, // Ensure id is always a string
+            id: userDataDecoded.id?.toString() || credentials.email, // Ensure id is always a string
             token: userData.token,
             email: credentials.email,
-            name: userData.name || undefined, // Optional name
+            role: userDataDecoded.role as UserRole,
+            displayName: userDataDecoded.displayName || undefined, // Optional name
+            image: userDataDecoded.image || undefined,
           };
 
           return user;
@@ -99,12 +110,15 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      console.log("User", user);
+      console.log("Token", token);
       // Type assertion for user
       const extendedUser = user as ExtendedUser | undefined;
       
       if (extendedUser?.token) {
         token.token = extendedUser.token; // Store the raw token
-        token.name = extendedUser.name;
+        token.displayName = extendedUser.displayName;
+        token.role = extendedUser.role;
 
         // Decode the token if it's a JWT
         try {
@@ -113,9 +127,13 @@ export const authOptions: NextAuthOptions = {
           if (decoded && decoded.id) {
             token.id = decoded.id;
           }
-          if (decoded && decoded.role) {
-            token.role = decoded.role.name;
+          if (decoded && decoded.displayName) {
+            token.displayName = decoded.displayName;
           }
+          if (decoded && decoded.role) {
+            token.role = decoded.role;
+          }
+          
         } catch (error) {
           console.error("Failed to decode token:", error);
         }
@@ -123,10 +141,19 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      console.log("Session Token", token);
+
+      const tokenDecoded = jwt.decode(token.token as string) as JWTToken;
+
+      console.log("Token Decoded", tokenDecoded);
+
+
       if (token) {
+
         session.user.token = token.token as string;
-        session.user.role = token.role as unknown as { name?: string };
+        session.user.role = tokenDecoded.role as UserRole;
         session.user.id = token.id as string;
+        session.user.displayName = token.displayName as string;
       }
       return session;
     },

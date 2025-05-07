@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type KeyboardEvent, type ChangeEvent, type FormEvent } from "react";
+import { useState, type KeyboardEvent, type ChangeEvent, type FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faEye, faEyeSlash, faUser, faEnvelope, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
 import SuccessDialog from "./SuccessDialog";
 import ErrorDialog from "./ErrorDialog";
+import { signIn } from "next-auth/react";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -49,6 +50,9 @@ export default function SignupForm() {
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [refNumber, setRefNumber] = useState<string>("");
+  const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
+  const [cooldownTimer, setCooldownTimer] = useState<NodeJS.Timeout | null>(null);
+
   const validateOTP = (otpCode: string): boolean => {
     // Demo validation - in production this would be a server call
     return otpCode === "000000";
@@ -294,9 +298,33 @@ export default function SignupForm() {
       if (response.ok) {
         // Close OTP modal
         setShowOtpModal(false);
+        // Clear any existing cooldown timer when closing modal
+        if (cooldownTimer) {
+          clearInterval(cooldownTimer);
+          setCooldownTimer(null);
+        }
+        
         // Show success dialog
-        setSuccessMessage("สมัครสมาชิกสำเร็จ! คุณสามารถเข้าสู่ระบบได้ทันที");
+        setSuccessMessage("สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบอัตโนมัติ");
         setShowSuccessDialog(true);
+        
+        try {
+          // Automatically log in the user with the credentials they just registered with
+          const result = await signIn("credentials", {
+            email: email,
+            password: password,
+            redirect: false,
+            callbackUrl: "/",
+          });
+          
+          if (result?.error) {
+            console.error("Auto login error:", result.error);
+            // Still redirect to home page even if auto-login fails
+            // User can manually log in
+          }
+        } catch (loginError) {
+          console.error("Error during auto login:", loginError);
+        }
       } else {
         const errorData = await response.json();
         setErrorMessage(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
@@ -311,14 +339,61 @@ export default function SignupForm() {
     }
   };
 
+  const startCooldownTimer = () => {
+    // Set initial cooldown time (3 minutes = 180 seconds)
+    setCooldownSeconds(180);
+    
+    // Clear any existing timer
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+    }
+    
+    // Start a new timer that decrements the cooldown every second
+    const timer = setInterval(() => {
+      setCooldownSeconds(prevSeconds => {
+        if (prevSeconds <= 1) {
+          // When timer reaches 0, clear the interval and allow resending
+          clearInterval(timer);
+          setCooldownTimer(null);
+          return 0;
+        }
+        return prevSeconds - 1;
+      });
+    }, 1000);
+    
+    // Store the timer ID so we can clear it later if needed
+    setCooldownTimer(timer);
+    
+    // Cleanup function to clear the timer when component unmounts
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  };
+
   const handleSendOtp = async (): Promise<void> => {
     setIsSendingOtp(true);
     setError("");
 
     try {
-      // Simulate API call to send OTP
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch(`api/user/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          displayName,
+          email,
+          password
+        }),
+      }); 
+
+      const { data } = await response.json();
+      setRefNumber(data.refNumber);
+      setOtpToken(data.otpToken); 
       setOtpSent(true);
+      
+      // Start the cooldown timer after successfully sending OTP
+      startCooldownTimer();
     } catch (_) {
       // Ignore the error variable name but handle the error
       setErrorMessage("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
@@ -334,11 +409,27 @@ export default function SignupForm() {
     setOtpValues(["", "", "", "", "", ""]);
     setError("");
     setOtpSent(false);
+    
+    // Clear any existing cooldown timer when closing modal
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+      setCooldownTimer(null);
+      setCooldownSeconds(0);
+    }
   };
 
   const handleSuccessDialogClose = () => {
-    router.push("/profile");
+    router.push("/");
   };
+
+  // Cleanup timer when component unmounts
+  useEffect(() => {
+    return () => {
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer);
+      }
+    };
+  }, [cooldownTimer]);
 
   return (
     <>
@@ -377,6 +468,7 @@ export default function SignupForm() {
           onVerify={handleVerifyOtp}
           onClose={handleCloseOtpModal}
           onSendOtp={handleSendOtp}
+          cooldownSeconds={cooldownSeconds}
         />
       )}
 

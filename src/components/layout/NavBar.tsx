@@ -34,6 +34,7 @@ import {
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import logo from "@images/logo.png";
+import { User } from "@/types/users";
 
 // Define types for NavItem and User
 type NavItem = {
@@ -42,13 +43,6 @@ type NavItem = {
   icon: IconDefinition;
 };
 
-type User = {
-  id: number;
-  name?: string;
-  email?: string;
-  role?: string;
-  profile_image?: string;
-};
 
 // Server-side function to get navigation items
 function getNavItems(user?: User): NavItem[] {
@@ -207,14 +201,14 @@ export default async function NavBar() {
                   variant="ghost"
                   className="relative h-9 w-9 rounded-full transition-all duration-300 hover:bg-accent/50 hover:scale-105 focus:ring-2 focus:ring-blue-500/20"
                 >
-                  <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-105">
+                  <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
                     <AvatarImage
-                      src={user.profile_image || undefined}
-                      alt={user.name || "User"}
+                      src={user.image || undefined}
+                      alt={user.displayName || "User"}
                       className="transition-opacity duration-300"
                     />
                     <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-medium">
-                      {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                      {user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -225,12 +219,25 @@ export default async function NavBar() {
                 forceMount
                 sideOffset={8}
               >
-                <DropdownMenuLabel className="font-normal p-3">
+                <DropdownMenuLabel className="font-normal p-3 flex items-center gap-3">
+                  <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
+                    <AvatarImage
+                      src={user.image || undefined}
+                      alt={user.displayName || "User"}
+                      className="transition-opacity duration-300"
+                    />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-medium">
+                      {user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.name || "ผู้ใช้"}
+                      {user.displayName || "ผู้ใช้"}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
+                      {user.email || ""}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground mt-1">
                       {user.role === "admin" ? "แอดมิน" : "ผู้ใช้"}
                     </p>
                   </div>
@@ -242,7 +249,7 @@ export default async function NavBar() {
                 >
                   <Link href="/profile" className="flex items-center p-2">
                     <FontAwesomeIcon icon={faUser} className="mr-2 h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                    โปรไฟล์
+                    <span>โปรไฟล์</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -251,7 +258,7 @@ export default async function NavBar() {
                 >
                   <Link href="/logout" className="flex items-center p-2">
                     <FontAwesomeIcon icon={faSignOutAlt} className="mr-2 h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                    ออกจากระบบ
+                    <span>ออกจากระบบ</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

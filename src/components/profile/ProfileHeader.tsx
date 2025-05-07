@@ -2,7 +2,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faEnvelope, faPhone, faMapMarkerAlt, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
-import { User } from '@/types/profile';
+import { User } from '@/types/users';
 import { motion } from 'framer-motion';
 
 interface ProfileHeaderProps {
@@ -23,10 +23,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, previewImage, onLog
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="relative h-24 w-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100">
-              {previewImage || user.profile_image ? (
+              {previewImage || user.image ? (
                 <Image
-                  src={previewImage || user.profile_image}
-                  alt={`รูปโปรไฟล์ของ ${user.name}`}
+                  src={previewImage || user.image || ""}
+                  alt={`รูปโปรไฟล์ของ ${user.displayName}`}
                   fill
                   className="object-cover"
                   sizes="96px"
@@ -37,7 +37,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, previewImage, onLog
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {user.name}
+                {user.displayName}
               </h1>
               <p className="text-sm text-gray-500">{user.email}</p>
             </div>
@@ -64,7 +64,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, previewImage, onLog
           </div>
           <div className="flex items-center">
             <FontAwesomeIcon icon={faPhone} className="h-5 w-5 text-gray-400 mr-2" />
-            <span className="text-sm text-gray-900">{user.phone || 'ไม่ระบุ'}</span>
+            <span className="text-sm text-gray-900">{user.phoneNumber || 'ไม่ระบุ'}</span>
           </div>
           <div className="flex items-center">
             <FontAwesomeIcon icon={faMapMarkerAlt} className="h-5 w-5 text-gray-400 mr-2" />

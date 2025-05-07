@@ -36,11 +36,18 @@ export const passwordSchema = z
   .regex(/[a-z]/, { message: "รหัสผ่านต้องมีตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว" })
   .regex(/[0-9]/, { message: "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว" });
 
-// Login schema
+/**
+ * Login form validation schema
+ */
 export const loginSchema = z.object({
-  email: emailSchema,
+  email: z.string().email({ message: "รูปแบบอีเมลไม่ถูกต้อง" }),
   password: z.string().min(1, { message: "กรุณากรอกรหัสผ่าน" }),
 });
+
+/**
+ * Type for login form values
+ */
+export type LoginFormValues = z.infer<typeof loginSchema>;
 
 // Registration schema
 export const registrationSchema = z
@@ -63,6 +70,20 @@ export const otpSchema = z
   .string()
   .length(6, { message: "กรุณากรอก OTP ให้ครบ 6 หลัก" });
 
-// Types inferred from the schemas
-export type LoginFormValues = z.infer<typeof loginSchema>;
-export type RegistrationFormValues = z.infer<typeof registrationSchema>;
+/**
+ * Profile form validation schema
+ */
+export const profileSchema = z.object({
+  displayName: z.string().min(2, { message: "ชื่อผู้ใช้งานต้องมีความยาวอย่างน้อย 2 ตัวอักษร" }),
+  email: z.string().email({ message: "รูปแบบอีเมลไม่ถูกต้อง" }).optional(),
+  phoneNumber: z
+    .string()
+    .regex(/^[0-9]{10}$/, { message: "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง" })
+    .optional(),
+  bio: z.string().max(500, { message: "รายละเอียดต้องมีความยาวไม่เกิน 500 ตัวอักษร" }).optional(),
+});
+
+/**
+ * Type for profile form values
+ */
+export type ProfileFormValues = z.infer<typeof profileSchema>;

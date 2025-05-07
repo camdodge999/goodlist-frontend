@@ -18,6 +18,7 @@ interface OtpModalProps {
   isSendingOtp: boolean;
   otpSent: boolean;
   refNumber: string;
+  cooldownSeconds: number;
   onOtpChange: (index: number, value: string) => void;
   onKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
   onVerify: () => Promise<void>;
@@ -33,6 +34,7 @@ export default function OtpModal({
   isSendingOtp,
   otpSent,
   refNumber,
+  cooldownSeconds,
   onOtpChange,
   onVerify,
   onClose,
@@ -40,8 +42,15 @@ export default function OtpModal({
 }: OtpModalProps): React.ReactElement {
   const otpValue = otpValues.join("");
   
+  // Format seconds to mm:ss
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+  
   return (
-    <div className="fixed inset-0 z-[200] overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] overflow-y-auto bg-opacity-50 flex backdrop-blur-sm items-center justify-center p-4">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -122,15 +131,15 @@ export default function OtpModal({
 
             <Button
               onClick={onSendOtp}
-              disabled={isSendingOtp || otpSent}
+              disabled={isSendingOtp || cooldownSeconds > 0}
               variant="outline"
               className="w-full cursor-pointer flex justify-center items-center gap-2"
             >
               {isSendingOtp && <Spinner className="mr-2" />}
               {isSendingOtp
                 ? "กำลังส่ง..."
-                : otpSent
-                ? "ส่งรหัสยืนยันแล้ว"
+                : cooldownSeconds > 0
+                ? `รอ ${formatTime(cooldownSeconds)} เพื่อส่งใหม่`
                 : "ส่งรหัสยืนยัน"}
             </Button>
           </div>
@@ -138,6 +147,7 @@ export default function OtpModal({
           <p className="text-xs text-gray-500 text-center">
             หากไม่ได้รับรหัส โปรดตรวจสอบในโฟลเดอร์อีเมลขยะ
             หรือกดปุ่มส่งรหัสยืนยันอีกครั้ง
+            {cooldownSeconds > 0 && ` (รอ ${formatTime(cooldownSeconds)})`}
           </p>
         </div>
       </motion.div>

@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, FormEvent, type JSX, ChangeEvent } from "react";
+import { useState, FormEvent, type JSX, ChangeEvent, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { LoginFormValues, loginSchema } from "@/validators/user.schema";
-import { ZodError } from "zod";
 import { signIn } from "next-auth/react";
+import { LoginFormValues, loginSchema } from "@/validators/user.schema";
 import Spinner from "@/components/ui/Spinner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,105 +20,122 @@ export default function LoginForm(): JSX.Element {
     email: "",
     password: "",
   });
-  const [error, setError] = useState<string>("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isPending, setIsPending] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string> | null>(null);
+
+  // Reference to track if we should navigate
+  const shouldNavigateRef = useRef(false);
+
+  // Handle navigation outside of render cycle
+  useEffect(() => {
+    if (shouldNavigateRef.current) {
+      shouldNavigateRef.current = false;
+      router.push("/");
+    }
+  }, [router, showSuccessDialog]);
 
   const validateForm = (): boolean => {
-    try {
-      loginSchema.parse(formInput); 
-      setFieldErrors({});
-      return true;
-    } catch (err) {
-      if (err instanceof ZodError) {
-        const errors: Record<string, string> = {};
-        err.errors.forEach((error) => {
-          if (error.path[0]) {
-            errors[error.path[0] as string] = error.message;
-          }
-        });
-        setFieldErrors(errors);
-      }
+    // Client-side validation using zod
+    const result = loginSchema.safeParse(formInput);
+    
+    if (!result.success) {
+      // Format validation errors
+      const formattedErrors: Record<string, string> = {};
+      
+      // Extract the first error message for each field
+      result.error.errors.forEach((err) => {
+        const field = err.path[0].toString();
+        if (!formattedErrors[field]) {
+          formattedErrors[field] = err.message;
+        }
+      });
+      
+      setErrors(formattedErrors);
       return false;
     }
+    
+    setErrors(null);
+    return true;
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError("");
     
-    if (!validateForm()) {
-      return;
-    }
-    
-    setIsLoading(true);
-
     try {
+      // Reset errors
+      setErrors(null);
+      
+      // Validate form before submitting
+      if (!validateForm()) {
+        return;
+      }
+      
+      // Start loading state
+      setIsPending(true);
+      
+      // Use NextAuth signIn method with the credentials provider
       const result = await signIn("credentials", {
         email: formInput.email,
         password: formInput.password,
         redirect: false,
+        callbackUrl: "/profile",
       });
-
+      
+      // End loading state
+      setIsPending(false);
+      
       if (result?.error) {
-        setErrorMessage("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        // Handle NextAuth authentication error
+        setErrorMessage(result.error || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
         setShowErrorDialog(true);
-      } else if (result?.ok) {
+      } else {
+        // Authentication successful
         setSuccessMessage("เข้าสู่ระบบสำเร็จ");
         setShowSuccessDialog(true);
-        // Router will redirect after dialog is closed
+        // Set the flag to navigate on next effect run
+        shouldNavigateRef.current = true;
       }
-    } catch (err) {
-      setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } catch (error) {
+      setIsPending(false);
+      console.error("Error during form submission:", error);
+      setErrorMessage("เกิดข้อผิดพลาดขณะเข้าสู่ระบบ กรุณาลองอีกครั้ง");
       setShowErrorDialog(true);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    // Reset email-specific error when typing
-    if (fieldErrors.email) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.email;
-        return newErrors;
-      });
-    }
-    
-    // Reset general error
-    if (error) {
-      setError("");
-    }
-    
     setFormInput({ ...formInput, email: e.target.value });
+    // Clear error for this field when user types
+    if (errors && errors.email) {
+      const newErrors = { ...errors };
+      delete newErrors.email;
+      setErrors(Object.keys(newErrors).length > 0 ? newErrors : null);
+    }
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    // Reset password-specific error when typing
-    if (fieldErrors.password) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.password;
-        return newErrors;
-      });
-    }
-    
-    // Reset general error
-    if (error) {
-      setError("");
-    }
-    
     setFormInput({ ...formInput, password: e.target.value });
+    // Clear error for this field when user types
+    if (errors && errors.password) {
+      const newErrors = { ...errors };
+      delete newErrors.password;
+      setErrors(Object.keys(newErrors).length > 0 ? newErrors : null);
+    }
   };
 
   const handleSuccessDialogClose = () => {
-    router.push("/profile");
+    setShowSuccessDialog(false);
+    // Navigation is handled in the useEffect
+  };
+  
+  // Helper function to get field error
+  const getFieldError = (fieldName: string): string | undefined => {
+    return errors?.[fieldName];
   };
 
   return (
@@ -146,7 +162,7 @@ export default function LoginForm(): JSX.Element {
         className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50"
       >
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
             เข้าสู่ระบบ
           </h2>
           <p
@@ -177,11 +193,11 @@ export default function LoginForm(): JSX.Element {
                   placeholder="กรอกอีเมลของคุณ"
                   value={formInput.email}
                   onChange={handleEmailChange}
-                  className={`pl-10 ${fieldErrors.email ? "ring-2 ring-red-500" : ""}`}
+                  className={`pl-10 ${getFieldError("email") ? "ring-2 ring-red-500" : ""}`}
                 />
               </div>
-              {fieldErrors.email && (
-                <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
+              {getFieldError("email") && (
+                <p className="mt-1 text-sm text-red-500">{getFieldError("email")}</p>
               )}
             </div>
             
@@ -200,7 +216,7 @@ export default function LoginForm(): JSX.Element {
                   placeholder="กรอกรหัสผ่านของคุณ"
                   value={formInput.password}
                   onChange={handlePasswordChange}
-                  className={`pl-10 ${fieldErrors.password ? "ring-2 ring-red-500" : ""}`}
+                  className={`pl-10 ${getFieldError("password") ? "ring-2 ring-red-500" : ""}`}
                 />
                 <button
                   type="button"
@@ -211,8 +227,8 @@ export default function LoginForm(): JSX.Element {
                   <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
                 </button>
               </div>
-              {fieldErrors.password && (
-                <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>
+              {getFieldError("password") && (
+                <p className="mt-1 text-sm text-red-500">{getFieldError("password")}</p>
               )}
             </div>
           </div>
@@ -220,12 +236,12 @@ export default function LoginForm(): JSX.Element {
           <div>
             <Button 
               type="submit" 
-              disabled={isLoading} 
+              disabled={isPending} 
               variant="primary"
               className="w-full cursor-pointer"
             >
-              {isLoading && <Spinner className="mr-2" />}
-              {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+              {isPending && <Spinner className="mr-2" />}
+              {isPending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </Button>
           </div>
 

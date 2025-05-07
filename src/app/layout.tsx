@@ -5,6 +5,8 @@ import "./globals.css";
 import NavBar from "@/components/layout/NavBar";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { NextAuthProvider } from "@/providers/NextAuthProvider";
+import { ToastProvider } from "@/providers/ToastProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const prompt = localFont({
   src: [
@@ -67,10 +69,11 @@ export default function RootLayout({
     <html lang="th" className={`${prompt.className} antialiased`}>
       <body>
           <NextAuthProvider>
-            <StoreProvider>
+            <AuthProvider>
               <NavBar />
-              <main className="min-h-screen pt-20">{children}</main>
-            </StoreProvider>
+              <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
+              <ToastProvider />
+            </AuthProvider>
           </NextAuthProvider>
       </body>
     </html>

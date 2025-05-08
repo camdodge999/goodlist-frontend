@@ -1,7 +1,8 @@
-import React, { useRef } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { profileFormSchema, ProfileFormSchema } from "@/validators/profile.schema";
+import React, { useRef, FormEvent } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ProfileFormSchema } from "@/validators/profile.schema";
 
 interface ProfileFormProps {
   initialData: ProfileFormSchema;
@@ -30,16 +31,8 @@ export default function ProfileForm({
   previewImage,
   fileInputRef
 }: ProfileFormProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors }
-  } = useForm<ProfileFormSchema>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues: initialData
-  });
-
-  const handleFormSubmit = async (data: ProfileFormSchema) => {
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     await onSaveProfile();
   };
 
@@ -53,16 +46,25 @@ export default function ProfileForm({
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-6">
       <h3 className="text-lg font-medium text-gray-900 mb-4">ข้อมูลส่วนตัว</h3>
-      <form onSubmit={handleSubmit(handleFormSubmit)}>
+      <form onSubmit={handleFormSubmit}>
         <div className="mb-6">
           <div className="flex items-center">
-            <div className="mr-4">
+            <div className="mr-4 relative">
               {previewImage ? (
-                <img
-                  src={previewImage}
-                  alt="Profile preview"
-                  className="h-24 w-24 rounded-full object-cover"
-                />
+                <div className="relative group">
+                  <img
+                    src={previewImage}
+                    alt="Profile preview"
+                    className="h-24 w-24 rounded-full object-cover border-2 border-blue-500"
+                  />
+                  {isEditing && (
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center rounded-full transition-all duration-200">
+                      <span className="text-white opacity-0 group-hover:opacity-100">
+                        เปลี่ยน
+                      </span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
                   <span className="text-gray-500 text-xl">
@@ -70,16 +72,26 @@ export default function ProfileForm({
                   </span>
                 </div>
               )}
+              {isEditing && (
+                <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1 cursor-pointer shadow-md" 
+                     onClick={() => fileInputRef.current?.click()}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+              )}
             </div>
             {isEditing && (
               <div>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-3 py-1 bg-gray-200 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300"
+                  className="px-3 py-1 cursor-pointer"
                 >
                   เปลี่ยนรูปโปรไฟล์
-                </button>
+                </Button>
                 <input
                   type="file"
                   className="hidden"
@@ -103,19 +115,15 @@ export default function ProfileForm({
             >
               ชื่อ
             </label>
-            <input
+            <Input
               type="text"
               id="name"
-              className={`mt-1 block w-full rounded-md border ${
-                errors.name ? "border-red-300" : "border-gray-300"
-              } shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+              name="name"
+              className="mt-1"
               disabled={!isEditing}
-              {...register("name")}
+              defaultValue={initialData.name}
               onChange={onInputChange}
             />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-            )}
           </div>
 
           <div>
@@ -126,14 +134,13 @@ export default function ProfileForm({
               อีเมล
             </label>
             <div className="relative">
-              <input
+              <Input
                 type="email"
                 id="email"
-                className={`mt-1 block w-full rounded-md border ${
-                  emailError || errors.email ? "border-red-300" : "border-gray-300"
-                } shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                name="email"
+                className="mt-1"
                 disabled={!isEditing || !canChangeEmail}
-                {...register("email")}
+                defaultValue={initialData.email}
                 onChange={onInputChange}
               />
               {!canChangeEmail && lastEmailChange && (
@@ -142,8 +149,8 @@ export default function ProfileForm({
                   {formatDate(lastEmailChange)} สามารถเปลี่ยนอีเมลได้อีกครั้งหลังจาก 1 เดือน
                 </div>
               )}
-              {(emailError || errors.email) && (
-                <p className="mt-1 text-sm text-red-600">{emailError || errors.email?.message}</p>
+              {emailError && (
+                <p className="mt-1 text-sm text-red-600">{emailError}</p>
               )}
             </div>
           </div>
@@ -155,19 +162,15 @@ export default function ProfileForm({
             >
               เบอร์โทรศัพท์
             </label>
-            <input
+            <Input
               type="tel"
               id="phone"
-              className={`mt-1 block w-full rounded-md border ${
-                errors.phone ? "border-red-300" : "border-gray-300"
-              } shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+              name="phone"
+              className="mt-1"
               disabled={!isEditing}
-              {...register("phone")}
+              defaultValue={initialData.phone}
               onChange={onInputChange}
             />
-            {errors.phone && (
-              <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-            )}
           </div>
 
           <div className="sm:col-span-2">
@@ -177,47 +180,45 @@ export default function ProfileForm({
             >
               ที่อยู่
             </label>
-            <textarea
+            <Textarea
               id="address"
+              name="address"
               rows={3}
-              className={`mt-1 block w-full rounded-md border ${
-                errors.address ? "border-red-300" : "border-gray-300"
-              } shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+              className="mt-1"
               disabled={!isEditing}
-              {...register("address")}
+              defaultValue={initialData.address}
               onChange={onInputChange}
             />
-            {errors.address && (
-              <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
-            )}
           </div>
         </div>
 
         <div className="mt-6 flex justify-end">
           {isEditing ? (
             <>
-              <button
+              <Button
                 type="button"
-                className="mr-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                variant="outline"
+                className="mr-3 cursor-pointer"
                 onClick={onEditToggle}
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button 
                 type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="cursor-pointer"
               >
                 บันทึก
-              </button>
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              className="cursor-pointer"
               onClick={onEditToggle}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               แก้ไข
-            </button>
+            </Button>
           )}
         </div>
       </form>

@@ -12,7 +12,7 @@ export default function LoginClientPage() {
     useEffect(() => {
         // If the user is already logged in, redirect to profile
         if (status === "authenticated") {
-            router.push("/");
+            router.push("/profile");
         }
     }, [status, router]);
 

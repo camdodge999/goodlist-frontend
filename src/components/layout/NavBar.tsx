@@ -80,13 +80,13 @@ export default async function NavBar() {
       >
         {/* Logo */}
         <div className="flex lg:flex-1">
-          <Link href="/" className="-m-1.5 p-1.5">
+          <Link href="/" className="-m-1.5 p-1.5 pb-0">
             <Image
               src={logo}
               alt="Goodlistseller logo"
-              width={48}
-              height={48}
-              className="h-10 sm:h-12 w-auto object-contain"
+              width={72}
+              height={72}
+              className="h-10 sm:h-16 w-auto object-contain"
               priority
               quality={100}
               unoptimized

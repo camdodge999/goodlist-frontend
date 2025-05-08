@@ -35,7 +35,9 @@ export default function LoginForm(): JSX.Element {
   useEffect(() => {
     if (shouldNavigateRef.current) {
       shouldNavigateRef.current = false;
-      router.push("/");
+      setTimeout(() => {
+        router.push("/profile");
+      }, 1000);
     }
   }, [router, showSuccessDialog]);
 
@@ -83,7 +85,6 @@ export default function LoginForm(): JSX.Element {
         email: formInput.email,
         password: formInput.password,
         redirect: false,
-        callbackUrl: "/profile",
       });
       
       // End loading state
@@ -99,6 +100,9 @@ export default function LoginForm(): JSX.Element {
         setShowSuccessDialog(true);
         // Set the flag to navigate on next effect run
         shouldNavigateRef.current = true;
+        setTimeout(() => {
+          router.push("/profile");
+        }, 1000);
       }
     } catch (error) {
       setIsPending(false);
@@ -146,7 +150,6 @@ export default function LoginForm(): JSX.Element {
         title="เข้าสู่ระบบสำเร็จ"
         message={successMessage}
         buttonText="ไปที่หน้าโปรไฟล์"
-        onButtonClick={handleSuccessDialogClose}
       />
 
       <ErrorDialog 

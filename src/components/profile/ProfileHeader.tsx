@@ -4,6 +4,7 @@ import { faUser, faEnvelope, faPhone, faMapMarkerAlt, faSignOutAlt } from '@fort
 import Image from 'next/image';
 import { User } from '@/types/users';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 interface ProfileHeaderProps {
   user: User;
@@ -43,14 +44,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, previewImage, onLog
             </div>
           </div>
           <div className="flex space-x-3">
-            <button
+            <Button
               type="button"
               onClick={onLogout}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
             >
               <FontAwesomeIcon icon={faSignOutAlt} className="h-4 w-4 mr-2" />
               ออกจากระบบ
-            </button>
+            </Button>
           </div>
         </div>
       </div>

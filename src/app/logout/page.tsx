@@ -31,7 +31,7 @@ export default function LogoutPage() {
       // Get user email for the success message
       const userEmail = session?.user?.email;
       
-      await signOut({ redirect: true });
+      await signOut({ redirect: false });
       
       // Show success toast
       toast({

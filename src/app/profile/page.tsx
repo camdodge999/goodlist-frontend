@@ -10,13 +10,13 @@ export default async function ProfilePage() {
 
   // If no session exists, redirect to login
   if (!session || !session.user) {
-    redirect("/login?callbackUrl=/profile");
+    redirect("/login");
   }
 
   // Convert the session user to our User type
   const user: User = {
     id: session.user.id || session.user.email || "",
-    displayName: session.user.name || session.user.displayName || "",
+    displayName: session.user.displayName || "",
     email: session.user.email || "",
     image: session.user.image || "",
     role: session.user.role || "",

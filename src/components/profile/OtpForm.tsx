@@ -1,7 +1,6 @@
-import React, { useRef, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { otpValidationSchema } from "@/validators/profile.schema";
+import React, { useRef, useEffect, FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface OtpFormProps {
   email: string;
@@ -34,17 +33,14 @@ export default function OtpForm({
     .fill(0)
     .map(() => useRef<HTMLInputElement>(null));
 
-  const { handleSubmit } = useForm({
-    resolver: zodResolver(otpValidationSchema)
-  });
-
   useEffect(() => {
     if (!otpSent && inputRefs[0]?.current) {
       inputRefs[0].current.focus();
     }
   }, [otpSent]);
 
-  const handleFormSubmit = async () => {
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     await onVerify();
   };
 
@@ -64,18 +60,18 @@ export default function OtpForm({
           </div>
         )}
 
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <form onSubmit={handleFormSubmit}>
           {otpSent ? (
             <>
               <div className="flex justify-center space-x-2 mb-6">
                 {otpValues.map((value, index) => (
-                  <input
+                  <Input
                     key={index}
                     ref={inputRefs[index]}
                     type="text"
                     maxLength={1}
                     aria-label={`OTP digit ${index + 1}`}
-                    className="w-12 h-12 text-center text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-12 h-12 text-center text-lg"
                     value={value}
                     onChange={(e) => onOtpChange(index, e.target.value)}
                     onKeyDown={(e) => onKeyDown(index, e)}
@@ -85,40 +81,38 @@ export default function OtpForm({
               </div>
 
               <div className="flex justify-end space-x-3">
-                <button
+                <Button
                   type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
                   onClick={onClose}
                   disabled={isVerifying}
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isVerifying || otpValues.some((v) => !v)}
                 >
                   {isVerifying ? "กำลังยืนยัน..." : "ยืนยัน"}
-                </button>
+                </Button>
               </div>
             </>
           ) : (
             <div className="flex justify-end space-x-3">
-              <button
+              <Button
                 type="button"
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                variant="outline"
                 onClick={onClose}
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={onSendOtp}
                 disabled={isSendingOtp}
               >
                 {isSendingOtp ? "กำลังส่ง OTP..." : "ส่ง OTP"}
-              </button>
+              </Button>
             </div>
           )}
         </form>

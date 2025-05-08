@@ -77,7 +77,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         const mockStores: Store[] = [
           {
             id: 1,
-            userId: user.id,
+            userId: Number(user.id),
             storeName: "Example Store",
             bankAccount: "XXX-X-XXXXX-X",
             contactInfo: {
@@ -96,7 +96,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         ];
 
         // Filter stores owned by the current user
-        const stores = mockStores.filter((store) => store.userId === user.id);
+        const stores = mockStores.filter((store) => store.userId === Number(user.id));
         setUserStores(stores);
       } catch (err) {
         console.error("Error fetching user stores:", err);
@@ -256,14 +256,31 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      alert("ไฟล์ขนาดใหญ่เกินไป กรุณาเลือกไฟล์ขนาดไม่เกิน 5MB");
+      return;
     }
+    
+    // Check file type
+    if (!file.type.match('image/(jpeg|jpg|png|gif)')) {
+      alert("รองรับเฉพาะไฟล์รูปภาพประเภท JPG, PNG และ GIF เท่านั้น");
+      return;
+    }
+    
+    setProfileImage(file);
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.onerror = () => {
+      alert("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาลองใหม่อีกครั้ง");
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveProfile = async () => {
@@ -376,12 +393,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           />
 
           {/* Tab Content */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="mt-6"
-          >
+          <div>
             {activeTab === "stores" && (
               <ProfileStores stores={userStores} />
             )}
@@ -408,7 +420,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                 fileInputRef={fileInputRef as unknown as React.RefObject<HTMLInputElement>}
               />
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>

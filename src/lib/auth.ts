@@ -33,7 +33,9 @@ declare module "next-auth" {
       token?: string;
       role?: UserRole;
       displayName?: string;
-    } & DefaultSession["user"]
+      image?: string;
+      email?: string; 
+    } 
   }
 
   interface User {
@@ -110,8 +112,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      console.log("User", user);
-      console.log("Token", token);
       // Type assertion for user
       const extendedUser = user as ExtendedUser | undefined;
       
@@ -141,15 +141,8 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      console.log("Session Token", token);
-
       const tokenDecoded = jwt.decode(token.token as string) as JWTToken;
-
-      console.log("Token Decoded", tokenDecoded);
-
-
       if (token) {
-
         session.user.token = token.token as string;
         session.user.role = tokenDecoded.role as UserRole;
         session.user.id = token.id as string;

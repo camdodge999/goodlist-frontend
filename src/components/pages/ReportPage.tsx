@@ -1,30 +1,42 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faExclamationTriangle, 
-  faMagnifyingGlass
-} from '@fortawesome/free-solid-svg-icons';
+import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
-import { cn } from "@/lib/utils";
-import { mockStores, mockReports } from "@/data/mockData";
+import { mockStores } from "@/data/mockData";
+import { reportFormSchema, ReportFormSchema } from "@/validators/report.schema";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+
+// Custom components
+import StoreSearch from "@/components/report/StoreSearch";
+import ReasonTextarea from "@/components/report/ReasonTextarea";
+import FileUpload from "@/components/report/FileUpload";
+import FormSection from "@/components/report/FormSection";
 
 // Define types
+type ContactInfo = {
+  line?: string;
+  facebook?: string;
+  phone?: string;
+  address?: string;
+};
+
 type Store = {
-  id: string;
-  store_name: string;
-  contact_info: string;
-  image_url?: string;
-  is_verified: boolean;
-  is_banned: boolean;
+  id: number;
+  userId: number;
+  storeName: string;
+  contactInfo: ContactInfo;
+  imageUrl?: string;
+  isVerified: boolean;
+  isBanned: boolean;
 };
 
 type Report = {
   id: string;
-  store_id: string;
+  store_id: number;
   reason: string;
   evidence_url: string;
   created_at: string;
@@ -33,73 +45,92 @@ type Report = {
 
 export default function ReportPage() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [reportReason, setReportReason] = useState("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Partial<ReportFormSchema>>({});
 
-  // Filter stores based on search query
-  const filteredStores = mockStores.filter(
-    (store) =>
-      (store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.contactInfo.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      store.isVerified && // Only show verified stores
-      !store.isBanned // Don't show banned stores
-  );
+  // Update formData and reset validation error
+  const updateFormData = (field: keyof ReportFormSchema, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    resetValidationError(field);
+  };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Reset specific validation error
+  const resetValidationError = (field: keyof ReportFormSchema) => {
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Handle store selection
+  const handleStoreSelect = (store: Store) => {
+    setSelectedStore(store);
+    updateFormData('storeId', store.id);
+  };
+
+  // Handle reason change
+  const handleReasonChange = (value: string) => {
+    updateFormData('reason', value);
+  };
+
+  // Handle file change
+  const handleFileChange = (file: File | null) => {
+    setEvidenceFile(file);
     if (file) {
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        setError("ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 10MB");
-        return;
-      }
-      // Check file type
-      const validTypes = ["image/jpeg", "image/png", "application/pdf"];
-      if (!validTypes.includes(file.type)) {
-        setError("รองรับเฉพาะไฟล์ PNG, JPG และ PDF เท่านั้น");
-        return;
-      }
-      setEvidenceFile(file);
-      setError("");
+      updateFormData('evidence', file);
+    } else {
+      const newFormData = { ...formData };
+      delete newFormData.evidence;
+      setFormData(newFormData);
+      setValidationErrors(prev => ({
+        ...prev,
+        evidence: "กรุณาอัพโหลดหลักฐาน"
+      }));
     }
+  };
+
+  // Validate all fields before submission
+  const validateForm = (): boolean => {
+    let isValid = true;
+    const newErrors: Record<string, string> = {};
+
+    // Validate store selection
+    if (!selectedStore) {
+      newErrors.storeId = "กรุณาเลือกร้านค้า";
+      isValid = false;
+    }
+
+    // Validate reason
+    if (!formData.reason || formData.reason.trim().length < 10) {
+      newErrors.reason = "เหตุผลต้องมีความยาวอย่างน้อย 10 ตัวอักษร";
+      isValid = false;
+    }
+
+    // Validate evidence
+    if (!evidenceFile) {
+      newErrors.evidence = "กรุณาอัพโหลดหลักฐาน";
+      isValid = false;
+    }
+
+    setValidationErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    // Validate form
-    if (!selectedStore) {
-      setError("กรุณาเลือกร้านค้า");
+    
+    // Validate all fields
+    if (!validateForm()) {
       return;
     }
-    if (!reportReason.trim()) {
-      setError("กรุณาระบุเหตุผลในการรายงาน");
-      return;
-    }
-    if (!evidenceFile) {
-      setError("กรุณาอัพโหลดหลักฐาน");
-      return;
-    }
-
+    
     setIsSubmitting(true);
 
     try {
@@ -107,34 +138,35 @@ export default function ReportPage() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Create new report
-      const newReport = {
+      const newReport: Report = {
         id: Date.now().toString(),
-        store_id: selectedStore.id,
-        reason: reportReason,
-        evidence_url: URL.createObjectURL(evidenceFile),
+        store_id: selectedStore!.id,
+        reason: formData.reason!,
+        evidence_url: URL.createObjectURL(evidenceFile!),
         created_at: new Date().toISOString(),
-        status: "pending" as const,
+        status: "pending",
       };
 
-      // Add to mockReports
-      mockReports.push(newReport);
+      // Add to mockReports (this would be an API call in a real app)
+      console.log("Report submitted:", newReport);
 
       // Show success message
       alert("ส่งรายงานเรียบร้อยแล้ว");
 
       // Reset form
       setSelectedStore(null);
-      setSearchQuery("");
-      setReportReason("");
+      setFormData({});
       setEvidenceFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      setValidationErrors({});
 
       // Redirect to home page
       router.push("/");
     } catch (err) {
-      setError("เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง");
+      console.error("Error submitting report:", err);
+      setValidationErrors(prev => ({
+        ...prev,
+        form: "เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง"
+      }));
     } finally {
       setIsSubmitting(false);
     }
@@ -160,202 +192,63 @@ export default function ReportPage() {
             className="border-t border-gray-200 px-4 py-5 sm:px-6"
             onSubmit={handleSubmit}
           >
-            {error && (
+            {validationErrors.form && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
+                <p className="text-sm text-red-600">{validationErrors.form}</p>
               </div>
             )}
 
             <div className="space-y-6">
-              <div className="relative" ref={dropdownRef}>
-                <div className="flex items-center justify-between mb-1">
-                  <label
-                    htmlFor="store"
-                    className="block text-sm font-medium text-gray-700 flex items-center"
-                  >
-                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-2">
-                      1
-                    </span>
-                    เลือกร้านค้า
-                  </label>
-                  <span className="text-xs text-gray-500">* จำเป็น</span>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  ค้นหาและเลือกร้านค้าที่ต้องการรายงาน
-                </p>
-                <div className="mt-1 relative">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pr-10"
-                      placeholder="พิมพ์ชื่อร้านค้า หรือ Line ID..."
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setIsDropdownOpen(true);
-                      }}
-                      onFocus={() => setIsDropdownOpen(true)}
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <FontAwesomeIcon icon={faMagnifyingGlass} className="h-5 w-5 text-gray-400" />
-                    </div>
-                  </div>
-
-                  {isDropdownOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-gray-200">
-                      {filteredStores.length > 0 ? (
-                        filteredStores.map((store) => (
-                          <div
-                            key={store.id}
-                            className={cn(
-                              "flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50",
-                              selectedStore?.id === store.id && "bg-blue-50"
-                            )}
-                            onClick={() => {
-                              setSelectedStore(store);
-                              setSearchQuery(store.storeName);
-                              setIsDropdownOpen(false);
-                            }}
-                          >
-                            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                              <Image
-                                src={
-                                  store.imageUrl ||
-                                  "/images/stores/default-store.jpg"
-                                }
-                                alt={store.storeName}
-                                fill
-                                className="object-cover"
-                                sizes="40px"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {store.storeName}
-                              </p>
-                              <p className="text-xs text-gray-500 truncate">
-                                {JSON.parse(store.contactInfo).line}
-                              </p>
-                            </div>
-                            {store.isVerified && (
-                              <div className="flex-shrink-0">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                  ยืนยันแล้ว
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="px-4 py-2 text-sm text-gray-500">
-                          ไม่พบร้านค้าที่ค้นหา
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label
-                    htmlFor="reason"
-                    className="block text-sm font-medium text-gray-700 flex items-center"
-                  >
-                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-2">
-                      2
-                    </span>
-                    เหตุผล
-                  </label>
-                  <span className="text-xs text-gray-500">* จำเป็น</span>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  ระบุเหตุผลที่คุณต้องการรายงานร้านค้านี้
-                </p>
-                <textarea
-                  rows={4}
-                  name="reason"
-                  id="reason"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  placeholder="อธิบายรายละเอียดของปัญหาที่คุณพบ..."
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
+              <FormSection 
+                number={1} 
+                label="เลือกร้านค้า" 
+                description="ค้นหาและเลือกร้านค้าที่ต้องการรายงาน"
+              >
+                <StoreSearch 
+                  stores={mockStores} 
+                  selectedStore={selectedStore} 
+                  onSelectStore={handleStoreSelect}
+                  validationError={validationErrors.storeId}
                 />
-              </div>
+              </FormSection>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label
-                    htmlFor="evidence"
-                    className="block text-sm font-medium text-gray-700 flex items-center"
-                  >
-                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-2">
-                      3
-                    </span>
-                    แนบหลักฐาน
-                  </label>
-                  <span className="text-xs text-gray-500">* จำเป็น</span>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  อัพโหลดรูปภาพหรือเอกสารที่แสดงถึงการกระทำที่ไม่เหมาะสม
-                </p>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
-                      stroke="currentColor"
-                      fill="none"
-                      viewBox="0 0 48 48"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="file-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"
-                      >
-                        <span>อัพโหลดไฟล์</span>
-                        <input
-                          id="file-upload"
-                          name="file-upload"
-                          type="file"
-                          className="sr-only"
-                          accept=".png,.jpg,.jpeg,.pdf"
-                          onChange={handleFileChange}
-                          ref={fileInputRef}
-                        />
-                      </label>
-                      <p className="pl-1">หรือลากและวางที่นี่</p>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      PNG, JPG, PDF ขนาดไม่เกิน 10MB
-                    </p>
-                    {evidenceFile && (
-                      <p className="text-sm text-green-600 font-medium">
-                        {evidenceFile.name} (
-                        {(evidenceFile.size / (1024 * 1024)).toFixed(2)} MB)
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <FormSection 
+                number={2} 
+                label="เหตุผล" 
+                description="ระบุเหตุผลที่คุณต้องการรายงานร้านค้านี้"
+              >
+                <ReasonTextarea 
+                  value={formData.reason || ''} 
+                  onChange={handleReasonChange}
+                  validationError={validationErrors.reason}
+                  schema={reportFormSchema.shape.reason}
+                  placeholder="อธิบายรายละเอียดของปัญหาที่คุณพบ..."
+                />
+              </FormSection>
+
+              <FormSection 
+                number={3} 
+                label="แนบหลักฐาน" 
+                description="อัพโหลดรูปภาพหรือเอกสารที่แสดงถึงการกระทำที่ไม่เหมาะสม"
+              >
+                <FileUpload 
+                  onFileChange={handleFileChange}
+                  validationError={validationErrors.evidence}
+                  fileSchema={reportFormSchema.shape.evidence}
+                  label="อัพโหลดไฟล์"
+                  description="PNG, JPG, PDF ขนาดไม่เกิน 10MB"
+                  accept="image/png,image/jpeg,application/pdf"
+                />
+              </FormSection>
 
               <div className="flex justify-end">
-                <button
+                <Button
                   type="submit"
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    isSubmitting && "opacity-75 cursor-not-allowed"
-                  }`}
+                  className="px-4 py-2"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "กำลังส่งรายงาน..." : "ส่งรายงาน"}
-                </button>
+                </Button>
               </div>
             </div>
           </form>

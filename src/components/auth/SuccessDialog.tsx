@@ -52,13 +52,15 @@ export default function SuccessDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="sm:justify-center mt-8">
-          <Button
-            variant="primary"
-            onClick={handleButtonClick}
-            className="min-w-[120px] text-lg py-6 cursor-pointer"
+          {handleButtonClick && (
+            <Button
+              variant="primary"
+              onClick={handleButtonClick}
+              className="min-w-[120px] text-lg py-6 cursor-pointer"
           >
             {buttonText}
           </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

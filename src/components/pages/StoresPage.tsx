@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
@@ -13,23 +13,25 @@ import StoreCard from "@/components/ui/StoreCard";
 import type { Store } from "@/types/stores";
 
 export default function StoresPage() {
-  const { stores, isLoading } = useStore() as { 
-    stores: Store[]; 
-    isLoading: boolean 
-  };
+  const { stores, isLoading, error, refreshStores } = useStore();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const storesPerPage = 6;
 
   // Filter stores based on search query and verification status
-  const filteredStores = stores.filter((store) => {
+  const filteredStores = stores.filter((store: Store) => {
     const matchesSearch =
       store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      store.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (store.description && store.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const isVerified = store.isVerified;
     return matchesSearch && isVerified;
   });
+
+  // Reset to first page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredStores.length / storesPerPage);
@@ -65,6 +67,18 @@ export default function StoresPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="py-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">เกิดข้อผิดพลาดในการโหลดข้อมูล</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={refreshStores}>ลองใหม่อีกครั้ง</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,7 +101,6 @@ export default function StoresPage() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setCurrentPage(1); // Reset to first page on search
               }}
               className="pl-10 w-full"
             />
@@ -95,7 +108,7 @@ export default function StoresPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {currentStores.map((store) => (
+          {currentStores.map((store: Store) => (
             <StoreCard key={store.id} store={store} />
           ))}
         </div>

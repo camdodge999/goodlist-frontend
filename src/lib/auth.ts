@@ -155,6 +155,27 @@ export const authOptions: NextAuthOptions = {
       if (url.startsWith('/api/auth/error')) {
         return `${baseUrl}/login?error=${encodeURIComponent(url.split('error=')[1] || 'Unknown error')}`;
       }
+      
+      // Handle callback URLs
+      if (url.includes('callbackUrl=')) {
+        const callbackUrl = new URL(url).searchParams.get('callbackUrl');
+        if (callbackUrl) {
+          // Check if it's an absolute URL
+          try {
+            const urlObj = new URL(callbackUrl);
+            // If it's same origin or a relative path, allow it
+            if (urlObj.origin === baseUrl || callbackUrl.startsWith('/')) {
+              return callbackUrl;
+            }
+          } catch {
+            // If URL parsing fails, it's likely a relative path
+            if (callbackUrl.startsWith('/')) {
+              return `${baseUrl}${callbackUrl}`;
+            }
+          }
+        }
+      }
+      
       // Redirect to baseUrl if url is relative
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;

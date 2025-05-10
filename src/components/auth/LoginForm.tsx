@@ -80,11 +80,16 @@ export default function LoginForm(): JSX.Element {
       // Start loading state
       setIsPending(true);
       
+      // Get callbackUrl from URL query parameters or use default
+      const params = new URLSearchParams(window.location.search);
+      const callbackUrl = params.get('callbackUrl') || '/profile';
+      
       // Use NextAuth signIn method with the credentials provider
       const result = await signIn("credentials", {
         email: formInput.email,
         password: formInput.password,
         redirect: false,
+        callbackUrl,
       });
       
       // End loading state
@@ -101,7 +106,7 @@ export default function LoginForm(): JSX.Element {
         // Set the flag to navigate on next effect run
         shouldNavigateRef.current = true;
         setTimeout(() => {
-          router.push("/profile");
+          router.push(callbackUrl);
         }, 1000);
       }
     } catch (error) {

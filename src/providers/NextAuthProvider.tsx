@@ -5,8 +5,13 @@ import { ReactNode } from "react";
 
 interface NextAuthProviderProps {
   children: ReactNode;
+  session?: any;
 }
 
-export function NextAuthProvider({ children }: NextAuthProviderProps) {
-  return <SessionProvider>{children}</SessionProvider>;
+export function NextAuthProvider({ children, session }: NextAuthProviderProps) {
+  return (
+    <SessionProvider session={session} refetchInterval={5 * 60}>
+      {children}
+    </SessionProvider>
+  );
 } 

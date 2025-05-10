@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { HeroSection, FeaturedStoresSection } from "@/components/landing";
 import { Store } from "@/types/stores";
-import { BodyResponse } from "@/types/response";
-import { ContactInfo } from "@/types/stores";
+import { StoreProvider } from "@/contexts/StoreContext";    
 
 export const metadata: Metadata = {
   title: 'Goodlistseller - ร้านค้าออนไลน์ที่คุณไว้ใจได้',
@@ -29,30 +28,18 @@ export default async function Home() {
   );
 
   // Parse the JSON response
-  const storesData: BodyResponse<Store[]> = await storesResponse.json();
+  const storesData = await storesResponse.json();
+
+  // Get stores from the response
+  const stores: Store[] = storesData.statusCode === 200 && storesData.data ? storesData.data : [];
 
   // Get first 3 verified stores for featured section
-  const featuredStores = storesData.status === 'success' && storesData.data
-    ? storesData.data
-      .filter((store: Store) => store.isVerified)
-      .slice(0, 3)
-      .map((store: Store) => ({
-        id: store.id,
-        storeName: store.storeName,
-        isVerified: store.isVerified,
-        imageUrl: store.imageUrl,
-        description: store.description,
-        contactInfo: store.contactInfo,
-        userId: store.userId,
-        bankAccount: store.bankAccount,
-        isBanned: store.isBanned,
-        createdAt: store.createdAt,
-        updatedAt: store.updatedAt
-      }))
-    : [];
+  const featuredStores = stores
+    .filter((store: Store) => store.isVerified)
+    .slice(0, 3);
 
   return (
-    <>
+    <StoreProvider initialStores={stores}>
       {/* Hero Section */}
       <HeroSection session={session} />
 
@@ -60,6 +47,6 @@ export default async function Home() {
       <FeaturedStoresSection featuredStores={featuredStores} />
 
       {/* Remaining sections would be similarly updated */}
-    </>
+    </StoreProvider>
   );
 } 

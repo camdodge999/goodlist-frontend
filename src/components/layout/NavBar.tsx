@@ -73,7 +73,7 @@ export default async function NavBar() {
   const navItems = getNavItems(user);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <header className="fixed inset-x-0 top-0 z-40 bg-white backdrop-blur-md border-b border-gray-100 z-50">
       <nav
         className="flex items-center justify-between py-3 px-4 sm:py-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
         aria-label="Global"

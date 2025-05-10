@@ -55,8 +55,6 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [{ url: "/images/logo.png", type: "image/png" }],
-    shortcut: "/images/logo.png",
-    apple: "/images/logo.png",
   },
 };
 
@@ -71,7 +69,7 @@ export default function RootLayout({
           <NextAuthProvider>
             <AuthProvider>
               <NavBar />
-              <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
+                <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
               <ToastProvider />
             </AuthProvider>
           </NextAuthProvider>

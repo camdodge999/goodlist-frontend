@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent, useEffect } from "react";
+import { useState, FormEvent, ChangeEvent, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/Spinner";
-import SuccessDialog from "./SuccessDialog";
-import ErrorDialog from "./ErrorDialog";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useReactActionState, getFieldError } from "@/utils/forms/useReactActionState";
 import { FormLabel } from "@/components/ui/form-label";
+import { useShowDialog } from "@/hooks/useShowDialog";
+import StatusDialog from "@/components/common/StatusDialog";
 
 // Don't import at module level to avoid the Promise issue
 // import { resetPasswordAction } from "@/app/api/auth/actions";
@@ -22,11 +22,30 @@ interface ResetPasswordFormProps {
 
 export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   const [email, setEmail] = useState<string>("");
-  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
-  const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
   const [action, setAction] = useState<any>(null);
+  
+  // Use the dialog hook
+  const {
+    showSuccessDialog,
+    setShowSuccessDialog,
+    showErrorDialog,
+    setShowErrorDialog,
+    successMessage,
+    errorMessage,
+    displaySuccessDialog,
+    displayErrorDialog
+  } = useShowDialog();
+
+  // Reference to track if we should call onSuccess
+  const shouldCallSuccessRef = useRef(false);
+  
+  // Handle success callback outside of render cycle
+  useEffect(() => {
+    if (shouldCallSuccessRef.current && !showSuccessDialog) {
+      shouldCallSuccessRef.current = false;
+      onSuccess();
+    }
+  }, [onSuccess, showSuccessDialog]);
 
   // Dynamically import the action to avoid the Promise issue
   useEffect(() => {
@@ -46,12 +65,17 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
     successMessage: actionSuccessMessage
   } = useReactActionState(action || (async () => ({ status: "error", message: "Action not loaded" })), {
     onSuccess: () => {
-      setSuccessMessage(actionSuccessMessage || `เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมล ${email} กรุณาตรวจสอบกล่องข้อความของคุณ`);
-      setShowSuccessDialog(true);
+      displaySuccessDialog({
+        title: "ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว",
+        message: actionSuccessMessage || `เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมล ${email} กรุณาตรวจสอบกล่องข้อความของคุณ`,
+        buttonText: "ตกลง",
+        onButtonClick: () => {
+          shouldCallSuccessRef.current = true;
+        }
+      });
     },
     onError: () => {
-      setErrorMessage(actionErrorMessage || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-      setShowErrorDialog(true);
+      displayErrorDialog(actionErrorMessage || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     }
   });
 
@@ -71,25 +95,21 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
     await execute(formData);
   };
 
-  const handleSuccessDialogClose = () => {
-    setShowSuccessDialog(false);
-    onSuccess();
-  };
-
   return (
     <>
-      <SuccessDialog 
+      <StatusDialog 
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
+        type="success"
         title="ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว"
         message={successMessage}
         buttonText="ตกลง"
-        onButtonClick={handleSuccessDialogClose}
       />
 
-      <ErrorDialog 
+      <StatusDialog 
         isOpen={showErrorDialog}
         setIsOpen={setShowErrorDialog}
+        type="error"
         message={errorMessage}
       />
     

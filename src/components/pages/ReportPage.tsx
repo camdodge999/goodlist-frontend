@@ -98,35 +98,41 @@ export default function ReportPage() {
 
   // Validate all fields before submission
   const validateForm = (): boolean => {
-    let isValid = true;
-    const newErrors: Record<string, string> = {};
-
-    // Validate store selection
-    if (!selectedStore) {
-      newErrors.storeId = "กรุณาเลือกร้านค้า";
-      isValid = false;
+    try {
+      // Use Zod schema to validate the form data
+      reportFormSchema.parse(formData);
+      
+      // If validation passes, clear any existing errors
+      setValidationErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Format Zod validation errors
+        const formattedErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            const field = err.path[0].toString();
+            if (!formattedErrors[field]) {
+              formattedErrors[field] = err.message;
+            }
+          }
+        });
+        setValidationErrors(formattedErrors);
+      } else {
+        // Handle unexpected errors
+        setValidationErrors({
+          form: "เกิดข้อผิดพลาดในการตรวจสอบข้อมูล กรุณาลองใหม่อีกครั้ง"
+        });
+        console.error("Validation error:", error);
+      }
+      return false;
     }
-
-    // Validate reason
-    if (!formData.reason || formData.reason.trim().length < 10) {
-      newErrors.reason = "เหตุผลต้องมีความยาวอย่างน้อย 10 ตัวอักษร";
-      isValid = false;
-    }
-
-    // Validate evidence
-    if (!evidenceFile) {
-      newErrors.evidence = "กรุณาอัพโหลดหลักฐาน";
-      isValid = false;
-    }
-
-    setValidationErrors(newErrors);
-    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate all fields
+    // Validate all fields using Zod
     if (!validateForm()) {
       return;
     }

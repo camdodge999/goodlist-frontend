@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockStores } from '@/data/mockData';
 import { BodyResponse } from '@/types/response';
 import { Store } from '@/types/stores';
 import { fetchWithAuth } from '@/lib/fetch-with-auth';

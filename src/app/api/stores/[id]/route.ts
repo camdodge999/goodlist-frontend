@@ -1,59 +1,68 @@
-import { NextResponse } from 'next/server';
-import { mockStores } from '@/data/mockData';
+import { NextRequest, NextResponse } from 'next/server';
 import { BodyResponse } from '@/types/response';
 import { Store } from '@/types/stores';
+import { fetchWithAuth } from '@/lib/fetch-with-auth';
 
 // GET handler for /api/stores/[id]
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const storeId = parseInt(params.id);
-    
+
     if (isNaN(storeId)) {
       return NextResponse.json(
         {
-          status: 'error',
+          statusCode: 400,
           message: 'Invalid store ID',
-          details: { id: params.id },
-        } as BodyResponse<null>,
+          data: undefined,
+        },
         { status: 400 }
       );
     }
-    
-    // Find the store with the matching ID (in a real app, this would be a database query)
-    const store = mockStores.find((s) => s.id === storeId);
-    
+
+    const store = await fetchStoreById(request, storeId.toString());
+
     if (!store) {
       return NextResponse.json(
         {
-          status: 'error',
+          statusCode: 404,
           message: 'Store not found',
-          details: { id: storeId },
-        } as BodyResponse<null>,
+          data: undefined,
+        },
         { status: 404 }
       );
     }
-    
-    // Create the response in the expected format
-    const response: BodyResponse<Store> = {
-      status: 'success',
-      data: store,
+
+
+    return NextResponse.json({
+      statusCode: 200,
+      data: store.data,
       message: null,
-    };
-    
-    return NextResponse.json(response);
+    }, { status: 200 });
   } catch (error) {
-    console.error('Error fetching store:', error);
-    
-    // Create error response
-    const errorResponse: BodyResponse<null> = {
-      status: 'error',
-      message: 'Failed to fetch store',
-      details: { error: error instanceof Error ? error.message : String(error) },
-    };
-    
-    return NextResponse.json(errorResponse, { status: 500 });
+    console.error("Internal server error", error);
+    return NextResponse.json(
+      { statusCode: 500, message: "Internal server error", data: undefined },
+      { status: 500 }
+    );
   }
-} 
+}
+
+async function fetchStoreById(
+  request: NextRequest,
+  id: string
+): Promise<BodyResponse<Store>> {
+  // Accept token as a parameter
+  const result = await fetchWithAuth<BodyResponse<Store>>({
+    request,
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/stores/${id}`,
+    method: "GET"
+  });
+  if (result.statusCode === 200) {
+    return result; // Typecast the result when the status is success
+  } else {
+    throw new Error(result.message || "Failed to fetch stores"); // Throw an error if the status is not success
+  }
+}

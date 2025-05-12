@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useStore } from "@/contexts/StoreContext";
 import StoreCard from "@/components/ui/StoreCard";
 import type { Store } from "@/types/stores";
+import StoreError from "@/components/stores/StoreError";
 
 export default function StoresPage() {
   const { stores, isLoading, error, refreshStores } = useStore();
@@ -69,13 +70,10 @@ export default function StoresPage() {
 
   if (error) {
     return (
-      <div className="py-8 text-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">เกิดข้อผิดพลาดในการโหลดข้อมูล</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={refreshStores}>ลองใหม่อีกครั้ง</Button>
-        </div>
-      </div>
+      <StoreError 
+        message={error}
+        onRetry={refreshStores}
+      />
     );
   }
 

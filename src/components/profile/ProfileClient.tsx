@@ -8,7 +8,6 @@ import 'dayjs/locale/th';
 
 // Components
 import ProfileHeader from "@/components/profile/ProfileHeader";
-import ProfileTabs from "@/components/profile/ProfileTabs";
 import ProfileStores from "@/components/profile/ProfileStores";
 import ProfileSettings from "@/components/profile/ProfileSettings";
 import OtpModal from "@/components/profile/OtpModal";

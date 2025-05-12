@@ -2,7 +2,13 @@ import React from "react";
 import ProfileForm from "./ProfileForm";
 import PasswordForm from "./PasswordForm";
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
-import { User } from "@/types/auth";
+import { User as AuthUser } from "@/types/auth";
+import { User as AppUser } from "@/types/users";
+import StatusDialog from "@/components/common/StatusDialog";
+import { useShowDialog } from "@/hooks/useShowDialog";
+
+// Create a union type that works with both User types
+type User = AuthUser | AppUser;
 
 interface ProfileSettingsProps {
   user: User;
@@ -45,8 +51,59 @@ export default function ProfileSettings({
   onEditToggle,
   fileInputRef
 }: ProfileSettingsProps) {
+  // Use the dialog hook
+  const {
+    showSuccessDialog,
+    setShowSuccessDialog,
+    showErrorDialog,
+    setShowErrorDialog,
+    successMessage,
+    errorMessage,
+    successTitle,
+    errorTitle,
+    displaySuccessDialog,
+    displayErrorDialog
+  } = useShowDialog();
+
+  // Wrap the original handlers to use dialogs instead of alerts
+  const handleSaveProfile = async () => {
+    try {
+      await onSaveProfile();
+      displaySuccessDialog("โปรไฟล์ได้รับการอัปเดตเรียบร้อยแล้ว");
+    } catch (error) {
+      displayErrorDialog(error instanceof Error ? error.message : "ไม่สามารถอัปเดตโปรไฟล์ได้");
+    }
+  };
+
+  const handleChangePassword = async () => {
+    try {
+      await onChangePassword();
+      displaySuccessDialog("เปลี่ยนรหัสผ่านสำเร็จ");
+    } catch (error) {
+      displayErrorDialog(error instanceof Error ? error.message : "ไม่สามารถเปลี่ยนรหัสผ่านได้");
+    }
+  };
+
   return (
     <div>
+      {/* Success Dialog */}
+      <StatusDialog
+        isOpen={showSuccessDialog}
+        setIsOpen={setShowSuccessDialog}
+        type="success"
+        message={successMessage}
+        title={successTitle}
+      />
+
+      {/* Error Dialog */}
+      <StatusDialog
+        isOpen={showErrorDialog}
+        setIsOpen={setShowErrorDialog}
+        type="error"
+        message={errorMessage}
+        title={errorTitle}
+      />
+
       {/* Profile Form */}
       <ProfileForm
         initialData={formData}
@@ -56,7 +113,7 @@ export default function ProfileSettings({
         emailError={emailError}
         onInputChange={onInputChange}
         onImageChange={onImageChange}
-        onSaveProfile={onSaveProfile}
+        onSaveProfile={handleSaveProfile}
         onEditToggle={onEditToggle}
         previewImage={previewImage}
         fileInputRef={fileInputRef}
@@ -68,7 +125,7 @@ export default function ProfileSettings({
         passwordError={passwordError}
         isChangingPassword={isChangingPassword}
         onPasswordChange={onPasswordChange}
-        onChangePassword={onChangePassword}
+        onChangePassword={handleChangePassword}
         initialData={passwordData}
       />
     </div>

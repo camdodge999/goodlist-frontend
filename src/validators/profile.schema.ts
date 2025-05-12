@@ -6,6 +6,7 @@ export const profileFormSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   address: z.string().optional(),
+  profileImage: z.string().nullable().optional(),
 });
 
 export type ProfileFormSchema = z.infer<typeof profileFormSchema>;

@@ -101,7 +101,7 @@ export default function UserMenu({ user, isAuthenticated, isMobile = false }: Us
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-64 p-2 animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 border border-gray-100 shadow-lg bg-gradient-to-b from-white to-blue-50/30"
+            className="w-64 p-2 animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 border border-gray-100 shadow-lg bg-white"
             align="end"
             forceMount
             sideOffset={8}
@@ -129,7 +129,7 @@ export default function UserMenu({ user, isAuthenticated, isMobile = false }: Us
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="my-1 bg-gray-100" />
+            <DropdownMenuSeparator className="my-1 bg-gray-300" />
             <DropdownMenuItem
               asChild
               className="cursor-pointer transition-all duration-200 rounded-md hover:bg-blue-50 hover:text-blue-600 focus:bg-blue-50 focus:text-blue-600"

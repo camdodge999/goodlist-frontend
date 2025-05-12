@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash, faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
-import SuccessDialog from "./SuccessDialog";
-import ErrorDialog from "./ErrorDialog";
+import { useShowDialog } from "@/hooks/useShowDialog";
+import StatusDialog from "@/components/common/StatusDialog";
 
 export default function LoginForm(): JSX.Element {
   const router = useRouter();
@@ -21,15 +21,23 @@ export default function LoginForm(): JSX.Element {
     password: "",
   });
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
-  const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
-  const [successMessage, setSuccessMessage] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
   const [isPending, setIsPending] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string> | null>(null);
 
   // Reference to track if we should navigate
   const shouldNavigateRef = useRef(false);
+  
+  // Use the dialog hook
+  const {
+    showSuccessDialog,
+    setShowSuccessDialog,
+    showErrorDialog,
+    setShowErrorDialog,
+    successMessage,
+    errorMessage,
+    displaySuccessDialog,
+    displayErrorDialog,
+  } = useShowDialog();
 
   // Handle navigation outside of render cycle
   useEffect(() => {
@@ -97,23 +105,25 @@ export default function LoginForm(): JSX.Element {
       
       if (result?.error) {
         // Handle NextAuth authentication error
-        setErrorMessage(result.error || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-        setShowErrorDialog(true);
+        displayErrorDialog("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
       } else {
         // Authentication successful
-        setSuccessMessage("เข้าสู่ระบบสำเร็จ");
-        setShowSuccessDialog(true);
+        displaySuccessDialog({
+          message: "เข้าสู่ระบบสำเร็จ",
+          title: "เข้าสู่ระบบสำเร็จ",
+          buttonText: "ไปที่หน้าหลัก",
+          onButtonClick: () => {
+            router.push(callbackUrl);
+          }
+        });
+        
         // Set the flag to navigate on next effect run
         shouldNavigateRef.current = true;
-        setTimeout(() => {
-          router.push(callbackUrl);
-        }, 1000);
       }
     } catch (error) {
       setIsPending(false);
       console.error("Error during form submission:", error);
-      setErrorMessage("เกิดข้อผิดพลาดขณะเข้าสู่ระบบ กรุณาลองอีกครั้ง");
-      setShowErrorDialog(true);
+      displayErrorDialog("เกิดข้อผิดพลาดขณะเข้าสู่ระบบ กรุณาลองอีกครั้ง");
     }
   };
 
@@ -136,11 +146,6 @@ export default function LoginForm(): JSX.Element {
       setErrors(Object.keys(newErrors).length > 0 ? newErrors : null);
     }
   };
-
-  const handleSuccessDialogClose = () => {
-    setShowSuccessDialog(false);
-    // Navigation is handled in the useEffect
-  };
   
   // Helper function to get field error
   const getFieldError = (fieldName: string): string | undefined => {
@@ -149,17 +154,19 @@ export default function LoginForm(): JSX.Element {
 
   return (
     <>
-      <SuccessDialog 
+      <StatusDialog 
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
+        type="success"
         title="เข้าสู่ระบบสำเร็จ"
         message={successMessage}
-        buttonText="ไปที่หน้าโปรไฟล์"
+        buttonText="ไปที่หน้าหลัก"
       />
 
-      <ErrorDialog 
+      <StatusDialog 
         isOpen={showErrorDialog}
         setIsOpen={setShowErrorDialog}
+        type="error"
         message={errorMessage}
       />
     

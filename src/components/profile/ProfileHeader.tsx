@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { User } from '@/types/users';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ProfileHeaderProps {
   user: User;
@@ -23,19 +24,16 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, previewImage, onLog
       <div className="px-4 py-5 sm:px-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="relative h-24 w-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100">
-              {previewImage || user.image ? (
-                <Image
-                  src={previewImage || user.image || ""}
-                  alt={`รูปโปรไฟล์ของ ${user.displayName}`}
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-              ) : (
-                <FontAwesomeIcon icon={faUser} className="h-full w-full p-4 text-gray-300" />
-              )}
-            </div>
+            <Avatar className="h-24 w-24 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
+              <AvatarImage
+                src={user.image || undefined}
+                alt={user.displayName || "User"}
+                className="transition-opacity duration-300"
+              />
+              <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-medium text-4xl">
+                {user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}
+              </AvatarFallback>
+            </Avatar>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {user.displayName}

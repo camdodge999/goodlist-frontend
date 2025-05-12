@@ -45,7 +45,7 @@ export default function NavItems({ items, isMobile = false }: NavItemsProps) {
                   icon={item.icon} 
                   className={cn(
                     "h-5 w-5 mr-3",
-                    active ? "text-blue-600" : "text-blue-500"
+                    active ? "text-blue-600 hover" : "text-blue-500"
                   )} 
                 />
                 <span>{item.name}</span>
@@ -81,9 +81,6 @@ export default function NavItems({ items, isMobile = false }: NavItemsProps) {
               )} 
             />
             {item.name}
-            {active && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full" />
-            )}
           </Link>
         );
       })}

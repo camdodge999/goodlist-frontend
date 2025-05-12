@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ProfileFormSchema } from "@/validators/profile.schema";
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface ProfileFormProps {
   initialData: ProfileFormSchema;
   isEditing: boolean;
@@ -50,37 +50,40 @@ export default function ProfileForm({
         <div className="mb-6">
           <div className="flex items-center">
             <div className="mr-4 relative">
-              {previewImage ? (
+              <div className="flex items-start space-x-4">
+                {/* Current Profile Image */}
                 <div className="relative group">
-                  <img
-                    src={previewImage}
-                    alt="Profile preview"
-                    className="h-24 w-24 rounded-full object-cover border-2 border-blue-500"
-                  />
-                  {isEditing && (
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center rounded-full transition-all duration-200">
-                      <span className="text-white opacity-0 group-hover:opacity-100">
-                        เปลี่ยน
-                      </span>
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage
+                      src={initialData.profileImage || undefined}
+                      alt={initialData.name || "User"}
+                      className="transition-opacity duration-300"
+                    />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-medium text-4xl">
+                      {initialData.name ? initialData.name.charAt(0).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                
+                {/* Preview Image (shows only when a new image is selected) */}
+                {previewImage && isEditing && (
+                  <div className="relative group">
+                    <div className="flex flex-col items-center">
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage
+                          src={previewImage}
+                          alt="Preview"
+                          className="transition-opacity duration-300 object-cover"
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-green-100 to-green-200 text-green-700 font-medium text-4xl">
+                          {initialData.name ? initialData.name.charAt(0).toUpperCase() : "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-green-600 mt-1">รูปใหม่</span>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-500 text-xl">
-                    {initialData.name ? initialData.name.charAt(0).toUpperCase() : "U"}
-                  </span>
-                </div>
-              )}
-              {isEditing && (
-                <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1 cursor-pointer shadow-md" 
-                     onClick={() => fileInputRef.current?.click()}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
             {isEditing && (
               <div>
@@ -88,7 +91,7 @@ export default function ProfileForm({
                   type="button"
                   variant="secondary"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-3 py-1 cursor-pointer"
+                  className="px-3 py-1 cursor-pointer hover:bg-blue-500 hover:text-white transition-all duration-200"
                 >
                   เปลี่ยนรูปโปรไฟล์
                 </Button>

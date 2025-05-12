@@ -12,18 +12,21 @@ import ProfileTabs from "@/components/profile/ProfileTabs";
 import ProfileStores from "@/components/profile/ProfileStores";
 import ProfileSettings from "@/components/profile/ProfileSettings";
 import OtpModal from "@/components/profile/OtpModal";
+import StatusDialog from "@/components/common/StatusDialog";
+import { useShowDialog } from "@/hooks/useShowDialog";
 
 // Types
-import { ProfileTabProps } from "@/types/profile";
 import { Store } from "@/types/stores";
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
 import { User } from "@/types/users";
 import { signOut } from "next-auth/react";
+import { profileTabs } from "@/consts/profileTab";
 
 interface ProfileClientProps {
   user: User;
 }
 
+// ProfileClient component handles user profile management
 export default function ProfileClient({ user }: ProfileClientProps) {
   const router = useRouter();
   const [userStores, setUserStores] = useState<Store[]>([]);
@@ -40,6 +43,14 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [lastEmailChange, setLastEmailChange] = useState<Date | null>(null);
   const [canChangeEmail, setCanChangeEmail] = useState(true);
   const [tempEmail, setTempEmail] = useState("");
+
+  // Add the useShowDialog hook
+  const { 
+    showErrorDialog, 
+    setShowErrorDialog, 
+    errorMessage, 
+    displayErrorDialog 
+  } = useShowDialog();
 
   // Create individual refs for each OTP input
   const inputRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
@@ -65,7 +76,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const logout = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ redirect: false });
   };
 
   useEffect(() => {
@@ -261,13 +272,13 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     // Check file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      alert("ไฟล์ขนาดใหญ่เกินไป กรุณาเลือกไฟล์ขนาดไม่เกิน 5MB");
+      displayErrorDialog("ไฟล์ขนาดใหญ่เกินไป กรุณาเลือกไฟล์ขนาดไม่เกิน 5MB");
       return;
     }
     
     // Check file type
     if (!file.type.match('image/(jpeg|jpg|png|gif)')) {
-      alert("รองรับเฉพาะไฟล์รูปภาพประเภท JPG, PNG และ GIF เท่านั้น");
+      displayErrorDialog("รองรับเฉพาะไฟล์รูปภาพประเภท JPG, PNG และ GIF เท่านั้น");
       return;
     }
     
@@ -278,7 +289,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setPreviewImage(reader.result as string);
     };
     reader.onerror = () => {
-      alert("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาลองใหม่อีกครั้ง");
+      displayErrorDialog("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาลองใหม่อีกครั้ง");
     };
     reader.readAsDataURL(file);
   };
@@ -335,10 +346,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     }
   };
 
-  const tabs: ProfileTabProps[] = [
-    { id: "stores", name: "ร้านค้าของฉัน" },
-    { id: "settings", name: "ตั้งค่า" },
-  ];
+
 
   const handleEditToggle = () => {
     if (isEditing) {
@@ -361,6 +369,14 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {/* Error Dialog */}
+      <StatusDialog
+        isOpen={showErrorDialog}
+        setIsOpen={setShowErrorDialog}
+        type="error"
+        message={errorMessage}
+      />
+
       {showOtpModal && (
         <OtpModal
           email={tempEmail}
@@ -387,7 +403,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         {/* Tabs */}
         <div className="mt-8">
           <ProfileTabs 
-            tabs={tabs} 
+            tabs={profileTabs} 
             activeTab={activeTab} 
             onTabChange={setActiveTab} 
           />

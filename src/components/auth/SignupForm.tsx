@@ -14,8 +14,8 @@ import Spinner from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faEye, faEyeSlash, faUser, faEnvelope, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
-import SuccessDialog from "./SuccessDialog";
-import ErrorDialog from "./ErrorDialog";
+import { useShowDialog } from "@/hooks/useShowDialog";
+import StatusDialog from "@/components/common/StatusDialog";
 import { signIn } from "next-auth/react";
 
 export default function SignupForm() {
@@ -45,13 +45,21 @@ export default function SignupForm() {
   const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
-  const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
-  const [successMessage, setSuccessMessage] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
   const [refNumber, setRefNumber] = useState<string>("");
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
   const [cooldownTimer, setCooldownTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // Use the dialog hook
+  const {
+    showSuccessDialog,
+    setShowSuccessDialog,
+    showErrorDialog,
+    setShowErrorDialog,
+    successMessage,
+    errorMessage,
+    displaySuccessDialog,
+    displayErrorDialog,
+  } = useShowDialog();
 
   const validateOTP = (otpCode: string): boolean => {
     // Demo validation - in production this would be a server call
@@ -124,8 +132,7 @@ export default function SignupForm() {
         });
         setFieldErrors(errors);
         if (errors.acceptedTerms) {
-          setErrorMessage(errors.acceptedTerms);
-          setShowErrorDialog(true);
+          displayErrorDialog(errors.acceptedTerms);
         }
       }
       return false;
@@ -140,8 +147,7 @@ export default function SignupForm() {
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
-        setErrorMessage(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
-        setShowErrorDialog(true);
+        displayErrorDialog(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
       }
       return false;
     }
@@ -267,8 +273,7 @@ export default function SignupForm() {
       setOtpToken(data.otpToken);
     } catch (error) {
       console.error("Error registering user:", error);
-      setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-      setShowErrorDialog(true);
+      displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     }
   };
 
@@ -305,8 +310,12 @@ export default function SignupForm() {
         }
         
         // Show success dialog
-        setSuccessMessage("สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบอัตโนมัติ");
-        setShowSuccessDialog(true);
+        displaySuccessDialog({
+          message: "สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบอัตโนมัติ",
+          title: "สมัครสมาชิกสำเร็จ",
+          buttonText: "ไปที่หน้าโปรไฟล์",
+          onButtonClick: () => router.push("/")
+        });
         
         try {
           // Automatically log in the user with the credentials they just registered with
@@ -327,13 +336,11 @@ export default function SignupForm() {
         }
       } else {
         const errorData = await response.json();
-        setErrorMessage(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
-        setShowErrorDialog(true);
+        displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
       }
     } catch (_) {
       // Ignore the error variable name but handle the error
-      setErrorMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-      setShowErrorDialog(true);
+      displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsVerifying(false);
     }
@@ -396,8 +403,7 @@ export default function SignupForm() {
       startCooldownTimer();
     } catch (_) {
       // Ignore the error variable name but handle the error
-      setErrorMessage("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
-      setShowErrorDialog(true);
+      displayErrorDialog("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSendingOtp(false);
     }
@@ -418,10 +424,6 @@ export default function SignupForm() {
     }
   };
 
-  const handleSuccessDialogClose = () => {
-    router.push("/");
-  };
-
   // Cleanup timer when component unmounts
   useEffect(() => {
     return () => {
@@ -433,18 +435,20 @@ export default function SignupForm() {
 
   return (
     <>
-      <SuccessDialog
+      <StatusDialog
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
+        type="success"
         title="สมัครสมาชิกสำเร็จ"
         message={successMessage}
         buttonText="ไปที่หน้าโปรไฟล์"
-        onButtonClick={handleSuccessDialogClose}
+        onButtonClick={() => router.push("/")}
       />
 
-      <ErrorDialog
+      <StatusDialog
         isOpen={showErrorDialog}
         setIsOpen={setShowErrorDialog}
+        type="error"
         message={errorMessage}
       />
 

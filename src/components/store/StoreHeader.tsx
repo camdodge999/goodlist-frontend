@@ -18,6 +18,7 @@ export default function StoreHeader({ store, storeOwner }: StoreHeaderProps) {
             <Image
               src={store.imageUrl || "/images/stores/default-store.jpg"}
               alt={store.storeName}
+              aria-describedby='store-image'
               fill
               className="object-cover"
               sizes="(max-width: 96px) 100vw, 96px"

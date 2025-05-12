@@ -6,6 +6,7 @@ import { User as AuthUser } from "@/types/auth";
 import { User as AppUser } from "@/types/users";
 import StatusDialog from "@/components/common/StatusDialog";
 import { useShowDialog } from "@/hooks/useShowDialog";
+import { motion } from "framer-motion";
 
 // Create a union type that works with both User types
 type User = AuthUser | AppUser;
@@ -104,30 +105,30 @@ export default function ProfileSettings({
         title={errorTitle}
       />
 
-      {/* Profile Form */}
-      <ProfileForm
-        initialData={formData}
-        isEditing={isEditing}
-        canChangeEmail={canChangeEmail}
-        lastEmailChange={lastEmailChange}
-        emailError={emailError}
-        onInputChange={onInputChange}
-        onImageChange={onImageChange}
-        onSaveProfile={handleSaveProfile}
-        onEditToggle={onEditToggle}
-        previewImage={previewImage}
-        fileInputRef={fileInputRef}
-      />
 
-      {/* Password Form */}
-      <PasswordForm
-        isEditing={isEditing}
-        passwordError={passwordError}
-        isChangingPassword={isChangingPassword}
-        onPasswordChange={onPasswordChange}
-        onChangePassword={handleChangePassword}
-        initialData={passwordData}
-      />
+        <ProfileForm
+          initialData={formData}
+          isEditing={isEditing}
+          canChangeEmail={canChangeEmail}
+          lastEmailChange={lastEmailChange}
+          emailError={emailError}
+          onInputChange={onInputChange}
+          onImageChange={onImageChange}
+          onSaveProfile={handleSaveProfile}
+          onEditToggle={onEditToggle}
+          previewImage={previewImage}
+          fileInputRef={fileInputRef}
+        />
+
+        {/* Password Form */}
+        <PasswordForm
+          isEditing={isEditing}
+          passwordError={passwordError}
+          isChangingPassword={isChangingPassword}
+          onPasswordChange={onPasswordChange}
+          onChangePassword={handleChangePassword}
+          initialData={passwordData}
+        />
     </div>
   );
 } 

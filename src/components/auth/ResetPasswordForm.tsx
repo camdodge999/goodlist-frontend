@@ -11,6 +11,7 @@ import ErrorDialog from "./ErrorDialog";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useReactActionState, getFieldError } from "@/utils/forms/useReactActionState";
+import { FormLabel } from "@/components/ui/form-label";
 
 // Don't import at module level to avoid the Promise issue
 // import { resetPasswordAction } from "@/app/api/auth/actions";
@@ -115,9 +116,9 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <FormLabel htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               อีเมล
-            </label>
+            </FormLabel>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                 <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
@@ -136,17 +137,15 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
             )}
           </div>
 
-          <div>
-            <Button 
-              type="submit" 
-              disabled={isPending || !action} 
-              variant="primary"
-              className="w-full cursor-pointer"
-            >
-              {isPending && <Spinner className="mr-2" />}
-              {isPending ? "กำลังส่งคำขอ..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
-            </Button>
-          </div>
+          <Button 
+            type="submit" 
+            disabled={isPending || !action} 
+            variant="primary"
+            className="w-full cursor-pointer"
+          >
+            {isPending && <Spinner className="mr-2" />}
+            {isPending ? "กำลังส่งคำขอ..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
+          </Button>
         </form>
       </motion.div>
     </>

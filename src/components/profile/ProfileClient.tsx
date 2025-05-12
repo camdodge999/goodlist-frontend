@@ -21,7 +21,7 @@ import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.sche
 import { User } from "@/types/users";
 import { signOut } from "next-auth/react";
 import { profileTabs } from "@/consts/profileTab";
-
+import UnderlineTab from "@/components/ui/underline-tab";
 interface ProfileClientProps {
   user: User;
 }
@@ -402,7 +402,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
         {/* Tabs */}
         <div className="mt-8">
-          <ProfileTabs 
+          <UnderlineTab 
             tabs={profileTabs} 
             activeTab={activeTab} 
             onTabChange={setActiveTab} 

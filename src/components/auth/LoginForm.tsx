@@ -13,6 +13,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash, faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
 import { useShowDialog } from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
+import { FormLabel } from "@/components/ui/form-label";
 
 export default function LoginForm(): JSX.Element {
   const router = useRouter();
@@ -195,9 +196,9 @@ export default function LoginForm(): JSX.Element {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <FormLabel htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 อีเมล
-              </label>
+              </FormLabel>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
@@ -217,9 +218,9 @@ export default function LoginForm(): JSX.Element {
             </div>
             
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <FormLabel htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1"> 
                 รหัสผ่าน
-              </label>
+              </FormLabel>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <FontAwesomeIcon icon={faLock} className="w-5 h-5" />

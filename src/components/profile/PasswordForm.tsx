@@ -2,6 +2,7 @@ import React, { FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PasswordFormSchema } from "@/validators/profile.schema";
+import { FormLabel } from "../ui/form-label";
 
 interface PasswordFormProps {
   isEditing: boolean;
@@ -40,12 +41,12 @@ export default function PasswordForm({
         )}
         <div className="grid grid-cols-1 gap-6">
           <div>
-            <label
+            <FormLabel
               htmlFor="oldPassword"
               className="block text-sm font-medium text-gray-700"
             >
               รหัสผ่านปัจจุบัน
-            </label>
+            </FormLabel>
             <Input
               type="password"
               id="oldPassword"
@@ -57,12 +58,12 @@ export default function PasswordForm({
           </div>
 
           <div>
-            <label
+            <FormLabel
               htmlFor="newPassword"
               className="block text-sm font-medium text-gray-700"
             >
               รหัสผ่านใหม่
-            </label>
+            </FormLabel>
             <Input
               type="password"
               id="newPassword"
@@ -74,12 +75,12 @@ export default function PasswordForm({
           </div>
 
           <div>
-            <label
+            <FormLabel
               htmlFor="confirmPassword"
               className="block text-sm font-medium text-gray-700"
             >
               ยืนยันรหัสผ่านใหม่
-            </label>
+            </FormLabel>
             <Input
               type="password"
               id="confirmPassword"

@@ -17,6 +17,7 @@ import { faCheck, faTimes, faEye, faEyeSlash, faUser, faEnvelope, faLock, faLock
 import { useShowDialog } from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
 import { signIn } from "next-auth/react";
+import { FormLabel } from "../ui/form-label";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -504,9 +505,9 @@ export default function SignupForm() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+              <FormLabel htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">  
                 ชื่อผู้ใช้งาน
-              </label>
+              </FormLabel>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
@@ -526,9 +527,9 @@ export default function SignupForm() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <FormLabel htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 อีเมล
-              </label>
+              </FormLabel>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
@@ -548,9 +549,9 @@ export default function SignupForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <FormLabel htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 รหัสผ่าน
-              </label>
+              </FormLabel>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <FontAwesomeIcon icon={faLock} className="w-5 h-5" />
@@ -617,9 +618,9 @@ export default function SignupForm() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <FormLabel htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                 ยืนยันรหัสผ่าน
-              </label>
+              </FormLabel>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <FontAwesomeIcon icon={faLockOpen} className="w-5 h-5" />
@@ -648,7 +649,7 @@ export default function SignupForm() {
                 className="cursor-pointer"
                 onCheckedChange={(checked: boolean | "indeterminate") => setAcceptedTerms(checked === true)}
               />
-              <label
+              <FormLabel
                 htmlFor="terms"
                 className="text-sm text-gray-900 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
@@ -661,7 +662,7 @@ export default function SignupForm() {
                 >
                   ข้อกำหนดและเงื่อนไขการใช้งาน
                 </Button>
-              </label>
+              </FormLabel>
             </div>
           </div>
 

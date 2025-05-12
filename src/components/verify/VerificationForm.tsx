@@ -1,9 +1,4 @@
-// Note: This component requires the following dependencies:
-// npm install react-hook-form @hookform/resolvers
-
 import React, { useRef, useState, FormEvent, ChangeEvent } from "react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 
 // Components
 import FileInput from "./FileInput";
@@ -15,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorMessage } from "@/components/ui/error-message";
 
 // Types and validation
-import { VerificationFormSchema } from "@/validators/store.schema";
+import { verificationFormSchema, fileValidationSchema, type VerificationFormSchema } from "@/validators/store.schema";
 
 interface VerificationFormProps {
   initialData?: Partial<VerificationFormSchema>;
@@ -176,45 +171,26 @@ export default function VerificationForm({
     setIdCard(file);
   };
   
-  // Validate form
+  // Validate form using Zod schema
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    // Validate required fields
-    if (!formData.storeName) {
-      newErrors['storeName'] = 'กรุณากรอกชื่อร้านค้า';
+    // Use Zod schema to validate form data
+    const result = verificationFormSchema.safeParse(formData);
+    
+    if (!result.success) {
+      // Format Zod validation errors
+      const formattedErrors: Record<string, string> = {};
+      
+      result.error.errors.forEach((err) => {
+        const path = err.path.join('.');
+        formattedErrors[path] = err.message;
+      });
+      
+      setErrors(formattedErrors);
+      return false;
     }
-
-    if (!formData.email) {
-      newErrors['email'] = 'กรุณากรอกอีเมล';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors['email'] = 'รูปแบบอีเมลไม่ถูกต้อง';
-    }
-
-    if (!formData.bankAccount) {
-      newErrors['bankAccount'] = 'กรุณากรอกเลขบัญชีธนาคาร';
-    }
-
-    if (!formData.contactInfo.line) {
-      newErrors['contactInfo.line'] = 'กรุณากรอก Line ID';
-    }
-
-    if (!formData.contactInfo.facebook) {
-      newErrors['contactInfo.facebook'] = 'กรุณากรอก Facebook Page';
-    }
-
-    if (!formData.contactInfo.phone) {
-      newErrors['contactInfo.phone'] = 'กรุณากรอกเบอร์โทรศัพท์';
-    } else if (!/^\d{9,10}$/.test(formData.contactInfo.phone.replace(/[^0-9]/g, ''))) {
-      newErrors['contactInfo.phone'] = 'เบอร์โทรศัพท์ไม่ถูกต้อง';
-    }
-
-    if (!formData.contactInfo.address) {
-      newErrors['contactInfo.address'] = 'กรุณากรอกที่อยู่';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    setErrors({});
+    return true;
   };
 
   // Form submit handler
@@ -223,7 +199,7 @@ export default function VerificationForm({
     setError("");
     setFileErrors({});
 
-    // Validate form fields
+    // Validate form fields using Zod
     if (!validateForm()) {
       return;
     }

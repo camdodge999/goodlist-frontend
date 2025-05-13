@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { HeroSection, FeaturedStoresSection } from "@/components/landing";
+import { HeroSection, FeaturedStoresSection, Footer } from "@/components/landing";
 import { Store } from "@/types/stores";
 import { StoreProvider } from "@/contexts/StoreContext";    
 
@@ -46,7 +46,8 @@ export default async function Home() {
       {/* Featured Stores Section */}
       <FeaturedStoresSection featuredStores={featuredStores} />
 
-      {/* Remaining sections would be similarly updated */}
+      {/* Footer with sitemap and contact info */}
+      <Footer />
     </StoreProvider>
   );
 } 

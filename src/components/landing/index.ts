@@ -1,3 +1,4 @@
 export { HeroSection } from './HeroSection';
 export { FeaturedStoresSection } from './FeaturedStoresSection';
-export { Footer } from './Footer'; 
+export { StoreCheckerSection } from './StoreCheckerSection'; 
+export { SafetyTipsSection } from './SafetyTipsSection'; 

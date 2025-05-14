@@ -34,6 +34,11 @@ const nextConfig: NextConfig = {
         port: "3000",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
     ], // Add 'localhost' to the list of allowed domains
   },
   async headers() {

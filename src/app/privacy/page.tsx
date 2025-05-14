@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import ContentWidth from "@/components/layout/ContentWidth";
-import { Footer } from "@/components/landing";
+import { Footer } from "@/components/layout/Footer";  
 
 export const metadata: Metadata = {
   title: 'นโยบายความเป็นส่วนตัว | Goodlistseller',

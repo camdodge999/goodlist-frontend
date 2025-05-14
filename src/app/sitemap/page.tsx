@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from "next/link";
 import ContentWidth from "@/components/layout/ContentWidth";
-import { Footer } from "@/components/landing";
+import { Footer } from "@/components/layout/Footer";  
 import { sitemapSections } from '@/consts/sitemap';
 
 export const metadata: Metadata = {

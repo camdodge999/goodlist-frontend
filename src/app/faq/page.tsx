@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle, faShieldAlt, faUserLock, faCookieBite, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
-import { faqs } from "@/data/faqs";
+import { faqs } from "@/consts/faqs";
 import Link from "next/link";
 
 export const metadata: Metadata = {

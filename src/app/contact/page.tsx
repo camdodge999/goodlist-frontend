@@ -5,12 +5,8 @@ import {
   faMapMarkerAlt, 
   faPhone
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  faFacebook,
-  faLine
-} from '@fortawesome/free-brands-svg-icons';
 import ContentWidth from "@/components/layout/ContentWidth";
-import { Footer } from "@/components/landing";
+import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";

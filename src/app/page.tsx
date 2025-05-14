@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { HeroSection, FeaturedStoresSection, Footer } from "@/components/landing";
+import { Footer } from "@/components/layout/Footer";
+import { HeroSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection } from "@/components/landing";
 import { Store } from "@/types/stores";
 import { StoreProvider } from "@/contexts/StoreContext";    
 
@@ -45,6 +46,12 @@ export default async function Home() {
 
       {/* Featured Stores Section */}
       <FeaturedStoresSection featuredStores={featuredStores} />
+
+      {/* Store Checker Section */}
+      <StoreCheckerSection />
+
+      {/* Safety Tips and FAQ Section */}
+      <SafetyTipsSection />
 
       {/* Footer with sitemap and contact info */}
       <Footer />

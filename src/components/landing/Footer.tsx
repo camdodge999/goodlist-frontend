@@ -13,7 +13,7 @@ import {
   faPhone 
 } from '@fortawesome/free-solid-svg-icons';
 import ContentWidth from "@/components/layout/ContentWidth";
-
+import Logo from "@/components/layout/Logo";
 export function Footer() {
   const currentYear = new Date().getFullYear();
   
@@ -24,13 +24,8 @@ export function Footer() {
           {/* Logo and About */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <div className="relative h-10 w-10 mr-3">
-                <Image 
-                  src="/logo.png" 
-                  alt="Goodlistseller Logo" 
-                  fill 
-                  className="object-contain"
-                />
+              <div className="flex items-center justify-center w-12 h-12 mr-2">
+                <Logo />
               </div>
               <h3 className="text-xl font-bold">Goodlistseller</h3>
             </div>

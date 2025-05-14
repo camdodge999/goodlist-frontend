@@ -24,16 +24,14 @@ export default function LoginClientPage() {
 
     if (status === "loading") {
         return (
-            <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-[calc(100vh-82px)] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <div className="absolute inset-0 bg-cover bg-center z-0"></div>
-            <div className="absolute inset-0 bg-blue-900 opacity-40 z-10"></div>
+        <div className="min-h-[calc(100vh-82px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <LoginForm />
         </div>
     );

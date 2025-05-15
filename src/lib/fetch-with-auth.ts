@@ -21,7 +21,7 @@ export async function fetchWithAuth<T>({
   const headerToken = token ? token.token : null;
 
   const headers: HeadersInit = {
-    Authorization: `Bearer ${headerToken}`,
+    Authorization: `Bearer ${headerToken ?? ""}`,
   };
 
   let bodyData: string | FormData | null = null;

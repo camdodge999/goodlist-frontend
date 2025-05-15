@@ -1,9 +1,13 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faCommentDots, faCreditCard } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faCommentDots, faCreditCard, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faFacebook, faLine } from '@fortawesome/free-brands-svg-icons';
 import VerificationBadge from "./VerificationBadge";
 import Link from "next/link";
 import Image from "next/image";
 import type { Store, ContactInfo } from "@/types/stores";
+import { isValidJSON } from "@/utils/valid-json";
+import { getAuthenticatedImageUrl } from '@/lib/utils';
+import defaultLogo from "@images/logo-placeholder.png";
 
 interface StoreCardProps {
   store: Store;
@@ -17,12 +21,19 @@ export default function StoreCard({ store }: StoreCardProps) {
     phone: "",
     address: "",
   };
+  
   try {
     if (store.contactInfo) {
-      contactInfo =
-        typeof store.contactInfo === "string"
-          ? JSON.parse(store.contactInfo)
-          : store.contactInfo;
+      if (typeof store.contactInfo === "string") {
+        if (isValidJSON(store.contactInfo)) {
+          contactInfo = JSON.parse(store.contactInfo);
+        } else {
+          // If not valid JSON, keep the default empty values
+          console.error("Invalid JSON format in contact info");
+        }
+      } else {
+        contactInfo = store.contactInfo;
+      }
     }
   } catch (error) {
     console.error("Error parsing contact info:", error);
@@ -30,54 +41,67 @@ export default function StoreCard({ store }: StoreCardProps) {
 
   return (
     <Link href={`/stores/${store.id}`}>
-      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
         {/* Store Image */}
-        <div className="relative h-48 w-full">
+        <div className="relative h-48 w-full border-b border-gray-200">
           <Image
-            src={store.imageUrl || "/images/stores/default-store.jpg"}
+            src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              target.srcset = defaultLogo.src;
+            }}
             alt={store.storeName}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
 
-        <div className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <FontAwesomeIcon icon={faStore} className="w-8 h-8 text-gray-600" />
+        {/* Store Information */}
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <div className="text-slate-700">
+                <FontAwesomeIcon icon={faStore} className="text-4xl" />
+              </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {store.storeName}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  @{store.storeName.toLowerCase().replace(/\s+/g, "")}
-                </p>
+                <h3 className="text-xl font-semibold text-gray-900">{store.storeName}</h3>
+                <p className="text-gray-500">@{store.storeName.toLowerCase().replace(/\s+/g, "")}</p>
               </div>
             </div>
-            <VerificationBadge
-              status={store.isVerified ? "verified" : "pending"}
-            />
+            <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs  flex items-center space-x-2">
+              <FontAwesomeIcon icon={faCheckCircle} />
+              <span>ผ่านการตรวจสอบ</span>
+            </div>
           </div>
-
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center gap-2 text-gray-600">
-              <FontAwesomeIcon icon={faCommentDots} className="w-5 h-5" />
-              <div className="text-sm">
-                <p>Line: {contactInfo.line || "ไม่ระบุ"}</p>
-                <p>Facebook: {contactInfo.facebook || "ไม่ระบุ"}</p>
-              </div>
+          
+         
+          
+          <div className="flex items-center gap-3 text-gray-600 mb-2">
+            <div className="text-slate-600">
+              <FontAwesomeIcon icon={faLine} className="w-4 h-4" />
             </div>
-
-            <div className="flex items-center gap-2 text-gray-600">
-              <FontAwesomeIcon icon={faCreditCard} className="w-5 h-5" />
-              <div className="text-sm">
-                <p>Bank Account: ••••••••••</p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Click to view full details
-                </p>
-              </div>
+            <div className="text-md">
+              Line: {contactInfo.line || "ไม่ระบุ"}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 text-gray-600 mb-2">
+            <div className="text-slate-600">
+              <FontAwesomeIcon icon={faFacebook} className="w-4 h-4" />
+            </div>
+            <div className="text-md">
+              Facebook: {contactInfo.facebook || "ไม่ระบุ"}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 text-gray-600 mt-3">
+            <div className="text-slate-600">
+              <FontAwesomeIcon icon={faCreditCard} />
+            </div>
+            <div className="text-md">
+              <span>Bank Account: •••••••••</span>
+              <div className="text-blue-600 text-xs cursor-pointer">Click to view full details</div>
             </div>
           </div>
         </div>

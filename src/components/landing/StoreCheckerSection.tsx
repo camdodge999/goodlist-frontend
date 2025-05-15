@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { exampleStores, howItWorksSteps, safetyLevels } from "@/consts/storeChecker";
 import { Step, StoreChecker, SafetyLevel } from "@/types/storeChecker";
+import defaultLogo from "@images/logo.png";
+import { getTrustLevelColor, getTrustLevelIcon, getTrustLevelText, getTrustLevelDescription } from "@/lib/store-checker";
 
 // Header component
 const SectionHeader = () => (
@@ -48,40 +50,6 @@ const SearchTool = () => (
 
 // Store card component
 const StoreCard = ({ store }: { store: StoreChecker }) => {
-  const getTrustLevelColor = (level: string) => {
-    switch(level) {
-      case "high": return "border-green-500";
-      case "medium": return "border-yellow-500";
-      default: return "border-red-500";
-    }
-  };
-
-  const getTrustLevelIcon = (level: string) => {
-    switch(level) {
-      case "high": return { icon: faCheckCircle, color: "text-green-500" };
-      case "medium": return { icon: faInfoCircle, color: "text-yellow-500" };
-      default: return { icon: faExclamationTriangle, color: "text-red-500" };
-    }
-  };
-
-  const getTrustLevelText = (level: string) => {
-    switch(level) {
-      case "high": return "น่าเชื่อถือ";
-      case "medium": return "ควรระวัง";
-      default: return "ไม่น่าเชื่อถือ";
-    }
-  };
-
-  const getTrustLevelDescription = (level: string) => {
-    switch(level) {
-      case "high": 
-        return "ร้านค้านี้มีความน่าเชื่อถือสูง สามารถซื้อสินค้าได้อย่างปลอดภัย";
-      case "medium":
-        return "ควรตรวจสอบข้อมูลเพิ่มเติมก่อนตัดสินใจซื้อสินค้า";
-      default:
-        return "ไม่แนะนำให้ซื้อสินค้าจากร้านค้านี้ เนื่องจากมีความเสี่ยงสูง";
-    }
-  };
 
   const { icon, color } = getTrustLevelIcon(store.trustLevel);
 
@@ -92,7 +60,11 @@ const StoreCard = ({ store }: { store: StoreChecker }) => {
     >
       <div className="relative h-48 w-full">
         <Image 
-          src={store.image} 
+          src={store.imageStore || "/images/logo.png"}
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            target.srcset = defaultLogo.src;
+          }}
           alt={store.name}
           fill
           className="object-cover"

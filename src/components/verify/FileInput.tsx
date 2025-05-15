@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload, faFileAlt, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import { FormMessage } from "@/components/ui/form-message";
+import { Button } from "../ui/button";
 
 interface FileInputProps {
   id: string;
@@ -72,8 +73,9 @@ export default function FileInput({
                 ({Math.round(selectedFile.size / 1024)} KB)
               </span>
             </div>
-            <button
+            <Button
               type="button"
+              title="ลบไฟล์"
               onClick={() => {
                 if (fileRef.current) {
                   fileRef.current.value = "";
@@ -83,7 +85,7 @@ export default function FileInput({
               className="text-gray-500 hover:text-red-500 transition-colors"
             >
               <FontAwesomeIcon icon={faTimesCircle} className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         ) : (
           <label

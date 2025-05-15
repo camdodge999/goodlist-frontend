@@ -16,6 +16,7 @@ import { faqs } from "@/consts/faqs";
 import { safetyTips } from '@/consts/safetyTip';
 import { FAQ } from "@/types/faq";
 import { SafetyTip } from "@/types/safetyTip";
+import defaultLogo from "@images/logo.png";
 
 // Get popular FAQs
 const popularFaqs = [
@@ -45,6 +46,10 @@ const SafetyTipCard = ({ tip }: { tip: SafetyTip }) => (
         alt={tip.alt}
         fill
         className="object-cover"
+        onError={(e) => {
+          const target = e.currentTarget as HTMLImageElement;
+          target.srcset = defaultLogo.src;
+        }}
       />
     </div>
     <div className="p-6">

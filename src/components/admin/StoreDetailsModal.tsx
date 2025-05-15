@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type Store } from "./StoreItem";
+import defaultLogo from "@images/logo.png";
+
 
 interface StoreDetailsModalProps {
   isOpen: boolean;
@@ -56,9 +58,14 @@ export default function StoreDetailsModal({
             <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
               <Image
                 src={
-                  store.image_url ||
-                  "/images/stores/default-store.jpg"
+                  store.imageStore ||
+                  "/images/logo.png"
                 }
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.srcset = defaultLogo.src;
+                }}
+
                 alt={store.store_name}
                 fill
                 className="object-cover"

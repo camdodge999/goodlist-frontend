@@ -2,21 +2,26 @@
 
 import { ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface StoreHeaderProps {
   title: ReactNode;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   isLoading?: boolean;
+  isRefreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export default function StoreHeader({ 
   title, 
   searchQuery = "", 
   onSearchChange,
-  isLoading = false
+  isLoading = false,
+  isRefreshing = false,
+  onRefresh
 }: StoreHeaderProps) {
   return (
     <div className="flex flex-col gap-6 mb-8">
@@ -24,6 +29,22 @@ export default function StoreHeader({
         <h1 className="text-3xl font-bold text-gray-900">
           {title}
         </h1>
+        
+        {onRefresh && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            disabled={isRefreshing || isLoading}
+            className="ml-4"
+          >
+            <FontAwesomeIcon 
+              icon={faArrowsRotate} 
+              className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`}
+            />
+            {isRefreshing ? 'กำลังรีเฟรช...' : 'รีเฟรช'}
+          </Button>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -41,8 +62,8 @@ export default function StoreHeader({
               onSearchChange(e.target.value);
             }
           }}
-          disabled={isLoading}
-          className={`pl-10 w-full ${isLoading ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+          disabled={isLoading || isRefreshing}
+          className={`pl-10 w-full ${(isLoading || isRefreshing) ? 'bg-gray-50 cursor-not-allowed' : ''}`}
         />
       </div>
     </div>

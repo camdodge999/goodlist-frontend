@@ -50,7 +50,7 @@ export default function StoreItem({
             <Image
               src={
                 store.image_url ||
-                "/images/stores/default-store.jpg"
+                "/images/logo.png"
               }
               alt={store.store_name}
               fill

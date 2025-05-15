@@ -15,6 +15,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Store } from "@/types/stores";
 import { ContactInfo } from "@/types/stores";
+import { isValidJSON } from "@/utils/valid-json";
+import defaultLogo from "@images/logo.png";
 
 interface FeaturedStoresSectionProps {
   featuredStores: Store[];
@@ -35,9 +37,16 @@ const SectionHeader = () => (
 // Store card component
 const StoreCard = ({ store, index }: { store: Store; index: number }) => {
   // Parse contact info if needed
-  const contactInfo: ContactInfo = typeof store.contactInfo === 'string' 
-    ? JSON.parse(store.contactInfo) 
-    : store.contactInfo;
+  let contactInfo: ContactInfo | string = store.contactInfo;
+  
+  if (typeof store.contactInfo === 'string' && isValidJSON(store.contactInfo)) {
+    try {
+      contactInfo = JSON.parse(store.contactInfo) as ContactInfo;
+    } catch (error) {
+      console.error("Error parsing contact info:", error);
+      // Keep as string if parsing fails
+    }
+  }
 
   return (
     <Link
@@ -48,7 +57,11 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
         {/* Image Container */}
         <div className="relative h-56 overflow-hidden">
           <Image
-            src={store.imageUrl}
+            src={store.imageStore || '/images/logo.png'}
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              target.srcset = defaultLogo.src;
+            }}
             alt={store.storeName}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -75,7 +88,13 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
             {store.description}
           </p>
 
-          <StoreContactInfo contactInfo={contactInfo} />
+          {typeof contactInfo !== 'string' ? (
+            <StoreContactInfo contactInfo={contactInfo} />
+          ) : (
+            <div className="text-sm text-gray-600">
+              <pre className="whitespace-pre-wrap">{contactInfo}</pre>
+            </div>
+          )}
 
           {/* View More Button */}
           <div className="mt-4 pt-4 border-t border-gray-100">

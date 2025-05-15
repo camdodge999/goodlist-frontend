@@ -8,15 +8,16 @@ export interface ContactInfo {
 export interface Store {
   id: number;
   userId: number;
+  email: string;
   storeName: string;
   bankAccount: string;
-  contactInfo: ContactInfo;
+  contactInfo: ContactInfo | string;
   description: string;
   isVerified: boolean;
   isBanned: boolean;
   createdAt: string;
   updatedAt: string;
-  imageUrl: string;
+  imageStore: string;
 } 
 
 // Define types

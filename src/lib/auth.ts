@@ -64,7 +64,7 @@ export const authOptions: NextAuthOptions = {
 
           // Proceed with authentication
           const response = await fetch(
-            `${process.env.NEXTAUTH_BACKEND_URL!}/auth/login`,
+            `${process.env.NEXTAUTH_BACKEND_URL!}/api/auth/login`,
             {
               method: "POST",
               headers: {

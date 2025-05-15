@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import { Store, User, StoreAudit } from "@/types/stores";
+import { Store, User, StoreAudit, ContactInfo } from "@/types/stores";
 import { Button } from "@/components/ui/button";
 import StoreHeader from "./StoreHeader";
 import StoreDescription from "./StoreDescription";
@@ -19,9 +19,7 @@ interface StoreDetailClientProps {
 }
 
 export default function StoreDetailClient({ 
-  store, 
-  storeOwner, 
-  verificationAudit 
+  store
 }: StoreDetailClientProps) {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [authState, setAuthState] = useState<{ isLoggedIn: boolean; user: User | null }>({
@@ -48,7 +46,7 @@ export default function StoreDetailClient({
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
           {/* Store Header */}
-          <StoreHeader store={store} storeOwner={storeOwner} />
+          <StoreHeader store={store} />
 
           {/* Store Description */}
           <StoreDescription description={store.description} />
@@ -58,8 +56,8 @@ export default function StoreDetailClient({
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Contact Information */}
               <ContactInfoCard 
-                contactInfo={store.contactInfo}
-                userEmail={storeOwner.email}
+                contactInfo={store.contactInfo as ContactInfo}
+                userEmail={store.email}
                 isLoggedIn={authState.isLoggedIn} 
               />
 
@@ -68,7 +66,6 @@ export default function StoreDetailClient({
                 createdAt={store.createdAt}
                 bankAccount={store.bankAccount}
                 isLoggedIn={authState.isLoggedIn}
-                verificationAudit={verificationAudit}
               />
             </div>
           </div>

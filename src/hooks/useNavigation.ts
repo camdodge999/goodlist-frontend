@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { User } from "@/types/users";
-import { NavItem } from "../components/layout/NavItems";
+import { NavItem } from "@/types/navbar";
 import { 
   faHome, 
   faStore, 

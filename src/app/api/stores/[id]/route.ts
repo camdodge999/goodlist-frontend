@@ -50,6 +50,32 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const storeId = parseInt(params.id);
+  
+}
+
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const storeId = parseInt(params.id);
+  
+}
+
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const storeId = parseInt(params.id);
+  
+}
+
 async function fetchStoreById(
   request: NextRequest,
   id: string
@@ -57,7 +83,7 @@ async function fetchStoreById(
   // Accept token as a parameter
   const result = await fetchWithAuth<BodyResponse<Store>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/stores/${id}`,
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/stores/${id}`,
     method: "GET"
   });
   if (result.statusCode === 200) {

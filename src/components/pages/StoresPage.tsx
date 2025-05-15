@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStore } from "@/contexts/StoreContext";
 import type { Store } from "@/types/stores";
 import StoreError from "@/components/stores/StoreError";
@@ -15,20 +15,35 @@ export default function StoresPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const storesPerPage = 6;
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Handler for manual refresh
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refreshStores();
+    } catch (err) {
+      console.error("Error refreshing stores:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshStores]);
 
   // Filter stores based on search query and verification status
-  const filteredStores = stores.filter((store: Store) => {
-    const matchesSearch =
-      store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (store.description && store.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const isVerified = store.isVerified;
-    return matchesSearch && isVerified;
-  });
+  const filteredStores = Array.isArray(stores) 
+    ? stores.filter((store: Store) => {
+        const matchesSearch =
+          store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (store.description && store.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        const isVerified = store.isVerified;
+        return matchesSearch && isVerified;
+      })
+    : [];
 
-  // Reset to first page when search query changes
+  // Reset to first page when search query changes or stores are refreshed
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, stores]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredStores.length / storesPerPage);
@@ -42,17 +57,9 @@ export default function StoresPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (isLoading) {
+  // Show loading skeleton only on initial load, not during refreshes
+  if (isLoading && !refreshing && filteredStores.length === 0) {
     return <StoreLoadingSkeleton />;
-  }
-
-  if (error) {
-    return (
-      <StoreError 
-        message={error}
-        onRetry={refreshStores}
-      />
-    );
   }
 
   return (
@@ -62,15 +69,43 @@ export default function StoresPage() {
           title="ร้านค้าที่ผ่านการตรวจสอบ"
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          isLoading={isLoading}
+          isRefreshing={refreshing}
+          onRefresh={handleRefresh}
         />
 
-        <StoreGrid stores={currentStores} />
+        {error && (
+          <div className="mt-4">
+            <StoreError 
+              message={error}
+              onRetry={handleRefresh}
+            />
+          </div>
+        )}
 
-        <StorePagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        {refreshing ? (
+          <div className="mt-4">
+            <StoreLoadingSkeleton />
+          </div>
+        ) : (
+          <>
+            {filteredStores.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">ไม่พบร้านค้าที่ตรงกับการค้นหา</p>
+              </div>
+            ) : (
+              <>
+                <StoreGrid stores={currentStores} />
+
+                <StorePagination 
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

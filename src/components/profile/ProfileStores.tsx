@@ -56,8 +56,8 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
                       <div className="relative h-16 w-16 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
                           src={
-                            store.imageUrl ||
-                            "/images/stores/default-store.jpg"
+                            store.imageStore ||
+                            "/images/logo.png"
                           }
                           alt={`รูปภาพร้าน ${store.storeName}`}
                           fill

@@ -6,14 +6,15 @@ import { Store } from "@/types/stores";
 
 interface StoreContextProps {
   stores: Store[];
-  updateStore: (storeId: number, updates: Partial<Store>) => void;
-  deleteStore: (storeId: number) => void;
-  addStore: (newStore: Store) => void;
+  updateStore: (storeId: number, updates: Partial<Store>) => Promise<Store | null>;
+  deleteStore: (storeId: number) => Promise<boolean>;
+  addStore: (newStore: Store) => Promise<Store | null>;
   isLoading: boolean;
   error: string | null;
-  refreshStores: () => void;
+  refreshStores: () => Promise<Store[]>;
   fetchStores: (force?: boolean) => Promise<Store[]>;
   getFeaturedStores: (limit?: number) => Store[];
+  getStoreById: (storeId: number | string) => Promise<Store | null>;
 }
 
 interface StoreProviderProps {
@@ -25,9 +26,11 @@ const StoreContext = createContext<StoreContextProps | undefined>(undefined);
 
 export function StoreProvider({ children, initialStores = [] }: StoreProviderProps) {
   const [stores, setStores] = useState<Store[]>(initialStores);
-  const [isLoading, setIsLoading] = useState(initialStores.length === 0);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetched, setLastFetched] = useState<number | null>(null);
+  const [lastFetched, setLastFetched] = useState<number | null>(
+    initialStores.length > 0 ? Date.now() : null
+  );
   const router = useRouter();
 
   // Fetch stores from API
@@ -80,36 +83,144 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     }
   };
 
-  // Initialize with API data
+  // Initialize with API data only if no initialStores were provided
   useEffect(() => {
+    // Only fetch from client-side if we didn't get initialStores from server
     if (initialStores.length === 0) {
       fetchStores();
-    } else {
-      setLastFetched(Date.now());
     }
   }, []);
 
-  const updateStore = (storeId: number, updates: Partial<Store>) => {
-    setStores((prevStores) =>
-      prevStores.map((store) =>
-        store.id === storeId ? { ...store, ...updates } : store
-      )
-    );
+  const updateStore = async (storeId: number, updates: Partial<Store>) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Ensure storeId is properly converted to string for the URL
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error updating store: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.statusCode === 200 && data.data) {
+        setStores((prevStores) =>
+          prevStores.map((store) =>
+            store.id === storeId ? { ...store, ...data.data.storeDetail } : store
+          )
+        );
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to update store');
+      }
+    } catch (err) {
+      console.error('Error updating store:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const deleteStore = (storeId: number) => {
-    setStores((prevStores) =>
-      prevStores.filter((store) => store.id !== storeId)
-    );
+  const deleteStore = async (storeId: number) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Ensure storeId is properly converted to string for the URL
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error deleting store: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.statusCode === 200) {
+        setStores((prevStores) =>
+          prevStores.filter((store) => store.id !== storeId)
+        );
+        return true;
+      } else {
+        throw new Error(data.message || 'Failed to delete store');
+      }
+    } catch (err) {
+      console.error('Error deleting store:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const addStore = (newStore: Store) => {
-    setStores((prevStores) => [...prevStores, newStore]);
+  const addStore = async (newStore: Store) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newStore),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error adding store: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.statusCode === 201 && data.data) {
+        setStores((prevStores) => [...prevStores, data.data]);
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to add store');
+      }
+    } catch (err) {
+      console.error('Error adding store:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const refreshStores = () => {
-    fetchStores(true);
-    router.refresh(); // Refresh the current page to reflect new data
+  const refreshStores = async () => {
+    try {
+      setIsLoading(true);
+      const updatedStores = await fetchStores(true);
+      router.refresh(); // Refresh the current page to reflect new data
+      return updatedStores;
+    } catch (err) {
+      console.error('Error refreshing stores:', err);
+      return stores;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Get featured stores (verified stores)
@@ -117,6 +228,50 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     return stores
       .filter(store => store.isVerified)
       .slice(0, limit);
+  };
+
+  // Add a method to get a store by ID
+  const getStoreById = async (storeId: number | string): Promise<Store | null> => {
+    try {
+      // First check if we have it in our local state
+      const localStore = stores.find(store => store.id === Number(storeId));
+      if (localStore) {
+        return localStore;
+      }
+      
+      // If not in local state, fetch from API
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error fetching store: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.statusCode === 200 && data.data) {
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to fetch store');
+      }
+    } catch (err) {
+      console.error('Error fetching store by ID:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -131,6 +286,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         refreshStores,
         fetchStores,
         getFeaturedStores,
+        getStoreById,
       }}
     >
       {children}

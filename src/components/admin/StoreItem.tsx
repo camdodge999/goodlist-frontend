@@ -6,20 +6,7 @@ import {
   faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button";
-
-// Define Store type
-export type Store = {
-  id: string;
-  store_name: string;
-  description?: string;
-  contact_info: string;
-  image_url?: string;
-  is_verified: boolean;
-  is_banned: boolean;
-  is_additional_store?: boolean;
-  created_at: string;
-  updated_at?: string;
-};
+import { Store } from "@/types/stores";
 
 interface StoreItemProps {
   store: Store;
@@ -47,15 +34,15 @@ export default function StoreItem({
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-            <Image
-              src={
-                store.image_url ||
-                "/images/logo.png"
-              }
-              alt={store.store_name}
+            <Image 
+              src={store.imageStore || "/images/logo.png"}
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.srcset = defaultLogo.src;
+              }}
+              alt={store.name}
               fill
               className="object-cover"
-              sizes="40px"
             />
           </div>
           <div className="ml-4">

@@ -1,23 +1,23 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
+import { faUser } from '@fortawesome/free-regular-svg-icons';
 import VerificationBadge from "@/components/ui/VerificationBadge";
 import Image from "next/image";
 import { Store, User } from "@/types/stores";
-import defaultLogo from "@images/logo.png";
+import defaultLogo from "@images/logo-placeholder.png";
+import { getAuthenticatedImageUrl } from "@/lib/utils";
 
 interface StoreHeaderProps {
   store: Store;
-  storeOwner?: User;
 }
 
-export default function StoreHeader({ store, storeOwner }: StoreHeaderProps) {
+export default function StoreHeader({ store }: StoreHeaderProps) {
   return (
     <div className="px-6 py-5 sm:px-8 bg-gradient-to-r from-blue-50 to-white">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="relative w-24 h-24 rounded-xl overflow-hidden shadow-sm">
             <Image
-              src={store.imageStore || "/images/logo.png"}
+              src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.srcset = defaultLogo.src;
@@ -36,7 +36,7 @@ export default function StoreHeader({ store, storeOwner }: StoreHeaderProps) {
             <div className="flex items-center gap-2 mt-1">
               <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-400" />
               <span className="text-sm text-gray-500">
-                {storeOwner?.displayName}
+                {store?.displayName}
               </span>
             </div>
           </div>

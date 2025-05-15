@@ -6,10 +6,11 @@ import { fetchWithAuth } from '@/lib/fetch-with-auth';
 // GET handler for /api/stores/[id]
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const storeId = parseInt(params.id);
+    const { id } = await Promise.resolve(context.params);
+    const storeId = await Promise.resolve(parseInt(id));
 
     if (isNaN(storeId)) {
       return NextResponse.json(
@@ -38,7 +39,7 @@ export async function GET(
 
     return NextResponse.json({
       statusCode: 200,
-      data: store.data,
+      data: store.data?.storeDetail,
       message: null,
     }, { status: 200 });
   } catch (error) {
@@ -79,11 +80,11 @@ export async function DELETE(
 async function fetchStoreById(
   request: NextRequest,
   id: string
-): Promise<BodyResponse<Store>> {
+): Promise<BodyResponse<{storeDetail: Store}>> {
   // Accept token as a parameter
-  const result = await fetchWithAuth<BodyResponse<Store>>({
+  const result = await fetchWithAuth<BodyResponse<{storeDetail: Store}>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/stores/${id}`,
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/store/storeDetail/${id}`,
     method: "GET"
   });
   if (result.statusCode === 200) {

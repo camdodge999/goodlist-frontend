@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileText } from '@fortawesome/free-solid-svg-icons';
+import { faFileText } from '@fortawesome/free-regular-svg-icons';
 
 interface StoreDescriptionProps {
   description: string;

@@ -10,6 +10,8 @@ export interface Store {
   userId: number;
   email: string;
   storeName: string;
+  displayName?: string;
+  phoneNumber?: string;
   bankAccount: string;
   contactInfo: ContactInfo | string;
   description: string;

@@ -17,6 +17,7 @@ import { safetyTips } from '@/consts/safetyTip';
 import { FAQ } from "@/types/faq";
 import { SafetyTip } from "@/types/safetyTip";
 import defaultLogo from "@images/logo.png";
+import SafetyTipCard from './SafetyTipsCard';
 
 // Get popular FAQs
 const popularFaqs = [
@@ -37,29 +38,7 @@ const SectionHeader = () => (
   </div>
 );
 
-// Safety tip card component
-const SafetyTipCard = ({ tip }: { tip: SafetyTip }) => (
-  <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-    <div className="relative h-48 w-full">
-      <Image 
-        src={tip.image} 
-        alt={tip.alt}
-        fill
-        className="object-cover"
-        onError={(e) => {
-          const target = e.currentTarget as HTMLImageElement;
-          target.srcset = defaultLogo.src;
-        }}
-      />
-    </div>
-    <div className="p-6">
-      <h3 className="text-xl font-semibold mb-3">{tip.title}</h3>
-      <p className="text-gray-600">
-        {tip.description}
-      </p>
-    </div>
-  </div>
-);
+
 
 // Safety tips grid component
 const SafetyTipsGrid = () => (

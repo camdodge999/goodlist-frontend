@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Footer } from "@/components/layout/Footer";
-import { HeroSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection } from "@/components/landing";
+import { HeroSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection, GettingStartedSection } from "@/components/landing";
 import { Store } from "@/types/stores";
 import { StoreProvider } from "@/contexts/StoreContext";    
 
@@ -34,18 +34,16 @@ export default async function Home() {
   // Get stores from the response
   const stores: Store[] = storesData.statusCode === 200 && storesData.data ? storesData.data : [];
 
-  // Get first 3 verified stores for featured section
-  const featuredStores = stores
-    .filter((store: Store) => store.isVerified)
-    .slice(0, 3);
-
   return (
     <StoreProvider initialStores={stores}>
       {/* Hero Section */}
       <HeroSection session={session} />
 
+      {/* Getting Started Section */}
+      <GettingStartedSection />
+
       {/* Featured Stores Section */}
-      <FeaturedStoresSection featuredStores={featuredStores} />
+      <FeaturedStoresSection />
 
       {/* Store Checker Section */}
       <StoreCheckerSection />

@@ -57,15 +57,6 @@ export const exampleStores = [
       textColor: "text-green-500"
     },
     {
-      id: 2,
-      title: "ควรระวัง",
-      description: "ร้านค้าที่ควรตรวจสอบข้อมูลเพิ่มเติมก่อนตัดสินใจซื้อ เช่น อ่านรีวิวหรือติดต่อร้านค้าโดยตรง",
-      icon: faInfoCircle,
-      color: "yellow",
-      borderColor: "border-yellow-500",
-      textColor: "text-yellow-500"
-    },
-    {
       id: 3,
       title: "ไม่น่าเชื่อถือ",
       description: "ร้านค้าที่มีความเสี่ยงสูง อาจเป็นร้านค้าปลอมหรือมีประวัติการหลอกลวง ไม่ควรซื้อสินค้า",

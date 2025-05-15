@@ -2,18 +2,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGlobe, faCommentDots, faPhone, faMapMarker } from '@fortawesome/free-solid-svg-icons';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ContactInfo, User } from "@/types/stores";
+import { ContactInfo } from "@/types/stores";
 import { isValidJSON } from "@/utils/valid-json";
 
 interface ContactInfoCardProps {
   contactInfo: ContactInfo | string;
   userEmail: string;
-  isLoggedIn: boolean;
 }
 
-export default function ContactInfoCard({ contactInfo, userEmail, isLoggedIn }: ContactInfoCardProps) {
+export default function ContactInfoCard({ contactInfo, userEmail }: ContactInfoCardProps) {
   // Parse contactInfo if it's a string and valid JSON
   let contactData: ContactInfo | string = contactInfo;
+  console.log("contactData", contactData);
   
   if (typeof contactInfo === 'string') {
     if (isValidJSON(contactInfo)) {
@@ -35,8 +35,8 @@ export default function ContactInfoCard({ contactInfo, userEmail, isLoggedIn }: 
       <dl className="space-y-4">
         <div>
           <dt className="text-sm font-medium text-gray-500 flex items-center">
-            <FontAwesomeIcon icon={faGlobe} className="w-4 h-4 mr-2 text-gray-400" />
-            อีเมล
+            <FontAwesomeIcon icon={faGlobe} className="mr-2 text-gray-400" />
+            <span>อีเมล</span>
           </dt>
           <dd className="mt-1 text-sm text-gray-900">
             {userEmail}
@@ -46,8 +46,8 @@ export default function ContactInfoCard({ contactInfo, userEmail, isLoggedIn }: 
         {typeof contactData !== 'string' && (
           <div>
             <dt className="text-sm font-medium text-gray-500 flex items-center">
-              <FontAwesomeIcon icon={faCommentDots} className="w-4 h-4 mr-2 text-gray-400" />
-              ช่องทางการติดต่อ
+              <FontAwesomeIcon icon={faCommentDots} className="mr-2 text-gray-400" />
+              <span>ช่องทางการติดต่อ</span>
             </dt>
             <dd className="mt-1 text-sm text-gray-900">
               {contactData.line && (
@@ -86,19 +86,17 @@ export default function ContactInfoCard({ contactInfo, userEmail, isLoggedIn }: 
           </div>
         )}
 
-        {isLoggedIn && typeof contactData !== 'string' && contactData.phone && (
-          <div>
-            <dt className="text-sm font-medium text-gray-500 flex items-center">
-              <FontAwesomeIcon icon={faPhone} className="w-4 h-4 mr-2 text-gray-400" />
-              เบอร์โทรศัพท์
-            </dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {contactData.phone}
-            </dd>
-          </div>
-        )}
+        <div>
+          <dt className="text-sm font-medium text-gray-500 flex items-center">
+            <FontAwesomeIcon icon={faPhone} className="w-4 h-4 mr-2 text-gray-400" />
+            เบอร์โทรศัพท์
+          </dt>
+          <dd className="mt-1 text-sm text-gray-900">
+            {contactData?.phoneNumber || "ไม่มีข้อมูล"}
+          </dd>
+        </div>
 
-        {isLoggedIn && typeof contactData !== 'string' && contactData.address && (
+        {typeof contactData !== 'string' && contactData.address && (
           <div>
             <dt className="text-sm font-medium text-gray-500 flex items-center">
               <FontAwesomeIcon icon={faMapMarker} className="w-4 h-4 mr-2 text-gray-400" />

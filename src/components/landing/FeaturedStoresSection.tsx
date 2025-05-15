@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect } from 'react';
 import Link from "next/link";
 import Image from "next/image";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -17,10 +19,8 @@ import { Store } from "@/types/stores";
 import { ContactInfo } from "@/types/stores";
 import { isValidJSON } from "@/utils/valid-json";
 import defaultLogo from "@images/logo.png";
-
-interface FeaturedStoresSectionProps {
-  featuredStores: Store[];
-}
+import { getAuthenticatedImageUrl } from '@/lib/utils';
+import { useStore } from "@/contexts/StoreContext";
 
 // Section header component
 const SectionHeader = () => (
@@ -57,7 +57,7 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
         {/* Image Container */}
         <div className="relative h-56 overflow-hidden">
           <Image
-            src={store.imageStore || '/images/logo.png'}
+            src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement;
               target.srcset = defaultLogo.src;
@@ -146,8 +146,30 @@ const ViewAllStoresButton = () => (
   </div>
 );
 
-// Main component
-export function FeaturedStoresSection({ featuredStores }: FeaturedStoresSectionProps) {
+// Main component - now uses StoreContext instead of props
+export function FeaturedStoresSection() {
+  const { getFeaturedStores, isLoading } = useStore();
+  const featuredStores = getFeaturedStores(3);
+  
+  if (isLoading) {
+    return (
+      <section className="py-24 bg-gray-50">
+        <ContentWidth>
+          <SectionHeader />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((_, index) => (
+              <Card key={index} className="h-96 animate-pulse bg-gray-100">
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-gray-400">กำลังโหลด...</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </ContentWidth>
+      </section>
+    );
+  }
+
   return (
     <section className="py-24 bg-gray-50">
       <ContentWidth>

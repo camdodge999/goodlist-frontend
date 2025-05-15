@@ -18,6 +18,7 @@ import { exampleStores, howItWorksSteps, safetyLevels } from "@/consts/storeChec
 import { Step, StoreChecker, SafetyLevel } from "@/types/storeChecker";
 import defaultLogo from "@images/logo.png";
 import { getTrustLevelColor, getTrustLevelIcon, getTrustLevelText, getTrustLevelDescription } from "@/lib/store-checker";
+import { getAuthenticatedImageUrl } from '@/lib/utils';
 
 // Header component
 const SectionHeader = () => (
@@ -48,68 +49,6 @@ const SearchTool = () => (
   </div>
 );
 
-// Store card component
-const StoreCard = ({ store }: { store: StoreChecker }) => {
-
-  const { icon, color } = getTrustLevelIcon(store.trustLevel);
-
-  return (
-    <div 
-      key={store.id} 
-      className={`bg-white rounded-xl overflow-hidden shadow-md border-t-4 ${getTrustLevelColor(store.trustLevel)}`}
-    >
-      <div className="relative h-48 w-full">
-        <Image 
-          src={store.imageStore || "/images/logo.png"}
-          onError={(e) => {
-            const target = e.currentTarget as HTMLImageElement;
-            target.srcset = defaultLogo.src;
-          }}
-          alt={store.name}
-          fill
-          className="object-cover"
-        />
-        {store.verified && (
-          <Badge className="absolute top-4 right-4 bg-blue-600 text-white">
-            <FontAwesomeIcon icon={faCheckCircle} className="mr-1" />
-            ร้านค้าที่ผ่านการตรวจสอบ
-          </Badge>
-        )}
-      </div>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-3">
-          <h4 className="text-xl font-semibold">{store.name}</h4>
-        </div>
-        <div className="flex items-center mb-4">
-          <FontAwesomeIcon 
-            icon={icon} 
-            className={`text-2xl mr-3 ${color}`} 
-          />
-          <span className="font-medium">
-            {getTrustLevelText(store.trustLevel)}
-          </span>
-        </div>
-        <p className="text-gray-600 text-sm">
-          {getTrustLevelDescription(store.trustLevel)}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// Example results component
-const ExampleResults = () => (
-  <div className="mb-20">
-    <h3 className="text-2xl font-bold text-center mb-12">ตัวอย่างผลการตรวจสอบ</h3>
-    
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {exampleStores.map((store: StoreChecker) => (
-        <StoreCard key={store.id} store={store} />
-      ))}
-    </div>
-  </div>
-);
-
 // How it works component
 const HowItWorks = () => (
   <div className="mb-20">
@@ -134,7 +73,7 @@ const SafetyLevelsSection = () => (
   <div className="mb-20">
     <h3 className="text-2xl font-bold text-center mb-12">ระดับความน่าเชื่อถือ</h3>
     
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {safetyLevels.map((level: SafetyLevel) => (
         <div key={level.id} className={`bg-white rounded-xl p-6 shadow-md border-t-4 ${level.borderColor}`}>
           <div className="flex items-center mb-4">
@@ -178,7 +117,7 @@ export function StoreCheckerSection() {
       <ContentWidth>
         <SectionHeader />
         <SearchTool />
-        <ExampleResults />
+        {/* <ExampleResults /> */}
         <HowItWorks />
         <SafetyLevelsSection />
         <SafetyTipsCTA />

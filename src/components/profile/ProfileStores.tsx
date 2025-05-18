@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStore } from '@fortawesome/free-solid-svg-icons';
 import { motion } from 'framer-motion';
 import { Store } from '@/types/stores';
+import { getAuthenticatedImageUrl } from '@/lib/utils';
+import defaultImage from '@images/logo.webp';
+import StoreDetailDialog from '@/components/store/StoreDetailDialog';
 
 interface ProfileStoresProps {
   stores: Store[];
@@ -14,6 +17,18 @@ interface StoreWithContactInfo extends Store {
 }
 
 const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [showStoreDetails, setShowStoreDetails] = useState(false);
+
+  const handleOpenStoreDetails = (store: Store) => {
+    setSelectedStore(store);
+    setShowStoreDetails(true);
+  };
+
+  const handleCloseStoreDetails = () => {
+    setShowStoreDetails(false);
+  };
+
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
       <ul role="list" className="divide-y divide-gray-200">
@@ -36,11 +51,33 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
             try {
               if (typeof (store as StoreWithContactInfo).contact_info === 'string') {
                 contactInfo = JSON.parse((store as StoreWithContactInfo).contact_info);
-              } else if (store.contactInfo) {
-                contactInfo = store.contactInfo;
+              } else if (store.contactInfo && typeof store.contactInfo !== 'string') {
+                // Handle potential undefined properties in contactInfo
+                contactInfo = {
+                  line: store.contactInfo.line || "",
+                  facebook: store.contactInfo.facebook || "",
+                  phone: store.contactInfo.phone || "",
+                  address: store.contactInfo.address || "",
+                };
               }
             } catch (error) {
               console.error("Error parsing contact info:", error);
+            }
+            
+            // Determine the verification status and styling
+            let statusClass = "";
+            let statusText = "";
+            
+            if (store.isVerified === true) {
+              statusClass = "bg-green-100 text-green-800";
+              statusText = "ผ่านการตรวจสอบ";
+            } else if (store.isVerified === false) {
+              statusClass = "bg-red-100 text-red-800";
+              statusText = "ไม่ผ่านการตรวจสอบ";
+            } else {
+              // For null or undefined cases
+              statusClass = "bg-yellow-100 text-yellow-800";
+              statusText = "รอการตรวจสอบ";
             }
             
             return (
@@ -50,15 +87,22 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors duration-200">
+                <div 
+                  className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                  onClick={() => handleOpenStoreDetails(store)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="relative h-16 w-16 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
                           src={
-                            store.imageStore ||
+                            getAuthenticatedImageUrl(store.imageStore) ||
                             "/images/logo.webp"
                           }
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.srcset = defaultImage.src;
+                          }}
                           alt={`รูปภาพร้าน ${store.storeName}`}
                           fill
                           className="object-cover"
@@ -76,15 +120,9 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
                     </div>
                     <div className="ml-2 flex-shrink-0">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          store.isVerified
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}`}
                       >
-                        {store.isVerified
-                          ? "ผ่านการตรวจสอบ"
-                          : "รอการตรวจสอบ"}
+                        {statusText}
                       </span>
                     </div>
                   </div>
@@ -94,6 +132,13 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
           })
         )}
       </ul>
+
+      {/* Store Detail Dialog */}
+      <StoreDetailDialog 
+        store={selectedStore} 
+        isOpen={showStoreDetails} 
+        onClose={handleCloseStoreDetails} 
+      />
     </div>
   );
 };

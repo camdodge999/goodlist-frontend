@@ -5,6 +5,14 @@ export interface ContactInfo {
   address?: string;
 };
 
+export interface StoreDocument {
+  id?: number;
+  name: string;
+  url: string;
+  type?: string;
+  createdAt?: string;
+}
+
 export interface Store {
   id: number;
   userId: number;
@@ -15,12 +23,16 @@ export interface Store {
   bankAccount: string;
   contactInfo: ContactInfo | string;
   description: string;
-  isVerified: boolean;
+  isVerified: boolean | null;
   isBanned: boolean;
   createdAt: string;
   updatedAt: string;
   imageStore: string;
   imageUrl?: string;
+  taxId?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  documents?: StoreDocument[];
 } 
 
 // Define types

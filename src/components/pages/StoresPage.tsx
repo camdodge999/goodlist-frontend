@@ -10,24 +10,37 @@ import StoreGrid from "@/components/stores/StoreGrid";
 import StorePagination from "@/components/stores/StorePagination";
 
 export default function StoresPage() {
-  const { stores, isLoading, error, refreshStores } = useStore();
+  const { stores, isLoading, error, refreshStores, fetchStores } = useStore();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const storesPerPage = 6;
   const [refreshing, setRefreshing] = useState(false);
 
+  // Initial data loading
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        await fetchStores();
+      } catch (err) {
+        console.error("Error loading stores:", err);
+      }
+    };
+    
+    loadStores();
+  }, [fetchStores]);
+
   // Handler for manual refresh
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refreshStores();
+      await fetchStores(true); // Force refresh
     } catch (err) {
       console.error("Error refreshing stores:", err);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshStores]);
+  }, [fetchStores]);
 
   // Filter stores based on search query and verification status
   const filteredStores = Array.isArray(stores) 

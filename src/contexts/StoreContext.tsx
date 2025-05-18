@@ -3,12 +3,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Store } from "@/types/stores";
+import { useSession } from "next-auth/react";
 
 interface StoreContextProps {
   stores: Store[];
   updateStore: (storeId: number, updates: Partial<Store>) => Promise<Store | null>;
   deleteStore: (storeId: number) => Promise<boolean>;
-  addStore: (newStore: Store) => Promise<Store | null>;
+  addStore: (newStore: FormData) => Promise<Store | null>;
   isLoading: boolean;
   error: string | null;
   refreshStores: () => Promise<Store[]>;
@@ -32,6 +33,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     initialStores.length > 0 ? Date.now() : null
   );
   const router = useRouter();
+  const { data: session } = useSession();
 
   // Fetch stores from API
   const fetchStores = async (force = false) => {
@@ -102,6 +104,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         {
           method: 'PUT',
           headers: {
+            'Authorization': `Bearer ${session?.user?.token}`,  
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(updates),
@@ -144,6 +147,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         {
           method: 'DELETE',
           headers: {
+            'Authorization': `Bearer ${session?.user?.token}`,  
             'Content-Type': 'application/json',
           },
         }
@@ -172,7 +176,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     }
   };
 
-  const addStore = async (newStore: Store) => {
+  const addStore = async (newStore: FormData) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -182,9 +186,9 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.user?.token}`,
           },
-          body: JSON.stringify(newStore),
+          body: newStore,
         }
       );
 

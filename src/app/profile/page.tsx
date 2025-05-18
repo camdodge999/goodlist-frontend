@@ -13,17 +13,18 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  // Convert the session user to our User type
-  const user: User = {
+  // Convert the session user to our User type for initial rendering
+  // The full data will be fetched by the client-side UserContext
+  const initialUser: User = {
     id: session.user.id || session.user.email || "",
     displayName: session.user.displayName || "",
     email: session.user.email || "",
     image: session.user.image || "",
     role: session.user.role || "",
-    phoneNumber: "",
+    phoneNumber: "", // Session user may not have phoneNumber
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
-  return <ProfileClient user={user} />;
+  return <ProfileClient user={initialUser} />;
 } 

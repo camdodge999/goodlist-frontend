@@ -6,6 +6,7 @@ const contactInfoSchema = z.object({
   facebook: z.string().min(1, "กรุณาระบุ Facebook Page"),
   phone: z.string().min(9, "เบอร์โทรศัพท์ต้องมีอย่างน้อย 9 หลัก"),
   address: z.string().min(1, "กรุณาระบุที่อยู่"),
+  other: z.string().optional(),
 });
 
 // Main verification form schema

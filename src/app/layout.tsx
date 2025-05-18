@@ -6,6 +6,7 @@ import NavBar from "@/components/layout/NavBar";
 import { NextAuthProvider } from "@/providers/NextAuthProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AppProviders } from "@/providers/AppProviders";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
@@ -72,9 +73,11 @@ export default async function RootLayout({
       <body>
           <NextAuthProvider session={session}>
             <AuthProvider>
-              <NavBar />
+              <AppProviders>
+                <NavBar />
                 <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
-              <ToastProvider />
+                <ToastProvider />
+              </AppProviders>
             </AuthProvider>
           </NextAuthProvider>
       </body>

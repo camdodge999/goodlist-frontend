@@ -51,12 +51,6 @@ export async function fetchWithAuth<T>({
     }
   }
 
-  // Forward relevant headers from the original request
-  const contentType = request.headers.get('Content-Type');
-  if (contentType && !headers["Content-Type"]) {
-    headers["Content-Type"] = contentType;
-  }
-
   // Make the authenticated request to the backend
   const response = await fetch(url, {
     method,

@@ -1,0 +1,257 @@
+"use client";
+
+import React from 'react';
+import Image from 'next/image';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { X, FileText } from 'lucide-react';
+import { Store } from '@/types/stores';
+import { getAuthenticatedImageUrl } from '@/lib/utils';
+import defaultImage from '@images/logo.webp';
+
+interface StoreDetailDialogProps {
+  store: Store | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, onClose }) => {
+  if (!store) return null;
+
+  // Handle contact info
+  let contactInfo = {
+    line: "",
+    facebook: "",
+    phone: "",
+    address: "",
+  };
+  
+  try {
+    if (typeof store.contactInfo === 'string') {
+      contactInfo = JSON.parse(store.contactInfo);
+    } else if (store.contactInfo && typeof store.contactInfo !== 'string') {
+      contactInfo = {
+        line: store.contactInfo.line || "",
+        facebook: store.contactInfo.facebook || "",
+        phone: store.contactInfo.phone || "",
+        address: store.contactInfo.address || "",
+      };
+    }
+  } catch (error) {
+    console.error("Error parsing contact info:", error);
+  }
+
+  // Determine verification status and styling
+  let verificationStatus = "";
+  let verificationDate = "";
+  let statusColor = "";
+  
+  if (store.isVerified === true) {
+    verificationStatus = "ผ่านการตรวจสอบ";
+    verificationDate = store.verifiedAt || "15 กุมภาพันธ์ 2566"; // Default date if not available
+    statusColor = "text-green-600";
+  } else if (store.isVerified === false) {
+    verificationStatus = "ไม่ผ่านการตรวจสอบ";
+    statusColor = "text-red-600";
+  } else {
+    verificationStatus = "รอการตรวจสอบ";
+    statusColor = "text-yellow-600";
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl p-0 overflow-y-auto max-h-[90vh]">
+        <DialogHeader className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
+          <DialogTitle className="text-xl font-medium">รายละเอียดร้านค้า</DialogTitle>
+        </DialogHeader>
+        
+        <div className="p-0">
+          {/* Store Header Image */}
+          <div className="relative w-full h-48 border-b border-gray-200">
+            <Image
+              src={getAuthenticatedImageUrl(store.imageStore) || defaultImage.src}
+              alt={`รูปภาพร้าน ${store.storeName}`}
+              fill
+              className="object-cover"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.srcset = defaultImage.src;
+              }}
+            />
+          </div>
+          
+          <div className="px-6 py-4">
+            {/* Basic Info */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">ข้อมูลพื้นฐาน</h3>
+              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                <div>
+                  <div className="text-sm text-gray-500">ชื่อร้าน</div>
+                  <div className="font-medium">{store.storeName}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">อีเมล</div>
+                  <div className="font-medium">{store.email || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">เลขบัญชี</div>
+                  <div className="font-medium">{store.bankAccount || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">เลขประจำตัวผู้เสียภาษี</div>
+                  <div className="font-medium">{store.taxId || "-"}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Contact Info */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">ข้อมูลการติดต่อ</h3>
+              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                <div>
+                  <div className="text-sm text-gray-500">Line ID</div>
+                  <div className="font-medium">@{contactInfo.line || "bkkelectronics"}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">Facebook</div>
+                  <div className="font-medium">{contactInfo.facebook || "bkkelectronics"}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">เบอร์โทรศัพท์</div>
+                  <div className="font-medium">{contactInfo.phone || "082-345-6789"}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ที่อยู่</div>
+                  <div className="font-medium">{contactInfo.address || "456 ถนนเพชรบุรี แขวงทุ่งพญาไท เขตราชเทวี กรุงเทพฯ 10400"}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Verification Documents */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">เอกสารยืนยันตัวตน</h3>
+              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                {(store.documents && store.documents.length > 0) ? (
+                  store.documents.map((doc, index) => (
+                    <div key={index} className="flex items-center">
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-500">{doc.type || "เอกสาร"}</div>
+                        <div className="font-medium">{doc.name}</div>
+                      </div>
+                      <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                        <FileText size={16} className="mr-1" />
+                        <span>ดูเอกสาร</span>
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm text-gray-500">เอกสารการจดทะเบียน</div>
+                        <div className="font-medium">ดูเอกสาร</div>
+                      </div>
+                      <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                        <FileText size={16} className="mr-1" />
+                        <span>ดูเอกสาร</span>
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm text-gray-500">บัตรประจำตัวประชาชน</div>
+                        <div className="font-medium">ดูเอกสาร</div>
+                      </div>
+                      <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                        <FileText size={16} className="mr-1" />
+                        <span>ดูเอกสาร</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            {/* Verification Status */}
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold mb-2">สถานะ</h3>
+              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                <div>
+                  <div className="text-sm text-gray-500">สถานะการตรวจสอบ</div>
+                  <div className={`font-medium ${statusColor}`}>{verificationStatus}</div>
+                </div>
+                
+                {store.isVerified === true && (
+                  <div>
+                    <div className="text-sm text-gray-500">วันที่ผ่าน</div>
+                    <div className="font-medium">{verificationDate}</div>
+                  </div>
+                )}
+                
+                {store.isVerified === false && store.rejectionReason && (
+                  <div>
+                    <div className="text-sm text-gray-500">เหตุผลการไม่อนุมัติ</div>
+                    <div className="font-medium text-red-600">{store.rejectionReason}</div>
+                  </div>
+                )}
+
+                {store.isVerified === true && (
+                  <div>
+                    <div className="text-sm text-gray-500">วันที่สิ้นอายุ</div>
+                    <div className="font-medium">31 ธันวาคม 2566</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Store Statistics */}
+            {store.isVerified === true && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">ข้อมูลเชิงสถิติ</h3>
+                <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                  <div>
+                    <div className="text-sm text-gray-500">ร้านค้าเปิดอยู่</div>
+                    <div className="font-medium">2 วัน</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">ร้านค้าผ่านการตรวจสอบ</div>
+                    <div className="font-medium">1 วัน</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer Actions (for verified stores) */}
+        {store.isVerified !== null && (
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex justify-end gap-2">
+            <button className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors">
+              ปิด
+            </button>
+            {store.isVerified === true && (
+              <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
+                อนุมัติ
+              </button>
+            )}
+            {store.isVerified === false && (
+              <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
+                ปฏิเสธ
+              </button>
+            )}
+            {store.isVerified === null && (
+              <>
+                <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
+                  ปฏิเสธ
+                </button>
+                <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
+                  อนุมัติ
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default StoreDetailDialog; 

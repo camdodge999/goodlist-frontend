@@ -10,15 +10,22 @@ import { Button } from "@/components/ui/button";
 import { ErrorMessage } from "@/components/ui/error-message";
 
 // Types and validation
-import { verificationFormSchema, fileValidationSchema, type VerificationFormSchema } from "@/validators/verify.schema";
+import { verificationFormSchema, type VerificationFormSchema } from "@/validators/verify.schema";
+import Spinner from "../ui/Spinner";
 
 interface VerificationFormProps {
   initialData?: Partial<VerificationFormSchema>;
+  savedFiles?: {
+    imageStore: File | null;
+    certIncrop: File | null;
+    imageIdCard: File | null;
+  } | null;
+  isSubmitting?: boolean;
   onSubmit: (
     formData: VerificationFormSchema, 
     files: { 
       imageStore: File | null; 
-      certIncorp: File | null; 
+      certIncrop: File | null; 
       imageIdCard: File | null 
     }
   ) => Promise<void>;
@@ -26,6 +33,8 @@ interface VerificationFormProps {
 
 export default function VerificationForm({ 
   initialData,
+  savedFiles,
+  isSubmitting = false,
   onSubmit 
 }: VerificationFormProps) {
   // Form state using useState for each field
@@ -40,6 +49,7 @@ export default function VerificationForm({
       facebook: initialData?.contactInfo?.facebook || "",
       phone: initialData?.contactInfo?.phone || "",
       address: initialData?.contactInfo?.address || "",
+      other: initialData?.contactInfo?.other || "",
     }
   });
 
@@ -47,16 +57,16 @@ export default function VerificationForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // File state
-  const [imageStore, setImageStore] = useState<File | null>(null);
-  const [certIncorp, setCertIncorp] = useState<File | null>(null);
-  const [imageIdCard, setImageIdCard] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageStore, setImageStore] = useState<File | null>(savedFiles?.imageStore || null);
+  const [certIncrop, setCertIncrop] = useState<File | null>(savedFiles?.certIncrop || null);
+  const [imageIdCard, setImageIdCard] = useState<File | null>(savedFiles?.imageIdCard || null);
+  const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
   
   // File refs
   const imageStoreRef = useRef<HTMLInputElement | null>(null);
-  const certIncorpRef = useRef<HTMLInputElement | null>(null);
+  const certIncropRef = useRef<HTMLInputElement | null>(null);
   const imageIdCardRef = useRef<HTMLInputElement | null>(null);
 
   // Handle input changes
@@ -119,30 +129,30 @@ export default function VerificationForm({
     setImageStore(file);
   };
 
-  const handleCertIncorpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlecertIncropChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     
     // Clear previous errors
-    setFileErrors(prev => ({...prev, certIncorp: ""}));
+    setFileErrors(prev => ({...prev, certIncrop: ""}));
     
     if (!file) {
-      setCertIncorp(null);
+      setCertIncrop(null);
       return;
     }
     
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setFileErrors(prev => ({...prev, certIncorp: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
+      setFileErrors(prev => ({...prev, certIncrop: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
       return;
     }
     
     // Check file type
     if (file.type !== "application/pdf") {
-      setFileErrors(prev => ({...prev, certIncorp: "รองรับเฉพาะไฟล์ PDF เท่านั้น"}));
+      setFileErrors(prev => ({...prev, certIncrop: "รองรับเฉพาะไฟล์ PDF เท่านั้น"}));
       return;
     }
     
-    setCertIncorp(file);
+    setCertIncrop(file);
   };
 
   const handleImageIdCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,12 +235,12 @@ export default function VerificationForm({
       return;
     }
 
-    setIsSubmitting(true);
+    setLocalIsSubmitting(true);
 
     try {
       await onSubmit(formData, {
         imageStore,
-        certIncorp,
+        certIncrop,
         imageIdCard
       });
     } catch (err) {
@@ -240,7 +250,7 @@ export default function VerificationForm({
         setError("เกิดข้อผิดพลาดในการส่งเอกสาร กรุณาลองใหม่อีกครั้ง");
       }
     } finally {
-      setIsSubmitting(false);
+      setLocalIsSubmitting(false);
     }
   };
 
@@ -250,7 +260,7 @@ export default function VerificationForm({
   };
 
   return (
-    <form onSubmit={handleFormSubmit}>
+    <form onSubmit={handleFormSubmit} className="space-y-8 mt-4">
       <ErrorMessage message={error} />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -391,6 +401,23 @@ export default function VerificationForm({
             <FormMessage variant="error">{getErrorMessage('contactInfo.phone')}</FormMessage>
           )}
         </div>
+        <div>
+          <FormLabel htmlFor="other">
+            อื่นๆ
+          </FormLabel>
+          <Input
+            type="text"
+            id="other"
+            name="contactInfo.other"
+            value={formData.contactInfo.other}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('contactInfo.other') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('contactInfo.other')}
+          />
+          {getErrorMessage('contactInfo.other') && (
+            <FormMessage variant="error">{getErrorMessage('contactInfo.other')}</FormMessage>
+          )}
+        </div>
 
         <div className="sm:col-span-2">
           <FormLabel htmlFor="address" required>
@@ -436,10 +463,10 @@ export default function VerificationForm({
           label="เอกสารจดทะเบียนธุรกิจ (ถ้ามี)"
           description="PDF ขนาดไม่เกิน 5MB"
           acceptTypes="application/pdf"
-          onChange={handleCertIncorpChange}
-          fileRef={certIncorpRef as unknown as React.RefObject<HTMLInputElement>}
-          selectedFile={certIncorp}
-          error={fileErrors.certIncorp}
+          onChange={handlecertIncropChange}
+          fileRef={certIncropRef as unknown as React.RefObject<HTMLInputElement>}
+          selectedFile={certIncrop}
+          error={fileErrors.certIncrop}
         />
 
         {/* ID Card */}
@@ -467,13 +494,16 @@ export default function VerificationForm({
           </p>
         </div>
 
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isSubmitting}
+        {/* Submit button */}
+        <div className="mt-8">
+          <Button 
+            type="submit" 
+            className="w-full py-6 text-lg"
+            disabled={isSubmitting || localIsSubmitting}
           >
-            {isSubmitting ? "กำลังส่งเอกสาร..." : "ส่งเอกสารยืนยันตัวตน"}
+            {(isSubmitting || localIsSubmitting) 
+              ? <><Spinner size="sm" className="mr-2" /> กำลังส่งข้อมูล...</> 
+              : "ส่งเอกสารยืนยันตัวตน"}
           </Button>
         </div>
       </div>

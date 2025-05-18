@@ -16,13 +16,6 @@ export default function StoreError({ message, onRetry, showHeader = true }: Stor
   return (
     <div className="py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {showHeader && (
-          <StoreHeader
-            title="เกิดข้อผิดพลาดในการโหลดข้อมูล"
-            isLoading={false}
-          />
-        )}
-        
         <div className="min-h-[40vh] flex items-center justify-center py-12">
           <div className="max-w-lg w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
             {/* Error Icon */}

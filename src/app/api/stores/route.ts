@@ -42,20 +42,35 @@ export async function GET(
 
 export async function POST(request: NextRequest): Promise<NextResponse<BodyResponse<Store>>> {
   try {
-    const body = await request.json();
-    // Validate request body
-    if (!body.displayName || !body.email || !body.password) {
-      return NextResponse.json(
-        { 
-          statusCode: 400,
-          message: "Display name, email, and password are required", 
-          data: undefined
-        },
-        { status: 400 }
-      );
+    // Check if the request is FormData
+    const contentType = request.headers.get('content-type') || '';
+    const isFormData = contentType.includes('multipart/form-data');
+
+    console.log(isFormData);
+    
+    let body;
+    
+    if (isFormData) {
+      // Handle FormData
+      body = await request.formData();
+    } else {
+      // Handle JSON
+      body = await request.json();
+      
+      // Validate request body for JSON requests
+      if (!body.storeName || !body.email) {
+        return NextResponse.json(
+          { 
+            statusCode: 400,
+            message: "Store name and email are required", 
+            data: undefined
+          },
+          { status: 400 }
+        );
+      }
     }
 
-    const result = await createStore(request,body);
+    const result = await createStore(request, body);
 
     if(result.statusCode === 200){
       return NextResponse.json({  
@@ -75,7 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     }
 
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Error creating store:", error);
     return NextResponse.json(
       { 
         statusCode: 500,
@@ -87,18 +102,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   }
 }
 
-async function createStore(request: NextRequest,body: any): Promise<BodyResponse<Store>> {
+async function createStore(request: NextRequest, body: any): Promise<BodyResponse<Store>> {
+  // For FormData, we use it directly - fetchWithAuth handles it correctly
+  console.log(body);
   const result = await fetchWithAuth<BodyResponse<Store>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL}/store`,
+    url: `${process.env.NEXTAUTH_BACKEND_URL}/api/store/createStore`,
     method: 'POST',
-    body: body,
+    body: body
   });
 
   if (result.statusCode === 200) {
-    return result; // Typecast the result when the status is success
+    return result;
   } else {
-    throw new Error(result.message || "Failed to create store"); // Throw an error if the status is not success
+    throw new Error(result.message || "Failed to create store");
   }
 }
 

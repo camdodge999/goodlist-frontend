@@ -10,16 +10,16 @@ import { Button } from "@/components/ui/button";
 import { ErrorMessage } from "@/components/ui/error-message";
 
 // Types and validation
-import { verificationFormSchema, fileValidationSchema, type VerificationFormSchema } from "@/validators/store.schema";
+import { verificationFormSchema, fileValidationSchema, type VerificationFormSchema } from "@/validators/verify.schema";
 
 interface VerificationFormProps {
   initialData?: Partial<VerificationFormSchema>;
   onSubmit: (
     formData: VerificationFormSchema, 
     files: { 
-      storeImage: File | null; 
-      registrationDoc: File | null; 
-      idCard: File | null 
+      imageStore: File | null; 
+      certIncorp: File | null; 
+      imageIdCard: File | null 
     }
   ) => Promise<void>;
 }
@@ -33,7 +33,8 @@ export default function VerificationForm({
     storeName: initialData?.storeName || "",
     email: initialData?.email || "",
     bankAccount: initialData?.bankAccount || "",
-    taxId: initialData?.taxId || "",
+    taxPayerId: initialData?.taxPayerId || "",
+    description: initialData?.description || "",
     contactInfo: {
       line: initialData?.contactInfo?.line || "",
       facebook: initialData?.contactInfo?.facebook || "",
@@ -46,17 +47,17 @@ export default function VerificationForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // File state
-  const [storeImage, setStoreImage] = useState<File | null>(null);
-  const [registrationDoc, setRegistrationDoc] = useState<File | null>(null);
-  const [idCard, setIdCard] = useState<File | null>(null);
+  const [imageStore, setImageStore] = useState<File | null>(null);
+  const [certIncorp, setCertIncorp] = useState<File | null>(null);
+  const [imageIdCard, setImageIdCard] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
   
   // File refs
-  const storeImageRef = useRef<HTMLInputElement | null>(null);
-  const registrationDocRef = useRef<HTMLInputElement | null>(null);
-  const idCardRef = useRef<HTMLInputElement | null>(null);
+  const imageStoreRef = useRef<HTMLInputElement | null>(null);
+  const certIncorpRef = useRef<HTMLInputElement | null>(null);
+  const imageIdCardRef = useRef<HTMLInputElement | null>(null);
 
   // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -91,84 +92,84 @@ export default function VerificationForm({
   };
 
   // File handlers
-  const handleStoreImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageStoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     
     // Clear previous errors
-    setFileErrors(prev => ({...prev, storeImage: ""}));
+    setFileErrors(prev => ({...prev, imageStore: ""}));
     
     if (!file) {
-      setStoreImage(null);
+      setImageStore(null);
       return;
     }
     
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setFileErrors(prev => ({...prev, storeImage: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
+      setFileErrors(prev => ({...prev, imageStore: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
       return;
     }
     
     // Check file type
     const validTypes = ["image/jpeg", "image/png"];
     if (!validTypes.includes(file.type)) {
-      setFileErrors(prev => ({...prev, storeImage: "รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น"}));
+      setFileErrors(prev => ({...prev, imageStore: "รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น"}));
       return;
     }
     
-    setStoreImage(file);
+    setImageStore(file);
   };
 
-  const handleRegistrationDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCertIncorpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     
     // Clear previous errors
-    setFileErrors(prev => ({...prev, registrationDoc: ""}));
+    setFileErrors(prev => ({...prev, certIncorp: ""}));
     
     if (!file) {
-      setRegistrationDoc(null);
+      setCertIncorp(null);
       return;
     }
     
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setFileErrors(prev => ({...prev, registrationDoc: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
+      setFileErrors(prev => ({...prev, certIncorp: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
       return;
     }
     
     // Check file type
     if (file.type !== "application/pdf") {
-      setFileErrors(prev => ({...prev, registrationDoc: "รองรับเฉพาะไฟล์ PDF เท่านั้น"}));
+      setFileErrors(prev => ({...prev, certIncorp: "รองรับเฉพาะไฟล์ PDF เท่านั้น"}));
       return;
     }
     
-    setRegistrationDoc(file);
+    setCertIncorp(file);
   };
 
-  const handleIdCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageIdCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     
     // Clear previous errors
-    setFileErrors(prev => ({...prev, idCard: ""}));
+    setFileErrors(prev => ({...prev, imageIdCard: ""}));
     
     if (!file) {
-      setIdCard(null);
+      setImageIdCard(null);
       return;
     }
     
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setFileErrors(prev => ({...prev, idCard: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
+      setFileErrors(prev => ({...prev, imageIdCard: "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 5MB"}));
       return;
     }
     
     // Check file type
     const validTypes = ["image/jpeg", "image/png"];
     if (!validTypes.includes(file.type)) {
-      setFileErrors(prev => ({...prev, idCard: "รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น"}));
+      setFileErrors(prev => ({...prev, imageIdCard: "รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น"}));
       return;
     }
     
-    setIdCard(file);
+    setImageIdCard(file);
   };
   
   // Validate form using Zod schema
@@ -208,13 +209,13 @@ export default function VerificationForm({
     const newFileErrors: Record<string, string> = {};
     let hasFileErrors = false;
 
-    if (!storeImage) {
-      newFileErrors.storeImage = "กรุณาอัพโหลดรูปร้านค้า";
+    if (!imageStore) {
+      newFileErrors.imageStore = "กรุณาอัพโหลดรูปร้านค้า";
       hasFileErrors = true;
     }
 
-    if (!idCard) {
-      newFileErrors.idCard = "กรุณาอัพโหลดบัตรประชาชน";
+    if (!imageIdCard) {
+      newFileErrors.imageIdCard = "กรุณาอัพโหลดบัตรประชาชน";
       hasFileErrors = true;
     }
 
@@ -228,9 +229,9 @@ export default function VerificationForm({
 
     try {
       await onSubmit(formData, {
-        storeImage,
-        registrationDoc,
-        idCard
+        imageStore,
+        certIncorp,
+        imageIdCard
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -287,10 +288,27 @@ export default function VerificationForm({
             <FormMessage variant="error">{getErrorMessage('email')}</FormMessage>
           )}
         </div>
+        <div className="sm:col-span-2 border-b border-gray-200 pb-6">
+          <FormLabel htmlFor="description" required>
+            รายละเอียด
+          </FormLabel>
+          <Textarea
+            id="description"
+            name="description"
+            rows={3}
+            value={formData.description}
+            onChange={handleInputChange}
+            className={`mt-1 ${getErrorMessage('description') ? "border-destructive ring-destructive/20" : ""}`}
+            aria-invalid={!!getErrorMessage('description')}
+          />
+          {getErrorMessage('description') && (
+            <FormMessage variant="error">{getErrorMessage('description')}</FormMessage>
+          )}
+        </div>
 
         <div>
           <FormLabel htmlFor="bankAccount" required>
-            เลขบัญชีธนาคาร
+            เลขบัญชีธนาคาร (ไม่ต้องมี -)
           </FormLabel>
           <Input
             type="text"
@@ -307,14 +325,14 @@ export default function VerificationForm({
         </div>
 
         <div>
-          <FormLabel htmlFor="taxId">
-            เลขประจำตัวผู้เสียภาษี (ถ้ามี)
+          <FormLabel htmlFor="taxPayerId">
+            เลขประจำตัวผู้เสียภาษี
           </FormLabel>
           <Input
             type="text"
-            id="taxId"
-            name="taxId"
-            value={formData.taxId}
+            id="taxPayerId"
+            name="taxPayerId"
+            value={formData.taxPayerId}
             onChange={handleInputChange}
             className="mt-1"
           />
@@ -400,38 +418,41 @@ export default function VerificationForm({
 
         {/* Store Image */}
         <FileInput
-          id="store-image"
+          required={true}
+          id="image-store"
           label="รูปร้านค้า (จำเป็น)"
           description="PNG, JPG ขนาดไม่เกิน 5MB"
           acceptTypes="image/jpeg, image/png"
-          onChange={handleStoreImageChange}
-          fileRef={storeImageRef as unknown as React.RefObject<HTMLInputElement>}
-          selectedFile={storeImage}
-          error={fileErrors.storeImage}
+          onChange={handleImageStoreChange}
+          fileRef={imageStoreRef as unknown as React.RefObject<HTMLInputElement>}
+          selectedFile={imageStore}
+          error={fileErrors.imageStore}
         />
 
         {/* Business Registration Document */}
         <FileInput
-          id="registration-doc"
+          required={false}
+          id="cert-incorp"
           label="เอกสารจดทะเบียนธุรกิจ (ถ้ามี)"
           description="PDF ขนาดไม่เกิน 5MB"
           acceptTypes="application/pdf"
-          onChange={handleRegistrationDocChange}
-          fileRef={registrationDocRef as unknown as React.RefObject<HTMLInputElement>}
-          selectedFile={registrationDoc}
-          error={fileErrors.registrationDoc}
+          onChange={handleCertIncorpChange}
+          fileRef={certIncorpRef as unknown as React.RefObject<HTMLInputElement>}
+          selectedFile={certIncorp}
+          error={fileErrors.certIncorp}
         />
 
         {/* ID Card */}
         <FileInput
-          id="id-card"
+          required={true}
+          id="image-id-card"
           label="บัตรประชาชน (จำเป็น)"
           description="PNG, JPG ขนาดไม่เกิน 5MB"
           acceptTypes="image/jpeg, image/png"
-          onChange={handleIdCardChange}
-          fileRef={idCardRef as unknown as React.RefObject<HTMLInputElement>}
-          selectedFile={idCard}
-          error={fileErrors.idCard}
+          onChange={handleImageIdCardChange}
+          fileRef={imageIdCardRef as unknown as React.RefObject<HTMLInputElement>}
+          selectedFile={imageIdCard}
+          error={fileErrors.imageIdCard}
         />
       </div>
 

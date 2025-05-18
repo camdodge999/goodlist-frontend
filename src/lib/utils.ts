@@ -28,3 +28,6 @@ export function getAuthenticatedImageUrl(imageUrl: string | null | undefined): s
 
   return `/api/images/uploads?path=${encodeURIComponent(imageUrl)}`;
 } 
+
+
+

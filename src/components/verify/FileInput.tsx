@@ -13,6 +13,7 @@ interface FileInputProps {
   fileRef: React.RefObject<HTMLInputElement>;
   selectedFile: File | null;
   error?: string;
+  required?: boolean;
 }
 
 export default function FileInput({
@@ -23,7 +24,8 @@ export default function FileInput({
   onChange,
   fileRef,
   selectedFile,
-  error
+  error,
+  required = false
 }: FileInputProps) {
   const [hover, setHover] = useState(false);
 
@@ -34,7 +36,7 @@ export default function FileInput({
           htmlFor={id}
           className="block text-sm font-medium text-gray-700"
         >
-          {label}
+          {label} {required && <span className="text-red-500">*</span>}
         </label>
         <span className="text-xs text-gray-500">{description}</span>
       </div>

@@ -23,7 +23,6 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ navItems, user, isAuthenticated }: MobileMenuProps) {
-  const pathname = usePathname();
   
   return (
     <div className="flex lg:hidden">

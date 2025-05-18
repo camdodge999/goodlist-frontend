@@ -35,7 +35,7 @@ export default function StoreItem({
         <div className="flex items-center">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
             <Image 
-              src={store.imageStore || "/images/logo.png"}
+              src={store.imageStore || "/images/logo.webp"}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.srcset = defaultLogo.src;

@@ -20,6 +20,7 @@ export interface Store {
   createdAt: string;
   updatedAt: string;
   imageStore: string;
+  imageUrl?: string;
 } 
 
 // Define types

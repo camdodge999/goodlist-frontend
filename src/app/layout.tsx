@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     description: "Platform for verified online stores",
     images: [
       {
-        url: "/images/logo.png",
+        url: "/images/logo.webp",
         width: 800,
         height: 600,
         alt: "Goodlist Seller Logo",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     ],
   },
   icons: {
-    icon: [{ url: "/images/logo.png", type: "image/png" }],
+    icon: [{ url: "/images/logo.webp", type: "image/png" }],
   },
 };
 

@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { DropdownFilter } from "@/components/ui/dropdown-filter";
-import defaultLogo from "@images/logo.png";
+import defaultLogo from "@images/logo.webp";
 
 type ContactInfo = {
   line?: string;
@@ -48,7 +48,7 @@ export default function StoreSearch({
     <div className={`flex items-center gap-3 px-4 py-2 ${isSelected ? "bg-blue-50" : isHighlighted ? "bg-gray-100" : "hover:bg-gray-50"}`}>
       <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
         <Image
-          src={store.imageUrl || "/images/logo.png"}
+          src={store.imageUrl || "/images/logo.webp"}
           onError={(e) => {
             const target = e.currentTarget as HTMLImageElement;
             target.srcset = defaultLogo.src;

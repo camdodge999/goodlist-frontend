@@ -14,15 +14,29 @@ export async function fetchWithAuth<T>({
   request: NextRequest;
   url: string;
   method: string;
-  body?: RequestBody; // Use specific type union instead of generic here
+  body?: RequestBody;
   extendHeaders?: HeadersInit;
 }): Promise<T> {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-  const headerToken = token ? token.token : null;
-
-  const headers: HeadersInit = {
-    Authorization: `Bearer ${headerToken ?? ""}`,
-  };
+  // Set up headers
+  const headers: HeadersInit = {};
+  
+  // First, try to get the Authorization header from the original request
+  const clientAuthHeader = request.headers.get('Authorization');
+  
+  if (clientAuthHeader) {
+    // If client provided an Authorization header, use it
+    headers.Authorization = clientAuthHeader;
+  } else {
+    // Otherwise, extract JWT token from the NextAuth session
+    const token = await getToken({ 
+      req: request, 
+      secret: process.env.NEXTAUTH_SECRET 
+    });
+    
+    // Get the raw JWT token from the token object
+    const headerToken = token?.token as string | undefined;
+    headers.Authorization = `Bearer ${headerToken || ""}`;
+  }
 
   let bodyData: string | FormData | null = null;
 
@@ -37,6 +51,13 @@ export async function fetchWithAuth<T>({
     }
   }
 
+  // Forward relevant headers from the original request
+  const contentType = request.headers.get('Content-Type');
+  if (contentType && !headers["Content-Type"]) {
+    headers["Content-Type"] = contentType;
+  }
+
+  // Make the authenticated request to the backend
   const response = await fetch(url, {
     method,
     headers: { ...headers, ...extendHeaders },
@@ -45,7 +66,7 @@ export async function fetchWithAuth<T>({
 
   if (!response.ok) {
     const errorResponse = await response.json();
-    const message = errorResponse.message;
+    const message = errorResponse.message || `HTTP error ${response.status}`;
     throw new Error(`Failed to fetch data: ${message}`);
   }
 

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type Store } from "./StoreItem";
-import defaultLogo from "@images/logo.png";
+import defaultLogo from "@images/logo.webp";
 
 
 interface StoreDetailsModalProps {
@@ -59,7 +59,7 @@ export default function StoreDetailsModal({
               <Image
                 src={
                   store.imageStore ||
-                  "/images/logo.png"
+                  "/images/logo.webp"
                 }
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement;

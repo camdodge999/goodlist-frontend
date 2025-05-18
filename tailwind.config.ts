@@ -21,6 +21,12 @@ export default {
         },
       },
       extend: {
+        text: {
+          "5xs": "0.25rem",
+          "4xs": "0.375rem",
+          "3xs": "0.5rem",
+          "2xs": "0.625rem",
+        },
         colors: {
           border: "hsl(var(--border))",
           input: "hsl(var(--input))",

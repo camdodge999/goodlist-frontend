@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { exampleStores, howItWorksSteps, safetyLevels } from "@/consts/storeChecker";
 import { Step, StoreChecker, SafetyLevel } from "@/types/storeChecker";
-import defaultLogo from "@images/logo.png";
+import defaultLogo from "@images/logo.webp";
 import { getTrustLevelColor, getTrustLevelIcon, getTrustLevelText, getTrustLevelDescription } from "@/lib/store-checker";
 import { getAuthenticatedImageUrl } from '@/lib/utils';
 

@@ -2,8 +2,8 @@ import React from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faShieldAlt, 
+import {
+  faShieldAlt,
   faExclamationTriangle,
   faSearch,
   faQuestionCircle,
@@ -16,7 +16,7 @@ import { faqs } from "@/consts/faqs";
 import { safetyTips } from '@/consts/safetyTip';
 import { FAQ } from "@/types/faq";
 import { SafetyTip } from "@/types/safetyTip";
-import defaultLogo from "@images/logo.png";
+import defaultLogo from "@images/logo.webp";
 import SafetyTipCard from './SafetyTipsCard';
 
 // Get popular FAQs
@@ -100,12 +100,20 @@ const CallToAction = () => (
         <p className="mb-6">
           ใช้เครื่องมือตรวจสอบร้านค้าของเราเพื่อหลีกเลี่ยงการหลอกลวงและช้อปปิ้งกับร้านค้าที่น่าเชื่อถือเท่านั้น
         </p>
-        <Button asChild className="bg-white text-blue-600 hover:bg-blue-50">
-          <Link href="/store-checker">
-            ตรวจสอบร้านค้าเลย
-            <FontAwesomeIcon icon={faSearch} className="ml-2" />
-          </Link>
-        </Button>
+        <div className="flex flex-col md:flex-row gap-4">
+          <Button asChild variant="primary" className="bg-white text-blue-600 hover:bg-blue-50">
+            <Link href="/store-checker">
+              <span>ตรวจสอบร้านค้าเลย</span>
+              <FontAwesomeIcon icon={faSearch} className="ml-2" />
+            </Link>
+          </Button>
+          <Button asChild variant="primary" className="bg-white text-blue-600 hover:bg-blue-50">
+            <Link href="/report">
+              <span>แจ้งร้านค้าโกง</span>
+              <FontAwesomeIcon icon={faExclamationTriangle} className="ml-2" />
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="md:w-1/3 flex justify-center">
         <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center">

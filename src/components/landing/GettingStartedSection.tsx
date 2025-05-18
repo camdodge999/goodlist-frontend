@@ -7,15 +7,16 @@ import ContentWidth from "@/components/layout/ContentWidth";
 import { 
   Search, 
   Store, 
-  MessageSquare, 
   Users, 
   FileCheck, 
   BadgeCheck,
-  RefreshCw
+  RefreshCw,
+  MessagesSquare
 } from "lucide-react";
 import { faUserGroup } from '@fortawesome/free-solid-svg-icons';
 import { faStore } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUserPlus, faRotate } from '@fortawesome/free-solid-svg-icons';
 
 // Define the feature card interface
 interface FeatureCardProps {
@@ -26,9 +27,9 @@ interface FeatureCardProps {
 
 // Feature card component
 const FeatureCard = ({ icon, title, description }: FeatureCardProps) => (
-  <Card className="p-8 flex flex-col items-center text-center hover:shadow-lg transition-shadow duration-300 border">
+  <Card className="p-8 flex flex-col items-center text-center hover:shadow-lg transition-shadow duration-300 border border-gray-100 border-b-4 border-b-blue-500">
     <div className="bg-blue-50 p-4 rounded-full mb-4">
-      <div className="text-blue-600 w-10 h-10">
+      <div className="text-blue-600 w-10 h-10 flex items-center justify-center">
         {icon}
       </div>
     </div>
@@ -50,7 +51,7 @@ const buyerFeatures = [
     description: "ตรวจสอบรายละเอียดร้านค้าและรีวิวจากผู้ซื้อ"
   },
   {
-    icon: <MessageSquare className="w-10 h-10" />,
+    icon: <MessagesSquare className="w-10 h-10" />,
     title: "ติดต่อร้าน",
     description: "ติดต่อร้านค้าผ่านระบบแชทที่ปลอดภัย"
   }
@@ -59,7 +60,7 @@ const buyerFeatures = [
 // Seller features
 const sellerFeatures = [
   {
-    icon: <Users className="w-10 h-10" />,
+    icon: <FontAwesomeIcon icon={faUserPlus} className="text-3xl" />,
     title: "สมัครสมาชิก",
     description: "สมัครสมาชิกและกรอกข้อมูลร้านค้าของคุณ"
   },
@@ -82,8 +83,9 @@ export function GettingStartedSection() {
     <section className="py-24 bg-white">
       <ContentWidth>
         <div className="text-center mb-16">
-          <div className="flex justify-center mb-2">
-            <RefreshCw className="text-blue-600 w-6 h-6" />
+          <div className="flex justify-center items-center gap-2 mb-4">
+            <FontAwesomeIcon icon={faRotate} className="w-6 h-6 text-gray-600" />
+            <span className="text-sm font-medium text-gray-600">วิธีการใช้งาน</span>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             เริ่มต้นใช้งานได้ง่ายๆ

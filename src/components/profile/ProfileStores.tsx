@@ -57,7 +57,7 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
                         <Image
                           src={
                             store.imageStore ||
-                            "/images/logo.png"
+                            "/images/logo.webp"
                           }
                           alt={`รูปภาพร้าน ${store.storeName}`}
                           fill

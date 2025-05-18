@@ -19,7 +19,7 @@ const mockStores: Store[] = [
     isBanned: false,
     createdAt: "2023-02-15T08:30:00Z",
     updatedAt: "2023-02-15T08:30:00Z",
-    imageUrl: "/images/logo.png",
+    imageUrl: "/images/logo.webp",
   },
   // Add more mock stores as needed
 ];

@@ -100,8 +100,8 @@ export default function StoreCard({ store }: StoreCardProps) {
               <FontAwesomeIcon icon={faCreditCard} />
             </div>
             <div className="text-md">
-              <span>Bank Account: •••••••••</span>
-              <div className="text-blue-600 text-xs cursor-pointer">Click to view full details</div>
+              <span>บัญชีธนาคาร : •••••••••</span>
+              <div className="text-blue-600 text-xs cursor-pointer">คลิกเพื่อดูข้อมูลเพิ่มเติม</div>
             </div>
           </div>
         </div>

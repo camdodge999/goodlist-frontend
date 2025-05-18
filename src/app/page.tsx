@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Footer } from "@/components/layout/Footer";
-import { HeroSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection, GettingStartedSection } from "@/components/landing";
+import { HeroSection, WhyChooseSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection, GettingStartedSection } from "@/components/landing";
 import { Store } from "@/types/stores";
 import { StoreProvider } from "@/contexts/StoreContext";    
 
@@ -38,6 +38,9 @@ export default async function Home() {
     <StoreProvider initialStores={stores}>
       {/* Hero Section */}
       <HeroSection session={session} />
+
+      {/* Why Choose Goodlistseller Section */}
+      <WhyChooseSection />
 
       {/* Getting Started Section */}
       <GettingStartedSection />

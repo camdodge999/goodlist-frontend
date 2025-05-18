@@ -141,13 +141,25 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      const tokenDecoded = jwt.decode(token.token as string) as JWTToken;
-      if (token) {
-        session.user.token = token.token as string;
-        session.user.role = tokenDecoded.role as UserRole;
-        session.user.id = token.id as string;
-        session.user.displayName = token.displayName as string;
+      try {
+        // Safely decode the token and extract user information
+        if (token.token) {
+          const tokenDecoded = jwt.decode(token.token as string) as JWTToken;
+          
+          // Update session with token information
+          session.user.token = token.token as string;
+          session.user.id = token.id as string;
+          session.user.displayName = token.displayName as string;
+          
+          // Only set role if available in the decoded token
+          if (tokenDecoded?.role) {
+            session.user.role = tokenDecoded.role as UserRole;
+          }
+        }
+      } catch (error) {
+        console.error("Error processing session:", error);
       }
+      
       return session;
     },
     async redirect({ url, baseUrl }) {

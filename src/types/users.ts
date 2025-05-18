@@ -9,6 +9,9 @@ export interface User {
   phoneNumber?: string;
   createdAt: string;
   updatedAt: string;
+  verificationStatus?: "not_started" | "pending" | "verified" | "banned";
+  verifiedAt?: string;
+  storeId?: number;
 }
 
 
@@ -22,5 +25,8 @@ export interface UserResponse {
 export enum UserRole {
   ADMIN = "admin",
   USER = "user",
+  VERIFIED = "verified",
+  PENDING = "pending",
+  BANNED = "banned",
 }
 

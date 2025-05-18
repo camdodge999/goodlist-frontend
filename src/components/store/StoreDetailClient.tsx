@@ -58,7 +58,6 @@ export default function StoreDetailClient({
               <ContactInfoCard 
                 contactInfo={store.contactInfo as ContactInfo}
                 userEmail={store.email}
-                isLoggedIn={authState.isLoggedIn} 
               />
 
               {/* Additional Information */}

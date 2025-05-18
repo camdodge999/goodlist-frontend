@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Store } from "@/types/stores";
 import { ContactInfo } from "@/types/stores";
 import { isValidJSON } from "@/utils/valid-json";
-import defaultLogo from "@images/logo.png";
+import defaultLogo from "@images/logo.webp";
 import { getAuthenticatedImageUrl } from '@/lib/utils';
 import { useStore } from "@/contexts/StoreContext";
 
@@ -53,9 +53,9 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
       href={`/stores/${store.id}`}
       className="group"
     >
-      <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-t-4 border-t-blue-500 bg-white">
+      <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-t-4 p-0 border-t-blue-500 bg-white">
         {/* Image Container */}
-        <div className="relative h-56 overflow-hidden">
+        <div className="relative h-56 w-full border-b border-gray-200">
           <Image
             src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
             onError={(e) => {
@@ -64,21 +64,20 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
             }}
             alt={store.storeName}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-contain transition-transform duration-500 group-hover:scale-110"
             priority={index < 2}
           />
           {/* Verification Badge */}
           {store.isVerified && (
             <Badge className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-blue-600 shadow-lg">
               <FontAwesomeIcon icon={faCheckCircle} className="mr-1" />
-              ผ่านการตรวจสอบ
+              <span>ผ่านการตรวจสอบ</span>
             </Badge>
           )}
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-2 px-6">
           <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">
             {store.storeName}
           </h3>
@@ -102,7 +101,7 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
               variant="ghost"
               className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
-              ดูรายละเอียดเพิ่มเติม
+              <span>ดูรายละเอียดเพิ่มเติม</span>
               <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
             </Button>
           </div>

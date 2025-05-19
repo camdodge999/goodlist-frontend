@@ -7,7 +7,7 @@ interface ExtendedUser extends User {
   token?: string;
   role?: UserRole;
   displayName?: string;
-  image?: string;
+  logo_url?: string;
   phoneNumber?: string;
   address?: string;
 }
@@ -16,7 +16,7 @@ interface ExtendedUser extends User {
 interface JWTToken {
   id?: number;
   displayName?: string;
-  image?: string;
+  logo_url?: string;
   phoneNumber?: string;
   address?: string;
   email?: string;
@@ -33,7 +33,7 @@ declare module "next-auth" {
       token?: string;
       role?: UserRole;
       displayName?: string;
-      image?: string;
+      logo_url?: string;
       email?: string; 
     } 
   }
@@ -43,6 +43,7 @@ declare module "next-auth" {
     role?: UserRole;
     email?: string;
     displayName?: string;
+    logo_url?: string;
   }
 }
 
@@ -98,7 +99,7 @@ export const authOptions: NextAuthOptions = {
             email: credentials.email,
             role: userDataDecoded.role as UserRole,
             displayName: userDataDecoded.displayName || undefined, // Optional name
-            image: userDataDecoded.image || undefined,
+            logo_url: userDataDecoded.logo_url || undefined,
           };
 
           return user;

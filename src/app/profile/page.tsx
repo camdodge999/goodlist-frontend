@@ -19,7 +19,7 @@ export default async function ProfilePage() {
     id: session.user.id || session.user.email || "",
     displayName: session.user.displayName || "",
     email: session.user.email || "",
-    image: session.user.image || "",
+    logo_url: session.user.logo_url || "",
     role: session.user.role || "",
     phoneNumber: "", // Session user may not have phoneNumber
     createdAt: new Date().toISOString(),

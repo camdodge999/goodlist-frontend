@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/types/users";
+import { getAuthenticatedImageUrl } from "@/lib/utils";
 
 interface UserMenuProps {
   user?: User;
@@ -90,7 +91,7 @@ export default function UserMenu({ user, isAuthenticated, isMobile = false }: Us
             >
               <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
                 <AvatarImage
-                  src={user.image || undefined}
+                  src={getAuthenticatedImageUrl(user.logo_url) || undefined}
                   alt={user.displayName || "User"}
                   className="transition-opacity duration-300"
                 />
@@ -109,7 +110,7 @@ export default function UserMenu({ user, isAuthenticated, isMobile = false }: Us
             <DropdownMenuLabel className="font-normal p-3 flex items-center gap-3">
               <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
                 <AvatarImage
-                  src={user.image || undefined}
+                  src={getAuthenticatedImageUrl(user.logo_url) || undefined}  
                   alt={user.displayName || "User"}
                   className="transition-opacity duration-300"
                 />

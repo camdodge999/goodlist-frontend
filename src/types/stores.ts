@@ -9,6 +9,7 @@ export interface StoreDocument {
   id?: number;
   name: string;
   url: string;
+  path?: string;
   type?: string;
   createdAt?: string;
 }
@@ -28,6 +29,8 @@ export interface Store {
   createdAt: string;
   updatedAt: string;
   imageStore: string;
+  certIncrop: string;
+  imageIdCard: string;
   imageUrl?: string;
   taxId?: string;
   verifiedAt?: string;

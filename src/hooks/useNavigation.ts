@@ -11,11 +11,12 @@ import {
   faSpellCheck, 
   faChartBar,
 } from '@fortawesome/free-solid-svg-icons';
+import { useUser } from "@/contexts/UserContext";
 
 export default function useNavigation() {
   const { data: session, status } = useSession();
-  const user = session?.user as unknown as User;
-  const isAuthenticated = status === "authenticated";
+  const { currentUser } = useUser();
+  const isAuthenticated = !!currentUser || status === "authenticated";
   
   // Generate navigation items based on user role
   const navItems = useMemo(() => {
@@ -24,6 +25,9 @@ export default function useNavigation() {
       { name: "ร้านค้า", href: "/stores", icon: faStore },
       { name: "แจ้งร้านโกง", href: "/report", icon: faExclamation },
     ];
+
+    // Use currentUser from UserContext if available, otherwise fall back to session
+    const user = currentUser || (session?.user as unknown as User);
 
     if (user) {
       const userItems: NavItem[] = [
@@ -38,10 +42,9 @@ export default function useNavigation() {
     }
 
     return baseItems;
-  }, [user]);
+  }, [currentUser, session]);
 
   return {
-    user,
     status,
     isAuthenticated,
     navItems

@@ -5,9 +5,12 @@ import MobileMenu from "./MobileMenu";
 import NavItems from "./NavItems";
 import UserMenu from "./UserMenu";
 import useNavigation from "@/hooks/useNavigation";
+import { useUser } from "@/contexts/UserContext";
 
 export default function NavBar() {
-  const { user, isAuthenticated, navItems } = useNavigation();
+  const { navItems } = useNavigation();
+  const { currentUser, isLoading } = useUser();
+  const isAuthenticated = !!currentUser;
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 bg-white backdrop-blur-lg border-b border-gray-100">
@@ -21,7 +24,7 @@ export default function NavBar() {
         {/* Mobile menu button */}
         <MobileMenu 
           navItems={navItems} 
-          user={user} 
+          user={currentUser || undefined} 
           isAuthenticated={isAuthenticated} 
         />
 
@@ -29,7 +32,7 @@ export default function NavBar() {
         <NavItems items={navItems} />
 
         {/* Right section - user menu */}
-        <UserMenu user={user} isAuthenticated={isAuthenticated} />
+        <UserMenu user={currentUser || undefined} isAuthenticated={isAuthenticated} />
       </nav>
     </header>
   );

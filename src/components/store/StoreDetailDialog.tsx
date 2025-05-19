@@ -1,12 +1,19 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { X, FileText } from 'lucide-react';
+import { X, FileText, Download, Eye } from 'lucide-react';
 import { Store } from '@/types/stores';
 import { getAuthenticatedImageUrl } from '@/lib/utils';
 import defaultImage from '@images/logo.webp';
+import DocumentPreviewDialog from './DocumentPreviewDialog';
+import { Button } from '../ui/button';
+import dayjs from 'dayjs';
+import 'dayjs/locale/th';
+import buddhistEra from "dayjs/plugin/buddhistEra"
+dayjs.locale('th');
+dayjs.extend(buddhistEra);
 
 interface StoreDetailDialogProps {
   store: Store | null;
@@ -15,6 +22,16 @@ interface StoreDetailDialogProps {
 }
 
 const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, onClose }) => {
+  const [previewImage, setPreviewImage] = useState<{
+    isOpen: boolean;
+    url: string;
+    name: string;
+  }>({
+    isOpen: false,
+    url: '',
+    name: '',
+  });
+
   if (!store) return null;
 
   // Handle contact info
@@ -24,7 +41,7 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
     phone: "",
     address: "",
   };
-  
+
   try {
     if (typeof store.contactInfo === 'string') {
       contactInfo = JSON.parse(store.contactInfo);
@@ -44,7 +61,7 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
   let verificationStatus = "";
   let verificationDate = "";
   let statusColor = "";
-  
+
   if (store.isVerified === true) {
     verificationStatus = "ผ่านการตรวจสอบ";
     verificationDate = store.verifiedAt || "15 กุมภาพันธ์ 2566"; // Default date if not available
@@ -57,200 +74,278 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
     statusColor = "text-yellow-600";
   }
 
+  // Handle document view or download
+  const handleDocumentAction = (doc: any) => {
+    const documentUrl = getAuthenticatedImageUrl(doc.path || doc.url);
+
+    if (!documentUrl) return;
+
+    // If it's an ID card image, open in preview dialog
+    if (doc.type === 'imageIdCard' || (doc.name && doc.name.includes('บัตรประชาชน'))) {
+      setPreviewImage({
+        isOpen: true,
+        url: documentUrl,
+        name: doc.name || 'บัตรประจำตัวประชาชน'
+      });
+    }
+    // For certIncorp documents, trigger a download
+    else if (doc.type === 'certIncorp' || (doc.name && doc.name.includes('จดทะเบียน'))) {
+      const link = document.createElement('a');
+      link.href = documentUrl;
+      link.download = doc.name || 'เอกสารการจดทะเบียน.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    // Default fallback - open in preview
+    else {
+      setPreviewImage({
+        isOpen: true,
+        url: documentUrl,
+        name: doc.name || 'เอกสาร'
+      });
+    }
+  };
+
+  // Close the preview dialog
+  const handleClosePreview = () => {
+    setPreviewImage({
+      isOpen: false,
+      url: '',
+      name: '',
+    });
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl p-0 overflow-y-auto max-h-[90vh]">
-        <DialogHeader className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
-          <DialogTitle className="text-xl font-medium">รายละเอียดร้านค้า</DialogTitle>
-        </DialogHeader>
-        
-        <div className="p-0">
-          {/* Store Header Image */}
-          <div className="relative w-full h-48 border-b border-gray-200">
-            <Image
-              src={getAuthenticatedImageUrl(store.imageStore) || defaultImage.src}
-              alt={`รูปภาพร้าน ${store.storeName}`}
-              fill
-              className="object-cover"
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.srcset = defaultImage.src;
-              }}
-            />
-          </div>
-          
-          <div className="px-6 py-4">
-            {/* Basic Info */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">ข้อมูลพื้นฐาน</h3>
-              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
-                <div>
-                  <div className="text-sm text-gray-500">ชื่อร้าน</div>
-                  <div className="font-medium">{store.storeName}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">อีเมล</div>
-                  <div className="font-medium">{store.email || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">เลขบัญชี</div>
-                  <div className="font-medium">{store.bankAccount || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">เลขประจำตัวผู้เสียภาษี</div>
-                  <div className="font-medium">{store.taxId || "-"}</div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Contact Info */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">ข้อมูลการติดต่อ</h3>
-              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
-                <div>
-                  <div className="text-sm text-gray-500">Line ID</div>
-                  <div className="font-medium">@{contactInfo.line || "bkkelectronics"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Facebook</div>
-                  <div className="font-medium">{contactInfo.facebook || "bkkelectronics"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">เบอร์โทรศัพท์</div>
-                  <div className="font-medium">{contactInfo.phone || "082-345-6789"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">ที่อยู่</div>
-                  <div className="font-medium">{contactInfo.address || "456 ถนนเพชรบุรี แขวงทุ่งพญาไท เขตราชเทวี กรุงเทพฯ 10400"}</div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Verification Documents */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">เอกสารยืนยันตัวตน</h3>
-              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
-                {(store.documents && store.documents.length > 0) ? (
-                  store.documents.map((doc, index) => (
-                    <div key={index} className="flex items-center">
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-500">{doc.type || "เอกสาร"}</div>
-                        <div className="font-medium">{doc.name}</div>
-                      </div>
-                      <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                        <FileText size={16} className="mr-1" />
-                        <span>ดูเอกสาร</span>
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm text-gray-500">เอกสารการจดทะเบียน</div>
-                        <div className="font-medium">ดูเอกสาร</div>
-                      </div>
-                      <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                        <FileText size={16} className="mr-1" />
-                        <span>ดูเอกสาร</span>
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm text-gray-500">บัตรประจำตัวประชาชน</div>
-                        <div className="font-medium">ดูเอกสาร</div>
-                      </div>
-                      <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                        <FileText size={16} className="mr-1" />
-                        <span>ดูเอกสาร</span>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {/* Verification Status */}
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">สถานะ</h3>
-              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
-                <div>
-                  <div className="text-sm text-gray-500">สถานะการตรวจสอบ</div>
-                  <div className={`font-medium ${statusColor}`}>{verificationStatus}</div>
-                </div>
-                
-                {store.isVerified === true && (
-                  <div>
-                    <div className="text-sm text-gray-500">วันที่ผ่าน</div>
-                    <div className="font-medium">{verificationDate}</div>
-                  </div>
-                )}
-                
-                {store.isVerified === false && store.rejectionReason && (
-                  <div>
-                    <div className="text-sm text-gray-500">เหตุผลการไม่อนุมัติ</div>
-                    <div className="font-medium text-red-600">{store.rejectionReason}</div>
-                  </div>
-                )}
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-3xl p-0 overflow-y-auto max-h-[90vh]">
+          <DialogHeader className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
+            <DialogTitle className="text-xl font-medium">รายละเอียดร้านค้า</DialogTitle>
+          </DialogHeader>
 
-                {store.isVerified === true && (
-                  <div>
-                    <div className="text-sm text-gray-500">วันที่สิ้นอายุ</div>
-                    <div className="font-medium">31 ธันวาคม 2566</div>
-                  </div>
-                )}
-              </div>
+          <div className="p-0">
+            {/* Store Header Image */}
+            <div className="relative w-full h-48 border-b border-gray-200">
+              <Image
+                src={getAuthenticatedImageUrl(store.imageStore) || defaultImage.src}
+                alt={`รูปภาพร้าน ${store.storeName}`}
+                fill
+                className="object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.srcset = defaultImage.src;
+                }}
+              />
             </div>
 
-            {/* Store Statistics */}
-            {store.isVerified === true && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">ข้อมูลเชิงสถิติ</h3>
+            <div className="px-6 py-4">
+              {/* Basic Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">ข้อมูลพื้นฐาน</h3>
                 <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
                   <div>
-                    <div className="text-sm text-gray-500">ร้านค้าเปิดอยู่</div>
-                    <div className="font-medium">2 วัน</div>
+                    <div className="text-sm text-gray-500">ชื่อร้าน</div>
+                    <div className="font-medium">{store.storeName}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">ร้านค้าผ่านการตรวจสอบ</div>
-                    <div className="font-medium">1 วัน</div>
+                    <div className="text-sm text-gray-500">อีเมล</div>
+                    <div className="font-medium">{store.email || "-"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">เลขบัญชี</div>
+                    <div className="font-medium">{store.bankAccount || "-"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">เลขประจำตัวผู้เสียภาษี</div>
+                    <div className="font-medium">{store.taxId || "-"}</div>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Footer Actions (for verified stores) */}
-        {store.isVerified !== null && (
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex justify-end gap-2">
-            <button className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors">
-              ปิด
-            </button>
-            {store.isVerified === true && (
-              <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
-                อนุมัติ
-              </button>
-            )}
-            {store.isVerified === false && (
-              <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
-                ปฏิเสธ
-              </button>
-            )}
-            {store.isVerified === null && (
-              <>
-                <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
-                  ปฏิเสธ
-                </button>
+              {/* Contact Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">ข้อมูลการติดต่อ</h3>
+                <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                  <div>
+                    <div className="text-sm text-gray-500">Line ID</div>
+                    <div className="font-medium">@{contactInfo.line || "bkkelectronics"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Facebook</div>
+                    <div className="font-medium">{contactInfo.facebook || "bkkelectronics"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">เบอร์โทรศัพท์</div>
+                    <div className="font-medium">{contactInfo.phone || "082-345-6789"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">ที่อยู่</div>
+                    <div className="font-medium">{contactInfo.address || "456 ถนนเพชรบุรี แขวงทุ่งพญาไท เขตราชเทวี กรุงเทพฯ 10400"}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification Documents */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">เอกสารยืนยันตัวตน</h3>
+                <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                  {(store.documents && store.documents.length > 0) ? (
+                    store.documents.map((doc, index) => (
+                      <div key={index} className="flex items-center">
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-500">{doc.type || "เอกสาร"}</div>
+                          <div className="font-medium">{doc.name}</div>
+                        </div>
+                        <button
+                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center cursor-pointer"
+                          onClick={() => handleDocumentAction(doc)}
+                        >
+                          {doc.type === 'certIncorp' || (doc.name && doc.name.includes('จดทะเบียน')) ? (
+                            <>
+                              <Download size={16} className="mr-1" />
+                              <span>ดาวน์โหลด</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye size={16} className="mr-1" />
+                              <span>ดูเอกสาร</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-500">เอกสารการจดทะเบียน</div>
+                        <button
+                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center cursor-pointer"
+                          onClick={() => handleDocumentAction({
+                            type: 'certIncorp',
+                            name: 'หนังสือรับรองบริษัท',
+                            path: store.certIncrop || ''
+                          })}
+                        >
+                          <Download size={16} className="mr-1" />
+                          <span>ดาวน์โหลด</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-500">บัตรประจำตัวประชาชน</div>
+                        <button
+                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center cursor-pointer"
+                          onClick={() => handleDocumentAction({
+                            type: 'imageIdCard',
+                            name: 'สำเนาบัตรประชาชน',
+                            path: store.imageIdCard || ''
+                          })}
+                        >
+                          <Eye size={16} className="mr-1" />
+                          <span>ดูเอกสาร</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Verification Status */}
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">สถานะ</h3>
+                <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                  <div>
+                    <div className="text-sm text-gray-500">สถานะการตรวจสอบ</div>
+                    <div className={`font-medium ${statusColor}`}>{verificationStatus}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-500">วันที่สมัคร</div>
+                    <div className="font-medium">{dayjs(store.createdAt).format('DD MMMM BBBB')}</div>
+                  </div>
+
+                  {store.isVerified === true && store.verifiedAt && (
+                    <div>
+                      <div className="text-sm text-gray-500">วันที่ผ่านการตรวจสอบ</div>
+                      <div className="font-medium">{dayjs(store.verifiedAt).format('DD MMMM BBBB')}</div>
+                    </div>
+                  )}
+
+                  {store.isVerified === false && store.rejectionReason && (
+                    <div>
+                      <div className="text-sm text-gray-500">เหตุผลการไม่อนุมัติ</div>
+                      <div className="font-medium text-red-600">{store.rejectionReason}</div>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="text-sm text-gray-500">วันที่อัปเดตล่าสุด</div>
+                    <div className="font-medium">{dayjs(store.updatedAt).format('DD MMMM BBBB')}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Store Statistics
+              {store.isVerified === true && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">ข้อมูลเชิงสถิติ</h3>
+                  <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 rounded-md">
+                    <div>
+                      <div className="text-sm text-gray-500">ร้านค้าเปิดอยู่</div>
+                      <div className="font-medium">2 วัน</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">ร้านค้าผ่านการตรวจสอบ</div>
+                      <div className="font-medium">1 วัน</div>
+                    </div>
+                  </div>
+                </div>
+              )} */}
+            </div>
+          </div>
+
+          {/* Footer Actions (for verified stores) */}
+          {store.isVerified !== null && (
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex justify-end gap-2">
+              <Button
+                variant="primary"
+                onClick={onClose}
+              >
+                ปิด
+              </Button>
+              {/* {store.isVerified === true && (
                 <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
                   อนุมัติ
                 </button>
-              </>
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+              )}
+              {store.isVerified === false && (
+                <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
+                  ปฏิเสธ
+                </button>
+              )}
+              {store.isVerified === null && (
+                <>
+                  <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
+                    ปฏิเสธ
+                  </button>
+                  <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
+                    อนุมัติ
+                  </button>
+                </>
+              )} */}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Preview Dialog */}
+      <DocumentPreviewDialog
+        isOpen={previewImage.isOpen}
+        onClose={handleClosePreview}
+        imageUrl={previewImage.url}
+        documentName={previewImage.name}
+      />
+    </>
   );
 };
 

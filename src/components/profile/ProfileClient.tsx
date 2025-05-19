@@ -30,7 +30,7 @@ interface ProfileClientProps {
 // ProfileClient component handles user profile management
 export default function ProfileClient({ user }: ProfileClientProps) {
   const router = useRouter();
-  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser } = useUser();
+  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading } = useUser();
   const [activeTab, setActiveTab] = useState("stores");
   const [isEditing, setIsEditing] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -59,8 +59,9 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [formData, setFormData] = useState<ProfileFormSchema>({
     name: "",
     email: "",
-    phone: "",
+    phoneNumber: "",
     address: "",
+    logo_url: "",
   });
 
   const [passwordData, setPasswordData] = useState<PasswordFormSchema>({
@@ -103,8 +104,9 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setFormData({
         name: displayUser.displayName || "",
         email: displayUser.email || "",
-        phone: displayUser.phoneNumber || "",
+        phoneNumber: displayUser.phoneNumber || "",
         address: displayUser.address || "",
+        logo_url: displayUser.logo_url || "",
       });
       setTempEmail(displayUser.email || "");
     };
@@ -132,7 +134,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setFormData({
         name: displayUser.displayName || "",
         email: displayUser.email || "",
-        phone: displayUser.phoneNumber || "",
+        phoneNumber: displayUser.phoneNumber || "",
         address: displayUser.address || "",
       });
       setTempEmail(displayUser.email || "");
@@ -301,21 +303,43 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
   const handleSaveProfile = async () => {
     try {
-      // Here you would typically make an API call to update the profile
-      // For now, we'll just update the local state
-      const result = await updateUser(displayUser.id, {
-        displayName: formData.name,
-        email: formData.email,
-        phoneNumber: formData.phone,
-        // Add address if needed in your User type
-      });
+      // Create FormData object for the profile update
+      const formDataObj = new FormData();
+      
+      // Add text fields to FormData, checking for undefined/null values
+      if (formData.name) {
+        formDataObj.append('displayName', formData.name);
+      }
+      
+      if (formData.email) {
+        formDataObj.append('email', formData.email);
+      }
+      
+      if (formData.phoneNumber) {
+        formDataObj.append('phoneNumber', formData.phoneNumber);
+      }
+      
+      if (formData.address) {
+        formDataObj.append('address', formData.address);
+      }
+      
+      // Add profile image if it exists
+      if (profileImage) {
+        formDataObj.append('logo_url', profileImage);
+      }
+      
+      // Call updateUser with FormData
+      const result = await updateUser(displayUser.id, formDataObj);
       
       if (result) {
         setIsEditing(false);
+        // Reset profile image state
+        setProfileImage(null);
+        setPreviewImage(null);
         // Refresh user data after update
         await refreshUser();
       } else {
-        displayErrorDialog("Failed to update profile");
+        throw new Error("Failed to update profile");
       }
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -361,8 +385,9 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setFormData({
         name: displayUser?.displayName || "",
         email: displayUser?.email || "",
-        phone: displayUser?.phoneNumber || "",
+        phoneNumber: displayUser?.phoneNumber || "",  
         address: displayUser?.address || "",
+        logo_url: displayUser?.logo_url || "",
       });
       setTempEmail(displayUser?.email || "");
       setPreviewImage(null);
@@ -407,7 +432,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         {/* Profile Header - Use the most up-to-date user data */}
         <ProfileHeader 
           user={displayUser} 
-          previewImage={previewImage} 
           onLogout={logout} 
         />
 
@@ -422,7 +446,10 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           {/* Tab Content */}
           <div>
             {activeTab === "stores" && (
-              <ProfileStores stores={userStores || []} />
+              <ProfileStores 
+                stores={userStores || []} 
+                isLoading={storesLoading}
+              />
             )}
 
             {activeTab === "settings" && (

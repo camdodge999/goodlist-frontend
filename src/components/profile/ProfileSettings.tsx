@@ -70,7 +70,6 @@ export default function ProfileSettings({
   const handleSaveProfile = async () => {
     try {
       await onSaveProfile();
-      displaySuccessDialog("โปรไฟล์ได้รับการอัปเดตเรียบร้อยแล้ว");
     } catch (error) {
       displayErrorDialog(error instanceof Error ? error.message : "ไม่สามารถอัปเดตโปรไฟล์ได้");
     }

@@ -10,13 +10,10 @@ import StoreDetailDialog from '@/components/store/StoreDetailDialog';
 
 interface ProfileStoresProps {
   stores: Store[];
+  isLoading?: boolean;
 }
 
-interface StoreWithContactInfo extends Store {
-  contact_info: string; // JSON string that will be parsed
-}
-
-const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
+const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [showStoreDetails, setShowStoreDetails] = useState(false);
 
@@ -28,6 +25,39 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
   const handleCloseStoreDetails = () => {
     setShowStoreDetails(false);
   };
+
+  // Skeleton loading component
+  const StoreSkeleton = () => (
+    <div className="px-4 py-4 sm:px-6 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="h-16 w-16 rounded-lg bg-gray-200"></div>
+          <div className="ml-4">
+            <div className="h-5 w-40 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 w-24 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+        <div className="ml-2 flex-shrink-0">
+          <div className="h-5 w-24 bg-gray-200 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Display skeletons when loading
+  if (isLoading) {
+    return (
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <ul role="list" className="divide-y divide-gray-200">
+          {[...Array(3)].map((_, index) => (
+            <li key={`skeleton-${index}`}>
+              <StoreSkeleton />
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -49,8 +79,8 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
             };
             
             try {
-              if (typeof (store as StoreWithContactInfo).contact_info === 'string') {
-                contactInfo = JSON.parse((store as StoreWithContactInfo).contact_info);
+              if (typeof store.contactInfo === 'string') {
+                contactInfo = JSON.parse(store.contactInfo);
               } else if (store.contactInfo && typeof store.contactInfo !== 'string') {
                 // Handle potential undefined properties in contactInfo
                 contactInfo = {

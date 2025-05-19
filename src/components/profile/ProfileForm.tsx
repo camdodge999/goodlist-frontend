@@ -6,6 +6,12 @@ import { ProfileFormSchema } from "@/validators/profile.schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 import { FormLabel } from "@/components/ui/form-label";
+import dayjs from "dayjs";
+import 'dayjs/locale/th';
+import buddhistEra from 'dayjs/plugin/buddhistEra';
+import { getAuthenticatedImageUrl } from "@/lib/utils";
+dayjs.extend(buddhistEra);
+dayjs.locale('th');
 
 interface ProfileFormProps {
   initialData: ProfileFormSchema;
@@ -39,13 +45,6 @@ export default function ProfileForm({
     await onSaveProfile();
   };
 
-  const formatDate = (date: Date) => {
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-6">
       <motion.div
@@ -54,7 +53,7 @@ export default function ProfileForm({
         transition={{ duration: 0.3 }}
       >
         <h3 className="text-lg font-medium text-gray-900 mb-4">ข้อมูลส่วนตัว</h3>
-        <form onSubmit={handleFormSubmit}>
+        <form onSubmit={handleFormSubmit} encType="multipart/form-data">
           <div className="mb-6">
             <div className="flex items-center">
               <div className="mr-4 relative">
@@ -63,7 +62,7 @@ export default function ProfileForm({
                   <div className="relative group">
                     <Avatar className="h-24 w-24">
                       <AvatarImage
-                        src={initialData.profileImage || undefined}
+                        src={getAuthenticatedImageUrl(initialData.logo_url) || undefined}
                         alt={initialData.name || "User"}
                         className="transition-opacity duration-300"
                       />
@@ -157,7 +156,7 @@ export default function ProfileForm({
                 {!canChangeEmail && lastEmailChange && (
                   <div className="mt-1 text-xs text-gray-500">
                     คุณได้เปลี่ยนอีเมลล่าสุดเมื่อวันที่{" "}
-                    {formatDate(lastEmailChange)} สามารถเปลี่ยนอีเมลได้อีกครั้งหลังจาก 1 เดือน
+                    {dayjs(lastEmailChange).format('DD/MM/BBBB')} สามารถเปลี่ยนอีเมลได้อีกครั้งหลังจาก 1 เดือน
                   </div>
                 )}
                 {emailError && (
@@ -168,18 +167,18 @@ export default function ProfileForm({
 
             <div>
               <FormLabel
-                htmlFor="phone"
+                htmlFor="phoneNumber"
                 className="block text-sm font-medium text-gray-700"
               >
                 เบอร์โทรศัพท์
               </FormLabel>
               <Input
                 type="tel"
-                id="phone"
-                name="phone"
+                id="phoneNumber"
+                name="phoneNumber"
                 className="mt-1"
                 disabled={!isEditing}
-                defaultValue={initialData.phone}
+                defaultValue={initialData.phoneNumber}
                 onChange={onInputChange}
               />
             </div>

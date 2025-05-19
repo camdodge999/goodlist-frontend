@@ -55,8 +55,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
-    const userId = parseInt(id);
+    const { id } = await Promise.resolve(params);
+    const userId = await Promise.resolve(parseInt(id));
 
     if (isNaN(userId)) {
       return NextResponse.json(
@@ -68,12 +68,22 @@ export async function PUT(
         { status: 400 }
       );
     }
-
-    // Get the update data from the request
-    const updateData = await request.json();
+    // Check content type to determine if this is a FormData or JSON request
+    const contentType = request.headers.get('content-type') || '';
+    const isFormData = contentType.includes('multipart/form-data');
+    
+    let body;
+    
+    if (isFormData) {
+      // Handle FormData
+      body = await request.formData();
+    } else {
+      // Handle JSON request
+      body = await request.json();
+    }
 
     // Forward the update request to the backend API
-    const result = await updateUserProfile(request, userId.toString(), updateData);
+    const result = await updateUserProfile(request, userId.toString(), body);
 
     return NextResponse.json({
       statusCode: result.statusCode,
@@ -125,12 +135,15 @@ async function updateUserProfile(
   id: string,
   updateData: any
 ): Promise<BodyResponse<{profileDetail: User}>> {
+
+  console.log(updateData);
+
   // Use fetchWithAuth to handle token extraction and API call
   const result = await fetchWithAuth<BodyResponse<{profileDetail: User}>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/profile/${id}`,
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/editProfile/${id}`,
     method: "PUT",
-    body: updateData
+    body: updateData,
   });
   
   if (result.statusCode === 200) {

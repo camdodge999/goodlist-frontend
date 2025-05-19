@@ -16,8 +16,9 @@ declare global {
 interface UserContextProps {
   currentUser: User | null;
   userStores: Store[];
-  updateUser: (userId: string, updates: Partial<User>) => Promise<User | null>;
+  updateUser: (userId: string, updates: Partial<User> | FormData) => Promise<User | null>;
   isLoading: boolean;
+  storesLoading: boolean;
   error: string | null;
   refreshUser: () => Promise<User | null>;
   fetchUserProfile: (userId: string, forceRefresh?: boolean) => Promise<User | null>;
@@ -39,6 +40,7 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [userStores, setUserStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [storesLoading, setStoresLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFetchingProfile, setIsFetchingProfile] = useState(false);
   const lastFetchTime = useRef<Record<string, number>>({});
@@ -134,19 +136,31 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
   // Use stable reference check for fetchUserProfile
   }, [session, currentUser, isFetchingProfile, fetchUserProfile]);
 
-  const updateUser = async (userId: string, updates: Partial<User>) => {
+  const updateUser = async (userId: string, updates: Partial<User> | FormData) => {
     try {
       setIsLoading(true);
       setError(null);
+
+      console.log(updates);
+      
+      // Check if updates is FormData or a regular object
+      const isFormData = updates instanceof FormData;
+      
+      // Configure headers based on content type
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${session?.user?.token}`,
+      };
+      
+      // Only add Content-Type for JSON, browser will set it with boundary for FormData
+      if (!isFormData) {
+        headers['Content-Type'] = 'application/json';
+      }
       
       // Use the API route which handles auth token extraction from the session
       const response = await fetch(`/api/user/profile/${userId}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session?.user?.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
+        headers,
+        body: isFormData ? updates : JSON.stringify(updates),
       });
 
       if (!response.ok) {
@@ -268,6 +282,9 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
       if (window.__fetchingStores) return;
       window.__fetchingStores = true;
       
+      // Set stores loading state to true
+      setStoresLoading(true);
+      
       const response = await fetch(`/api/user/store/${userId}`, {
         method: 'GET',
         headers: {
@@ -293,6 +310,8 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
     } finally {
       // Reset the flag
       window.__fetchingStores = false;
+      // Set stores loading state to false
+      setStoresLoading(false);
     }
   };
 
@@ -303,6 +322,7 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
         userStores,
         updateUser,
         isLoading,
+        storesLoading,
         error,
         refreshUser,
         fetchUserProfile,

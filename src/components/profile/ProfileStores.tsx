@@ -33,14 +33,14 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
     <div className="px-4 py-4 sm:px-6 animate-pulse">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <div className="h-16 w-16 rounded-lg bg-gray-200"></div>
+          <div className="h-16 w-16 rounded-lg bg-gray-200 flex-shrink-0"></div>
           <div className="ml-4">
-            <div className="h-5 w-40 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 w-24 bg-gray-200 rounded"></div>
+            <div className="h-6 w-48 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 w-32 bg-gray-200 rounded"></div>
           </div>
         </div>
         <div className="ml-2 flex-shrink-0">
-          <div className="h-5 w-24 bg-gray-200 rounded-full"></div>
+          <div className="h-5 w-20 bg-gray-200 rounded-full px-2.5 py-0.5"></div>
         </div>
       </div>
     </div>

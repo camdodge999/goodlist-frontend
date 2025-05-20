@@ -15,18 +15,16 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
-import { ArrowLeft } from "lucide-react";
-import defaultStoreImage from "@images/logo-placeholder.png";
-import { getAuthenticatedImageUrl } from "@/lib/utils";
-import  StoreHeader  from "./StoreHeader";
-import  StoreDescription from "./StoreDescription";
-import  ContactInfoCard from "./ContactInfoCard";
-import  AdditionalInfoCard from "./AdditionalInfoCard";
+import StoreHeader from "./StoreHeader";
+import StoreDescription from "./StoreDescription";
+import ContactInfoCard from "./ContactInfoCard";
+import AdditionalInfoCard from "./AdditionalInfoCard";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { useSession } from "next-auth/react";
 import ReportDialog from "./ReportDialog";
+import StoreDetailClientSkeleton from "./StoreDetailClientSkeleton";
 
 export default function StoreDetailClientWithContext() {
   const params = useParams();
@@ -35,7 +33,7 @@ export default function StoreDetailClientWithContext() {
   const { getStoreById, isLoading, error } = useStore();
   const [store, setStore] = useState<Store | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  
+
 
   useEffect(() => {
     async function fetchStoreData() {
@@ -53,13 +51,7 @@ export default function StoreDetailClientWithContext() {
   }, [params.id, getStoreById]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
+    return (<StoreDetailClientSkeleton />)
   }
 
   if (error) {
@@ -87,9 +79,6 @@ export default function StoreDetailClientWithContext() {
 
   return (
     <div className="space-y-6 py-8">
-
-
-    
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-4">
 
         {/* Breadcrumb Navigation */}
@@ -105,10 +94,10 @@ export default function StoreDetailClientWithContext() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        
+
         <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
           {/* Store Header */}
-          <StoreHeader store={store} /> 
+          <StoreHeader store={store} />
 
           {/* Store Description */}
           <StoreDescription description={store.description} />
@@ -117,14 +106,14 @@ export default function StoreDetailClientWithContext() {
           <div className="border-t border-gray-200 px-6 py-5 sm:px-8">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Contact Information */}
-              <ContactInfoCard 
+              <ContactInfoCard
                 contactInfo={store.contactInfo as ContactInfo}
                 userEmail={store.email}
-                isLoggedIn={session?.user?.email !== null} 
+                isLoggedIn={session?.user?.email !== null}
               />
 
               {/* Additional Information */}
-              <AdditionalInfoCard 
+              <AdditionalInfoCard
                 createdAt={store.createdAt}
                 bankAccount={store.bankAccount}
                 isLoggedIn={session?.user?.email !== null}
@@ -148,11 +137,11 @@ export default function StoreDetailClientWithContext() {
         </div>
       </div>
 
-          {/* Report Dialog */}
-          <ReportDialog 
-        isOpen={isReportDialogOpen} 
+      {/* Report Dialog */}
+      <ReportDialog
+        isOpen={isReportDialogOpen}
         storeId={store.id}
-        onOpenChange={setIsReportDialogOpen} 
+        onOpenChange={setIsReportDialogOpen}
       />
 
 

@@ -67,20 +67,20 @@ export default function NavItems({ items, isMobile = false }: NavItemsProps) {
             key={item.name}
             href={item.href}
             className={cn(
-              "text-sm font-semibold leading-6 transition-colors flex items-center gap-2 duration-200 relative py-4",
+              "text-sm font-semibold leading-6 transition-colors flex items-center gap-2 duration-200 relative py-4 group",
               active 
                 ? "text-blue-600" 
-                : "text-gray-900 hover:text-blue-600"
+                : "text-gray-900 group-hover:text-blue-600"
             )}
           >
             <FontAwesomeIcon 
               icon={item.icon} 
               className={cn(
                 "h-5 w-5 inline-block mr-1",
-                active ? "text-blue-600" : "text-gray-700"
+                active ? "text-blue-600" : "text-gray-700 group-hover:text-blue-600"
               )} 
             />
-            {item.name}
+            <span className="group-hover:text-blue-600">{item.name}</span>
           </Link>
         );
       })}

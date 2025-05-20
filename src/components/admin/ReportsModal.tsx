@@ -6,17 +6,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { type Store } from "./StoreItem";
-
-// Define Report type
-export type Report = {
-  id: string;
-  store_id: string;
-  reason: string;
-  evidence_url: string;
-  created_at: string;
-  status: "pending" | "valid" | "invalid";
-};
+import { Store } from "@/types/stores";
+import { Report } from "@/types/report";
 
 interface SelectedReport {
   store: Store;
@@ -28,7 +19,7 @@ interface ReportsModalProps {
   onClose: () => void;
   selectedReport: SelectedReport | null;
   onUpdateReportStatus: (reportId: string, newStatus: "valid" | "invalid") => void;
-  onBanStore: (storeId: string) => void;
+  onBanStore: (storeId: number) => void;
 }
 
 export default function ReportsModal({
@@ -59,7 +50,7 @@ export default function ReportsModal({
           <DialogTitle className="text-xl font-semibold">รายงานร้านค้า</DialogTitle>
           <DialogDescription>
             <div className="mt-2 flex items-center gap-2">
-              <span className="font-medium">{selectedReport.store.store_name}</span>
+              <span className="font-medium">{selectedReport.store.storeName}</span>
               <span className="text-gray-500">·</span>
               <span>
                 มีทั้งหมด {selectedReport.reports.length} รายงาน
@@ -73,7 +64,7 @@ export default function ReportsModal({
             <div key={report.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <div className="flex justify-between mb-4">
                 <span className="text-sm text-gray-500">
-                  รายงานเมื่อ {formatDate(report.created_at)}
+                  รายงานเมื่อ {formatDate(report.createdAt)}
                 </span>
                 <div>
                   {report.status === "pending" ? (
@@ -102,7 +93,7 @@ export default function ReportsModal({
                   <h4 className="text-sm font-medium text-gray-700">หลักฐาน:</h4>
                   <div className="mt-2">
                     <a
-                      href={report.evidence_url}
+                      href={report.evidenceUrls}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

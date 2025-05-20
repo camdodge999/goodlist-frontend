@@ -22,6 +22,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
       <DialogContent className="max-w-3xl p-0 overflow-y-auto max-h-[90vh]">
         <div className="relative p-4">
           <button 
+            type="button"
             onClick={onClose} 
             className="absolute top-2 right-2 p-1 rounded-full bg-gray-100 hover:bg-gray-200 z-10"
           >

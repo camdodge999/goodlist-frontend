@@ -7,6 +7,8 @@ import { Store } from '@/types/stores';
 import { getAuthenticatedImageUrl } from '@/lib/utils';
 import defaultImage from '@images/logo.webp';
 import StoreDetailDialog from '@/components/store/StoreDetailDialog';
+import { isValidJSON } from '@/utils/valid-json';
+import { getStoreStatus } from '@/lib/store-checker';
 
 interface ProfileStoresProps {
   stores: Store[];
@@ -77,10 +79,13 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
               phone: "",
               address: "",
             };
-            
+
+            const isValid = isValidJSON(store.contactInfo as string);
+            const { statusClass, statusText } = getStoreStatus(store.isVerified);
+
             try {
-              if (typeof store.contactInfo === 'string') {
-                contactInfo = JSON.parse(store.contactInfo);
+              if (isValid) {
+                contactInfo = JSON.parse(store.contactInfo as string);
               } else if (store.contactInfo && typeof store.contactInfo !== 'string') {
                 // Handle potential undefined properties in contactInfo
                 contactInfo = {
@@ -93,23 +98,7 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
             } catch (error) {
               console.error("Error parsing contact info:", error);
             }
-            
-            // Determine the verification status and styling
-            let statusClass = "";
-            let statusText = "";
-            
-            if (store.isVerified === true) {
-              statusClass = "bg-green-100 text-green-800";
-              statusText = "ผ่านการตรวจสอบ";
-            } else if (store.isVerified === false) {
-              statusClass = "bg-red-100 text-red-800";
-              statusText = "ไม่ผ่านการตรวจสอบ";
-            } else {
-              // For null or undefined cases
-              statusClass = "bg-yellow-100 text-yellow-800";
-              statusText = "รอการตรวจสอบ";
-            }
-            
+          
             return (
               <motion.li
                 key={store.id}

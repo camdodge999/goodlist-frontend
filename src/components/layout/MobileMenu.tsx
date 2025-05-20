@@ -20,9 +20,15 @@ interface MobileMenuProps {
   navItems: NavItem[];
   user?: User;
   isAuthenticated: boolean;
+  resetUserState?: () => Promise<void>;
 }
 
-export default function MobileMenu({ navItems, user, isAuthenticated }: MobileMenuProps) {
+export default function MobileMenu({ 
+  navItems, 
+  user, 
+  isAuthenticated, 
+  resetUserState 
+}: MobileMenuProps) {
   
   return (
     <div className="flex lg:hidden">
@@ -44,7 +50,12 @@ export default function MobileMenu({ navItems, user, isAuthenticated }: MobileMe
           <div className="mt-4 flow-root">
             <div className="-my-4 divide-y divide-gray-200">
               <NavItems items={navItems} isMobile={true} />
-              <UserMenu user={user} isAuthenticated={isAuthenticated} isMobile={true} />
+              <UserMenu 
+                user={user} 
+                isAuthenticated={isAuthenticated} 
+                isMobile={true} 
+                resetUserState={resetUserState}
+              />
             </div>
           </div>
         </SheetContent>

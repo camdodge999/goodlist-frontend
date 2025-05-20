@@ -21,19 +21,20 @@ export default function StoreCard({ store }: StoreCardProps) {
     phone: "",
     address: "",
   };
+
+  const isValid = isValidJSON(store.contactInfo as string);
   
   try {
-    if (store.contactInfo) {
-      if (typeof store.contactInfo === "string") {
-        if (isValidJSON(store.contactInfo)) {
-          contactInfo = JSON.parse(store.contactInfo);
-        } else {
-          // If not valid JSON, keep the default empty values
-          console.error("Invalid JSON format in contact info");
-        }
-      } else {
-        contactInfo = store.contactInfo;
-      }
+    if (isValid) {
+      contactInfo = JSON.parse(store.contactInfo as string);
+    } else if (store.contactInfo && typeof store.contactInfo !== 'string') {
+      // Handle potential undefined properties in contactInfo
+      contactInfo = {
+        line: store.contactInfo.line || "",
+        facebook: store.contactInfo.facebook || "",
+        phone: store.contactInfo.phone || "",
+        address: store.contactInfo.address || "",
+      };
     }
   } catch (error) {
     console.error("Error parsing contact info:", error);

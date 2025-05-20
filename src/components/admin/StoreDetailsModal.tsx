@@ -10,18 +10,21 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { type Store } from "./StoreItem";
-import defaultLogo from "@images/logo.webp";
+import { Store } from "@/types/stores";
 
+// Fallback default logo
+const defaultLogo = {
+  src: "/images/logo.webp"
+};
 
 interface StoreDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   store: Store | null;
-  onApprove: (storeId: string) => void;
-  onReject: (storeId: string) => void;
-  onBan: (storeId: string) => void;
-  onUnban: (storeId: string) => void;
+  onApprove: (storeId: number) => void;
+  onReject: (storeId: number) => void;
+  onBan: (storeId: number) => void;
+  onUnban: (storeId: number) => void;
 }
 
 export default function StoreDetailsModal({
@@ -45,6 +48,9 @@ export default function StoreDetailsModal({
     }).format(date);
   };
 
+  // Check if store has additional property (might be custom field)
+  const isAdditionalStore = store?.userId > 0 && store?.isVerified === null && !store?.isBanned;
+
   if (!store) return null;
 
   return (
@@ -65,30 +71,29 @@ export default function StoreDetailsModal({
                   const target = e.currentTarget as HTMLImageElement;
                   target.srcset = defaultLogo.src;
                 }}
-
-                alt={store.store_name}
+                alt={store.storeName}
                 fill
                 className="object-cover"
               />
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-medium text-gray-900">
-                {store.store_name}
+                {store.storeName}
               </h3>
               <div className="mt-1 flex flex-wrap gap-2">
-                {store.is_verified && (
+                {store.isVerified && (
                   <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
                     <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 mr-1" />
                     ยืนยันแล้ว
                   </Badge>
                 )}
-                {store.is_banned && (
+                {store.isBanned && (
                   <Badge variant="destructive">
                     <FontAwesomeIcon icon={faTimesCircle} className="w-3 h-3 mr-1" />
                     ถูกแบน
                   </Badge>
                 )}
-                {store.is_additional_store && (
+                {isAdditionalStore && (
                   <Badge variant="outline">คำขอเพิ่มร้านค้า</Badge>
                 )}
               </div>
@@ -109,14 +114,24 @@ export default function StoreDetailsModal({
               ข้อมูลการติดต่อ
             </h4>
             <div className="mt-1 space-y-2">
-              {Object.entries(JSON.parse(store.contact_info)).map(
-                ([key, value]) => (
-                  <p key={key} className="text-gray-600">
-                    <span className="capitalize">{key}:</span>{" "}
-                    <span className="font-medium">{value as string}</span>
-                  </p>
-                )
-              )}
+              {typeof store.contactInfo === 'string' 
+                ? Object.entries(JSON.parse(store.contactInfo)).map(
+                    ([key, value]) => (
+                      <p key={key} className="text-gray-600">
+                        <span className="capitalize">{key}:</span>{" "}
+                        <span className="font-medium">{value as string}</span>
+                      </p>
+                    )
+                  )
+                : Object.entries(store.contactInfo || {}).map(
+                    ([key, value]) => (
+                      <p key={key} className="text-gray-600">
+                        <span className="capitalize">{key}:</span>{" "}
+                        <span className="font-medium">{value as string}</span>
+                      </p>
+                    )
+                  )
+              }
             </div>
           </div>
 
@@ -127,24 +142,24 @@ export default function StoreDetailsModal({
                 วันที่สร้าง
               </h4>
               <p className="mt-1 text-gray-600">
-                {formatDate(store.created_at)}
+                {formatDate(store.createdAt)}
               </p>
             </div>
-            {store.updated_at && (
+            {store.updatedAt && (
               <div>
                 <h4 className="font-medium text-gray-900 flex items-center gap-2">
                   <FontAwesomeIcon icon={faCalendar} className="w-4 h-4 text-gray-500" />
                   วันที่อัปเดต
                 </h4>
                 <p className="mt-1 text-gray-600">
-                  {formatDate(store.updated_at)}
+                  {formatDate(store.updatedAt)}
                 </p>
               </div>
             )}
           </div>
 
           <div className="flex justify-end gap-4 mt-6">
-            {!store.is_verified && !store.is_banned && (
+            {store.isVerified === null && !store.isBanned && (
               <>
                 <Button
                   variant="outline"
@@ -170,7 +185,7 @@ export default function StoreDetailsModal({
                 </Button>
               </>
             )}
-            {store.is_verified && !store.is_banned && (
+            {store.isVerified === true && !store.isBanned && (
               <Button
                 variant="outline"
                 className="border-red-500 text-red-600 hover:bg-red-50"
@@ -183,7 +198,7 @@ export default function StoreDetailsModal({
                 แบนร้านค้า
               </Button>
             )}
-            {store.is_banned && (
+            {store.isBanned && (
               <Button
                 variant="outline"
                 className="border-green-500 text-green-600 hover:bg-green-50"

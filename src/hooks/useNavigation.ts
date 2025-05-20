@@ -7,9 +7,9 @@ import { NavItem } from "@/types/navbar";
 import { 
   faHome, 
   faStore, 
-  faExclamation, 
-  faSpellCheck, 
+  faExclamation,
   faChartBar,
+  faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { useUser } from "@/contexts/UserContext";
 
@@ -31,7 +31,7 @@ export default function useNavigation() {
 
     if (user) {
       const userItems: NavItem[] = [
-        { name: "ยืนยันตัวตน", href: "/verify", icon: faSpellCheck },
+        { name: "ยืนยันตัวตน", href: "/verify", icon: faCheck },
       ];
 
       if (user.role === "admin") {

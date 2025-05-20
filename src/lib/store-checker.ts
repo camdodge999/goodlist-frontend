@@ -34,3 +34,13 @@ export const getTrustLevelDescription = (level: string): string => {
             return "ไม่แนะนำให้ซื้อสินค้าจากร้านค้านี้ เนื่องจากมีความเสี่ยงสูง";
     }
 };
+
+export const getStoreStatus = (isVerified: boolean | null | undefined): { statusClass: string, statusText: string } => {
+    if (isVerified === true) {
+        return { statusClass: "bg-green-100 text-green-800", statusText: "ผ่านการตรวจสอบ" };
+    } else if (isVerified === false) {
+        return { statusClass: "bg-red-100 text-red-800", statusText: "ไม่ผ่านการตรวจสอบ" };
+    } else {
+        return { statusClass: "bg-yellow-100 text-yellow-800", statusText: "รอการตรวจสอบ" };
+    }
+};

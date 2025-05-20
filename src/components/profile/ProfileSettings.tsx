@@ -1,12 +1,14 @@
 import React from "react";
 import ProfileForm from "./ProfileForm";
 import PasswordForm from "./PasswordForm";
+import EmailForm from "./EmailForm";
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
 import { User as AuthUser } from "@/types/auth";
 import { User as AppUser } from "@/types/users";
 import StatusDialog from "@/components/common/StatusDialog";
 import { useShowDialog } from "@/hooks/useShowDialog";
 import { motion } from "framer-motion";
+import { useUser } from "@/contexts/UserContext";
 
 // Create a union type that works with both User types
 type User = AuthUser | AppUser;
@@ -52,6 +54,9 @@ export default function ProfileSettings({
   onEditToggle,
   fileInputRef
 }: ProfileSettingsProps) {
+  // Use the user context for email change
+  const { changeUserEmail, refreshUser } = useUser();
+
   // Use the dialog hook
   const {
     showSuccessDialog,
@@ -84,6 +89,28 @@ export default function ProfileSettings({
     }
   };
 
+  const handleChangeEmail = async (newEmail: string, currentPassword: string) => {
+    try {
+      if (!user?.id) {
+        throw new Error("ไม่พบข้อมูลผู้ใช้");
+      }
+      
+      const result = await changeUserEmail(user.id, newEmail, currentPassword);
+      
+      if (result) {
+        // Refresh user data after update
+        await refreshUser();
+        displaySuccessDialog("อีเมลของคุณได้รับการอัปเดตเรียบร้อยแล้ว");
+        return true;
+      } else {
+        throw new Error("ไม่สามารถอัปเดตอีเมล");
+      }
+    } catch (error) {
+      displayErrorDialog(error instanceof Error ? error.message : "ไม่สามารถอัปเดตอีเมล");
+      return false;
+    }
+  };
+
   return (
     <div>
       {/* Success Dialog */}
@@ -104,30 +131,40 @@ export default function ProfileSettings({
         title={errorTitle}
       />
 
+      <ProfileForm
+        initialData={formData}
+        isEditing={isEditing}
+        canChangeEmail={canChangeEmail}
+        lastEmailChange={lastEmailChange}
+        emailError={emailError}
+        onInputChange={onInputChange}
+        onImageChange={onImageChange}
+        onSaveProfile={handleSaveProfile}
+        onEditToggle={onEditToggle}
+        previewImage={previewImage}
+        fileInputRef={fileInputRef}
+      />
 
-        <ProfileForm
-          initialData={formData}
-          isEditing={isEditing}
-          canChangeEmail={canChangeEmail}
-          lastEmailChange={lastEmailChange}
-          emailError={emailError}
-          onInputChange={onInputChange}
-          onImageChange={onImageChange}
-          onSaveProfile={handleSaveProfile}
-          onEditToggle={onEditToggle}
-          previewImage={previewImage}
-          fileInputRef={fileInputRef}
-        />
+      {/* Email Form - New component for email management */}
+      <EmailForm
+        isEditing={isEditing}
+        currentEmail={formData.email}
+        lastEmailChange={lastEmailChange}
+        canChangeEmail={canChangeEmail}
+        emailError={emailError}
+        onEmailChange={onInputChange}
+        onChangeEmail={handleChangeEmail}
+      />
 
-        {/* Password Form */}
-        <PasswordForm
-          isEditing={isEditing}
-          passwordError={passwordError}
-          isChangingPassword={isChangingPassword}
-          onPasswordChange={onPasswordChange}
-          onChangePassword={handleChangePassword}
-          initialData={passwordData}
-        />
+      {/* Password Form */}
+      <PasswordForm
+        isEditing={isEditing}
+        passwordError={passwordError}
+        isChangingPassword={isChangingPassword}
+        onPasswordChange={onPasswordChange}
+        onChangePassword={handleChangePassword}
+        initialData={passwordData}
+      />
     </div>
   );
 } 

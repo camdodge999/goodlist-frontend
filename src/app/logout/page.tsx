@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { 
   AlertDialog,
@@ -15,14 +15,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 export default function LogoutPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { toast } = useToast();
+  const { signOut, isLoading } = useUser();
   const [open, setOpen] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect to login page if no session exists
+  useEffect(() => {
+    const checkSession = async () => {
+      if (status === "unauthenticated") {
+        await signOut();
+        router.push("/");
+      }
+    };
+    checkSession();
+  }, [status, router]);
 
   const handleLogout = async () => {
     try {
@@ -31,7 +44,7 @@ export default function LogoutPage() {
       // Get user email for the success message
       const userEmail = session?.user?.email;
       
-      await signOut({ redirect: false });
+      await signOut();
       
       // Show success toast
       toast({
@@ -59,6 +72,15 @@ export default function LogoutPage() {
     setOpen(false);
     router.back();
   };
+
+  // If not authenticated, show a loading state instead of the dialog
+  if (status === "unauthenticated" || status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center">

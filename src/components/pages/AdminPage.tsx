@@ -5,18 +5,18 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockStores, mockAdminUser, mockReports } from "@/data/mockData";
-import { updateMockData } from "@/utils/mockDataUtils";
+import { useStore } from "@/contexts/StoreContext";
 import { 
   StoreItem, 
   StoreDetailsModal, 
-  ReportsModal, 
-  type Store,
-  type Report
+  ReportsModal
 } from "@/components/admin";
 import UnderlineTab from "@/components/ui/underline-tab";
 import { Tab } from "@/types/tabs";
-// Define types
+import { Store } from "@/types/stores";
+import { Report } from "@/types/report";
+
+// Define types for auth user
 type User = {
   id: number;
   name: string;
@@ -30,6 +30,7 @@ interface SelectedReport {
 
 export default function AdminPage() {
   const { user } = useAuth() as { user: User | null };
+  const { stores, fetchStores, updateStore, isLoading: storesLoading } = useStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("pending");
   const [selectedReport, setSelectedReport] = useState<SelectedReport | null>(null);
@@ -37,73 +38,105 @@ export default function AdminPage() {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [reports, setReports] = useState<Report[]>([]);
   const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Fetch stores when component mounts
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await fetchStores(true);
+        // Fetch reports - in a real app, this would be from an API
+        // For now, we'll use an empty array
+        setReports([]);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [fetchStores, forceUpdate]);
 
   const tabs: Tab[] = [
     {
       id: "pending",
       name: "ร้านค้าที่รอการตรวจสอบ",
-      count: mockStores.filter((s) => !s.is_verified && !s.is_banned).length,
+      count: stores.filter((s) => s.isVerified === null && !s.isBanned).length,
     },
     {
       id: "reported",
       name: "ร้านค้าที่ถูกรายงาน",
-      count: mockReports.length,
+      count: reports.length,
     },
     {
       id: "verified",
       name: "ร้านค้าที่ตรวจสอบแล้ว",
-      count: mockStores.filter((s) => s.is_verified && !s.is_banned).length,
+      count: stores.filter((s) => s.isVerified === true && !s.isBanned).length,
     },
     {
       id: "additional",
       name: "คำขอเพิ่มร้านค้า",
-      count: mockStores.filter(
-        (s) => s.is_additional_store && !s.is_verified && !s.is_banned
+      // This would need a way to identify additional stores
+      // For now, we'll use a placeholder logic
+      count: stores.filter(
+        (s) => s.userId > 0 && s.isVerified === null && !s.isBanned
       ).length,
     },
     {
       id: "banned",
       name: "ร้านค้าที่ถูกแบน",
-      count: mockStores.filter((s) => s.is_banned).length,
+      count: stores.filter((s) => s.isBanned).length,
     },
   ];
 
-  const filteredStores = mockStores.filter((store) => {
+  const filteredStores = stores.filter((store) => {
     switch (activeTab) {
       case "pending":
-        return !store.is_verified && !store.is_banned;
+        return store.isVerified === null && !store.isBanned;
       case "reported":
-        return mockReports.some((report) => report.store_id === store.id);
+        return reports.some((report) => report.storeId === store.id.toString());
       case "verified":
-        return store.is_verified && !store.is_banned;
+        return store.isVerified === true && !store.isBanned;
       case "additional":
-        return (
-          store.is_additional_store && !store.is_verified && !store.is_banned
-        );
+        // This would need a way to identify additional stores
+        // For now, we'll use a placeholder logic
+        return store.userId > 0 && store.isVerified === null && !store.isBanned;
       case "banned":
-        return store.is_banned;
+        return store.isBanned;
       default:
         return true;
     }
   });
 
-  const getStoreReports = (storeId: string): Report[] => {
-    return mockReports.filter((report) => report.store_id === storeId);
+  const getStoreReports = (storeId: number): Report[] => {
+    return reports.filter((report) => report.storeId === storeId.toString());
   };
 
   const handleViewReport = (store: Store) => {
-    const reports = getStoreReports(store.id);
-    setSelectedReport({ store, reports });
+    const storeReports = getStoreReports(store.id);
+    setSelectedReport({ store, reports: storeReports });
     setIsReportModalOpen(true);
   };
 
   const handleUpdateReportStatus = (reportId: string, newStatus: "valid" | "invalid") => {
-    const report = mockReports.find((r) => r.id === reportId);
+    const report = reports.find((r) => r.id === reportId);
     if (report) {
-      report.status = newStatus;
-      // Force a re-render
-      setSelectedReport({ ...selectedReport! });
+      // In a real app, this would be an API call
+      setReports(prevReports => 
+        prevReports.map(r => r.id === reportId ? {...r, status: newStatus} : r)
+      );
+      
+      // Update selected report to reflect changes
+      if (selectedReport) {
+        setSelectedReport({
+          ...selectedReport,
+          reports: selectedReport.reports.map(r => 
+            r.id === reportId ? {...r, status: newStatus} : r
+          )
+        });
+      }
     }
   };
 
@@ -112,34 +145,55 @@ export default function AdminPage() {
     setIsReportModalOpen(false);
   };
 
-  const handleApproveStore = (storeId: string) => {
-    updateMockData.updateStore(storeId, {
-      is_verified: true,
-      updated_at: new Date().toISOString(),
-    });
-    setForceUpdate((prev) => prev + 1);
+  const handleApproveStore = async (storeId: number) => {
+    try {
+      await updateStore(storeId, {
+        isVerified: true,
+        updatedAt: new Date().toISOString(),
+      });
+      setForceUpdate(prev => prev + 1);
+    } catch (error) {
+      console.error("Error approving store:", error);
+    }
   };
 
-  const handleRejectStore = (storeId: string) => {
-    updateMockData.deleteStore(storeId);
-    setForceUpdate((prev) => prev + 1);
+  const handleRejectStore = async (storeId: number) => {
+    try {
+      // In a real app, you might want to set isVerified to false instead of deleting
+      await updateStore(storeId, {
+        isVerified: false,
+        updatedAt: new Date().toISOString(),
+        rejectionReason: "ไม่ผ่านการตรวจสอบ"
+      });
+      setForceUpdate(prev => prev + 1);
+    } catch (error) {
+      console.error("Error rejecting store:", error);
+    }
   };
 
-  const handleBanStore = (storeId: string) => {
-    updateMockData.updateStore(storeId, {
-      is_banned: true,
-      is_verified: false,
-      updated_at: new Date().toISOString(),
-    });
-    setForceUpdate((prev) => prev + 1);
+  const handleBanStore = async (storeId: number) => {
+    try {
+      await updateStore(storeId, {
+        isBanned: true,
+        isVerified: false,
+        updatedAt: new Date().toISOString(),
+      });
+      setForceUpdate(prev => prev + 1);
+    } catch (error) {
+      console.error("Error banning store:", error);
+    }
   };
 
-  const handleUnbanStore = (storeId: string) => {
-    updateMockData.updateStore(storeId, {
-      is_banned: false,
-      updated_at: new Date().toISOString(),
-    });
-    setForceUpdate((prev) => prev + 1);
+  const handleUnbanStore = async (storeId: number) => {
+    try {
+      await updateStore(storeId, {
+        isBanned: false,
+        updatedAt: new Date().toISOString(),
+      });
+      setForceUpdate(prev => prev + 1);
+    } catch (error) {
+      console.error("Error unbanning store:", error);
+    }
   };
 
   const handleViewStore = (store: Store) => {
@@ -160,7 +214,7 @@ export default function AdminPage() {
     setIsLoading(false);
   }, [user, router]);
 
-  if (isLoading) {
+  if (isLoading || storesLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

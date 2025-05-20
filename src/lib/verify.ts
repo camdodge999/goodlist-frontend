@@ -5,7 +5,7 @@ export const getStatusDetails = (status: VerificationStatusType): VerificationSt
     case 'not_started':
       return {
         status: 'not_started',
-        message: 'คุณยังไม่ได้ยืนยันตัวตน กรุณากรอกข้อมูลและอัพโหลดเอกสารเพื่อเริ่มกระบวนการยืนยันตัวตน'
+        message: 'ร้านค้าของคุณยังไม่ได้ยืนยันตัวตน กรุณากรอกข้อมูลและอัพโหลดเอกสารเพื่อเริ่มกระบวนการยืนยันตัวตน'
       };
     case 'pending':
       return {
@@ -15,12 +15,12 @@ export const getStatusDetails = (status: VerificationStatusType): VerificationSt
     case 'verified':
       return {
         status: 'verified',
-        message: 'คุณได้รับการยืนยันตัวตนเรียบร้อยแล้ว คุณสามารถใช้งานระบบได้อย่างเต็มรูปแบบ'
+        message: 'ร้านค้าของคุณได้รับการยืนยันตัวตนเรียบร้อยแล้ว คุณสามารถใช้งานระบบได้อย่างเต็มรูปแบบ'
       };
     case 'banned':
       return {
         status: 'banned',
-        message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อเจ้าหน้าที่เพื่อขอข้อมูลเพิ่มเติม'
+        message: 'ร้านค้าของคุณถูกระงับการใช้งาน กรุณาติดต่อเจ้าหน้าที่เพื่อขอข้อมูลเพิ่มเติม'
       };
     default:
       return {

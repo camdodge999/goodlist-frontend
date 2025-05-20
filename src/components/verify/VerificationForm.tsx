@@ -498,6 +498,7 @@ export default function VerificationForm({
         <div className="mt-8">
           <Button 
             type="submit" 
+            variant="primary"
             className="w-full py-6 text-lg"
             disabled={isSubmitting || localIsSubmitting}
           >

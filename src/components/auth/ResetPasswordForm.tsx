@@ -13,9 +13,6 @@ import { FormLabel } from "@/components/ui/form-label";
 import { useShowDialog } from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
 
-// Don't import at module level to avoid the Promise issue
-// import { resetPasswordAction } from "@/app/api/auth/actions";
-
 interface ResetPasswordFormProps {
   onSuccess: () => void;
 }
@@ -46,15 +43,6 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
       onSuccess();
     }
   }, [onSuccess, showSuccessDialog]);
-
-  // Dynamically import the action to avoid the Promise issue
-  useEffect(() => {
-    const loadAction = async () => {
-      const { resetPasswordAction } = await import("@/app/api/auth/actions");
-      setAction(resetPasswordAction);
-    };
-    loadAction();
-  }, []);
 
   // Use the server action state hook with React's useActionState
   const { 

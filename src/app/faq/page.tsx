@@ -6,7 +6,7 @@ import { faqs } from "@/consts/faqs";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "คำถามที่พบบ่อย - GoodList",
+  title: "คำถามที่พบบ่อย | Goodlistseller",
   description: "ค้นหาคำตอบสำหรับคำถามทั่วไปเกี่ยวกับนโยบายและการใช้งานของเรา",
 };
 

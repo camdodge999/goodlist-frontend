@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { profileTabs } from "@/consts/profileTab";
 import UnderlineTab from "@/components/ui/underline-tab";
 import { useUser } from "@/contexts/UserContext";
@@ -30,7 +30,7 @@ interface ProfileClientProps {
 // ProfileClient component handles user profile management
 export default function ProfileClient({ user }: ProfileClientProps) {
   const router = useRouter();
-  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading } = useUser();
+  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut } = useUser();
   const [activeTab, setActiveTab] = useState("stores");
   const [isEditing, setIsEditing] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -46,11 +46,15 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [tempEmail, setTempEmail] = useState("");
 
   // Add the useShowDialog hook
-  const { 
-    showErrorDialog, 
-    setShowErrorDialog, 
-    errorMessage, 
-    displayErrorDialog 
+  const {
+    showErrorDialog,
+    setShowErrorDialog,
+    errorMessage,
+    displayErrorDialog,
+    showSuccessDialog,
+    setShowSuccessDialog,
+    successMessage,
+    displaySuccessDialog
   } = useShowDialog();
 
   // Create individual refs for each OTP input
@@ -79,10 +83,10 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
   // Use the more up-to-date currentUser when available
   const displayUser = currentUser || user;
-  
+
   // Use a ref to track initialization to prevent repeated fetches
   const initialized = useRef(false);
-  
+
   useEffect(() => {
     // Fetch user profile with stores when component mounts
     const initializeProfile = async () => {
@@ -110,7 +114,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       });
       setTempEmail(displayUser.email || "");
     };
-    
+
     updateFormWithUserData();
 
     // Check last email change date from localStorage
@@ -125,7 +129,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         setLastEmailChange(lastChangeDate);
       }
     }
-  // Remove displayUser from dependency array but keep updateFormWithUserData logic
+    // Remove displayUser from dependency array but keep updateFormWithUserData logic
   }, [user.id, fetchUserProfile]);
 
   // Add a separate effect to update form data when displayUser changes
@@ -275,22 +279,22 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Check file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       displayErrorDialog("ไฟล์ขนาดใหญ่เกินไป กรุณาเลือกไฟล์ขนาดไม่เกิน 5MB");
       return;
     }
-    
+
     // Check file type
     if (!file.type.match('image/(jpeg|jpg|png|gif)')) {
       displayErrorDialog("รองรับเฉพาะไฟล์รูปภาพประเภท JPG, PNG และ GIF เท่านั้น");
       return;
     }
-    
+
     setProfileImage(file);
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewImage(reader.result as string);
@@ -305,38 +309,39 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     try {
       // Create FormData object for the profile update
       const formDataObj = new FormData();
-      
+
       // Add text fields to FormData, checking for undefined/null values
       if (formData.name) {
         formDataObj.append('displayName', formData.name);
       }
-      
+
       if (formData.email) {
         formDataObj.append('email', formData.email);
       }
-      
+
       if (formData.phoneNumber) {
         formDataObj.append('phoneNumber', formData.phoneNumber);
       }
-      
+
       if (formData.address) {
         formDataObj.append('address', formData.address);
       }
-      
+
       // Add profile image if it exists
       if (profileImage) {
         formDataObj.append('logo_url', profileImage);
       }
-      
+
       // Call updateUser with FormData
       const result = await updateUser(displayUser.id, formDataObj);
-      
+
       if (result) {
         setIsEditing(false);
         // Reset profile image state
         setProfileImage(null);
         setPreviewImage(null);
         // Refresh user data after update
+        displaySuccessDialog("บันทึกข้อมูลสำเร็จ");
         await refreshUser();
       } else {
         throw new Error("Failed to update profile");
@@ -385,7 +390,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setFormData({
         name: displayUser?.displayName || "",
         email: displayUser?.email || "",
-        phoneNumber: displayUser?.phoneNumber || "",  
+        phoneNumber: displayUser?.phoneNumber || "",
         address: displayUser?.address || "",
         logo_url: displayUser?.logo_url || "",
       });
@@ -395,12 +400,12 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setEmailError("");
       setPasswordError("");
     }
-    
+
     setIsEditing(!isEditing);
   };
 
   const logout = async () => {
-    await signOut({ redirect: false });
+    await signOut();
   };
 
   return (
@@ -411,6 +416,14 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         setIsOpen={setShowErrorDialog}
         type="error"
         message={errorMessage}
+      />
+
+
+      <StatusDialog
+        isOpen={showSuccessDialog}
+        setIsOpen={setShowSuccessDialog}
+        type="success"
+        message={successMessage}
       />
 
       {showOtpModal && (
@@ -430,24 +443,24 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header - Use the most up-to-date user data */}
-        <ProfileHeader 
-          user={displayUser} 
-          onLogout={logout} 
+        <ProfileHeader
+          user={displayUser}
+          onLogout={logout}
         />
 
         {/* Tabs */}
         <div className="mt-8">
-          <UnderlineTab 
-            tabs={profileTabs} 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab} 
+          <UnderlineTab
+            tabs={profileTabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
           />
 
           {/* Tab Content */}
           <div>
             {activeTab === "stores" && (
-              <ProfileStores 
-                stores={userStores || []} 
+              <ProfileStores
+                stores={userStores || []}
                 isLoading={storesLoading}
               />
             )}

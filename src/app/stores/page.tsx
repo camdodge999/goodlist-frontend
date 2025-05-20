@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import StoresPage from "@/components/pages/StoresPage";
 import { StoreProvider } from "@/contexts/StoreContext";
-import { Store } from "@/types/stores";
 
 export const metadata: Metadata = {
   title: 'ร้านค้าที่ผ่านการตรวจสอบ | Goodlistseller',
@@ -10,7 +9,6 @@ export const metadata: Metadata = {
 
 
 export default async function Page() {
-
   return (
     <StoreProvider>
       <StoresPage />

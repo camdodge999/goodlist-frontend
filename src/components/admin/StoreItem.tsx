@@ -8,15 +8,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Store } from "@/types/stores";
 
+// Fallback default logo
+const defaultLogo = {
+  src: "/images/logo.webp"
+};
+
 interface StoreItemProps {
   store: Store;
   activeTab: string;
   onViewStore: (store: Store) => void;
   onViewReport: (store: Store) => void;
-  onApproveStore: (storeId: string) => void;
-  onRejectStore: (storeId: string) => void;
-  onBanStore: (storeId: string) => void;
-  onUnbanStore: (storeId: string) => void;
+  onApproveStore: (storeId: number) => void;
+  onRejectStore: (storeId: number) => void;
+  onBanStore: (storeId: number) => void;
+  onUnbanStore: (storeId: number) => void;
 }
 
 export default function StoreItem({
@@ -29,6 +34,9 @@ export default function StoreItem({
   onBanStore,
   onUnbanStore
 }: StoreItemProps) {
+  // Check if store has additional property (might be custom field)
+  const isAdditionalStore = store.userId > 0 && store.isVerified === null && !store.isBanned;
+
   return (
     <div className="px-4 py-4 sm:px-6">
       <div className="flex items-center justify-between">
@@ -40,7 +48,7 @@ export default function StoreItem({
                 const target = e.currentTarget as HTMLImageElement;
                 target.srcset = defaultLogo.src;
               }}
-              alt={store.name}
+              alt={store.storeName}
               fill
               className="object-cover"
             />
@@ -50,12 +58,14 @@ export default function StoreItem({
               onClick={() => onViewStore(store)}
               className="text-sm font-medium text-blue-600 hover:text-blue-800"
             >
-              {store.store_name}
+              {store.storeName}
             </button>
             <p className="text-xs text-gray-500">
-              {JSON.parse(store.contact_info).line}
+              {typeof store.contactInfo === 'string' 
+                ? JSON.parse(store.contactInfo).line 
+                : store.contactInfo?.line}
             </p>
-            {store.is_additional_store && (
+            {isAdditionalStore && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                 คำขอเพิ่มร้านค้า
               </span>
@@ -74,7 +84,7 @@ export default function StoreItem({
               ดูรายละเอียด
             </Button>
           )}
-          {!store.is_verified && !store.is_banned && (
+          {store.isVerified === null && !store.isBanned && (
             <>
               <Button
                 variant="outline"
@@ -96,7 +106,7 @@ export default function StoreItem({
               </Button>
             </>
           )}
-          {store.is_verified && !store.is_banned && (
+          {store.isVerified === true && !store.isBanned && (
             <Button
               variant="outline"
               size="sm"
@@ -107,7 +117,7 @@ export default function StoreItem({
               แบนร้านค้า
             </Button>
           )}
-          {store.is_banned && (
+          {store.isBanned && (
             <Button
               variant="outline"
               size="sm"

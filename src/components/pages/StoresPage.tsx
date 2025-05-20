@@ -10,7 +10,7 @@ import StoreGrid from "@/components/stores/StoreGrid";
 import StorePagination from "@/components/stores/StorePagination";
 
 export default function StoresPage() {
-  const { stores, isLoading, error, refreshStores, fetchStores } = useStore();
+  const { stores, isLoading, error, fetchStores } = useStore();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);

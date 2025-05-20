@@ -141,7 +141,7 @@ export default function ProfileForm({
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                อีเมล
+                อีเมล (สามารถเปลี่ยนได้)
               </FormLabel>
               <div className="relative">
                 <Input
@@ -149,19 +149,10 @@ export default function ProfileForm({
                   id="email"
                   name="email"
                   className="mt-1"
-                  disabled={!isEditing || !canChangeEmail}
+                  disabled={true}
                   defaultValue={initialData.email}
                   onChange={onInputChange}
                 />
-                {!canChangeEmail && lastEmailChange && (
-                  <div className="mt-1 text-xs text-gray-500">
-                    คุณได้เปลี่ยนอีเมลล่าสุดเมื่อวันที่{" "}
-                    {dayjs(lastEmailChange).format('DD/MM/BBBB')} สามารถเปลี่ยนอีเมลได้อีกครั้งหลังจาก 1 เดือน
-                  </div>
-                )}
-                {emailError && (
-                  <p className="mt-1 text-sm text-red-600">{emailError}</p>
-                )}
               </div>
             </div>
 

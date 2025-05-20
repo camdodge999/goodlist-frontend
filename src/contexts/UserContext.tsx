@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { User } from "@/types/users";
 import { Store } from "@/types/stores";
 
@@ -17,6 +17,7 @@ interface UserContextProps {
   currentUser: User | null;
   userStores: Store[];
   updateUser: (userId: string, updates: Partial<User> | FormData) => Promise<User | null>;
+  changeUserEmail: (userId: string, newEmail: string, currentPassword: string) => Promise<User | null>;
   isLoading: boolean;
   storesLoading: boolean;
   error: string | null;
@@ -24,6 +25,7 @@ interface UserContextProps {
   fetchUserProfile: (userId: string, forceRefresh?: boolean) => Promise<User | null>;
   verifyUser: (userId: string, verificationData: any) => Promise<boolean>;
   getVerificationStatus: () => "not_started" | "pending" | "verified" | "banned";
+  signOut: () => Promise<void>;
 }
 
 interface UserProviderProps {
@@ -315,12 +317,75 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
     }
   };
 
+  const changeUserEmail = async (userId: string, newEmail: string, currentPassword: string): Promise<User | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Create data with email and password
+      const data = {
+        email: newEmail,
+        currentPassword
+      };
+      
+      // Use a specific API endpoint for email change that requires password verification
+      const response = await fetch(`/api/user/email/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session?.user?.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error updating email: ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      
+      if (responseData.statusCode === 200 && responseData.data) {
+        // Update the current user in state
+        setCurrentUser(prevUser => 
+          prevUser && prevUser.id === userId ? { ...prevUser, ...responseData.data } : prevUser
+        );
+        
+        // Update the last fetch time so we don't refetch immediately
+        const cacheKey = `user_${userId}`;
+        lastFetchTime.current[cacheKey] = Date.now();
+        
+        // Update last email change time in localStorage
+        localStorage.setItem("lastEmailChange", new Date().toISOString());
+        
+        return responseData.data;
+      } else {
+        throw new Error(responseData.message || 'Failed to update email');
+      }
+    } catch (err) {
+      console.error('Error updating email:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    // Reset user context data
+    setCurrentUser(null);
+    setUserStores([]);
+      
+    // Call NextAuth signOut
+    await nextAuthSignOut({redirect: false});
+  };
+
   return (
     <UserContext.Provider
       value={{
         currentUser,
         userStores,
         updateUser,
+        changeUserEmail,
         isLoading,
         storesLoading,
         error,
@@ -328,6 +393,7 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
         fetchUserProfile,
         verifyUser,
         getVerificationStatus,
+        signOut,
       }}
     >
       {children}

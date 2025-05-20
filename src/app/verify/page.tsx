@@ -19,7 +19,7 @@ import { VerificationFormSchema } from "@/validators/verify.schema";
 function VerifyPageContent() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { currentUser, fetchUserProfile, verifyUser, getVerificationStatus, isLoading: userLoading } = useUser();
+  const { currentUser, fetchUserProfile, getVerificationStatus, isLoading: userLoading, userStores } = useUser();
   const { addStore } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [saveFormData, setSaveFormData] = useState<VerificationFormSchema | null>(null);
@@ -150,14 +150,14 @@ function VerifyPageContent() {
             ยืนยันตัวตนร้านค้า
           </h1>
 
-          {/* Debug information - remove in production */}
+          {/* Debug information - remove in production
           <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
             <p>Session user: {session?.user?.id || 'Not authenticated'}</p>
             <p>Current user: {currentUser ? JSON.stringify(currentUser.id) : 'Not loaded'}</p>
             <p>Verification status: {verificationStatus}</p>
-          </div>
+          </div> */}
 
-          <VerificationStatusBox status={verificationStatus} />
+          <VerificationStatusBox status={userStores.length > 0 ? "verified" : verificationStatus} />
 
           {/* Always show form if user hasn't been verified yet */}
           {verificationStatus === "not_started" && (

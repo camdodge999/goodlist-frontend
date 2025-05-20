@@ -3,8 +3,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import ProfileClient from "@/components/profile/ProfileClient";
 import { User } from "@/types/users";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'โปรไฟล์ | Goodlistseller',
+  description: 'แพลตฟอร์มที่ช่วยให้คุณค้นหาร้านค้าออนไลน์ที่เชื่อถือได้ในประเทศไทย',
+};
+
 
 export default async function ProfilePage() {
+
   // Get session using server component
   const session = await getServerSession(authOptions);
 

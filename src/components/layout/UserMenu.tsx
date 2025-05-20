@@ -25,9 +25,15 @@ interface UserMenuProps {
   user?: User;
   isAuthenticated: boolean;
   isMobile?: boolean;
+  resetUserState?: () => Promise<void>;
 }
 
-export default function UserMenu({ user, isAuthenticated, isMobile = false }: UserMenuProps) {
+export default function UserMenu({ 
+  user, 
+  isAuthenticated, 
+  isMobile = false, 
+  resetUserState 
+}: UserMenuProps) {
   // Mobile version
   if (isMobile) {
     return (
@@ -43,15 +49,15 @@ export default function UserMenu({ user, isAuthenticated, isMobile = false }: Us
                 <span>โปรไฟล์</span>
               </div>
             </Link>
-            <Link
-              href="/logout"
-              className="block rounded-lg px-4 py-3 text-base font-semibold text-gray-900 hover:bg-red-50 active:bg-red-100 transition-colors"
+            <button
+              onClick={resetUserState}
+              className="w-full block rounded-lg px-4 py-3 text-base font-semibold text-gray-900 hover:bg-red-50 active:bg-red-100 transition-colors"
             >
               <div className="flex items-center">
                 <FontAwesomeIcon icon={faSignOutAlt} className="h-5 w-5 text-red-500 mr-3" />
                 <span>ออกจากระบบ</span>
               </div>
-            </Link>
+            </button>
           </>
         ) : (
           <>
@@ -143,11 +149,12 @@ export default function UserMenu({ user, isAuthenticated, isMobile = false }: Us
             <DropdownMenuItem
               asChild
               className="cursor-pointer transition-all duration-200 rounded-md hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600"
+              onClick={resetUserState}
             >
-              <Link href="/logout" className="flex items-center p-2">
+              <div className="flex items-center p-2">
                 <FontAwesomeIcon icon={faSignOutAlt} className="mr-2 h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                 <span>ออกจากระบบ</span>
-              </Link>
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -161,6 +168,7 @@ export default function UserMenu({ user, isAuthenticated, isMobile = false }: Us
             <Link href="/login">เข้าสู่ระบบ</Link>
           </Button>
           <Button
+            variant="primary"
             asChild
             className="transition-all duration-200 hover:shadow-md"
           >

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { 
   StoreItem, 
@@ -15,13 +14,7 @@ import UnderlineTab from "@/components/ui/underline-tab";
 import { Tab } from "@/types/tabs";
 import { Store } from "@/types/stores";
 import { Report } from "@/types/report";
-
-// Define types for auth user
-type User = {
-  id: number;
-  name: string;
-  role: string;
-};
+import { useSession } from "next-auth/react";
 
 interface SelectedReport {
   store: Store;
@@ -29,7 +22,7 @@ interface SelectedReport {
 }
 
 export default function AdminPage() {
-  const { user } = useAuth() as { user: User | null };
+  const { data: session, status } = useSession();
   const { stores, fetchStores, updateStore, isLoading: storesLoading } = useStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("pending");
@@ -40,16 +33,30 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
   const [forceUpdate, setForceUpdate] = useState(0);
+  // Add initialization ref to prevent repeated fetches
+  const initialized = useRef(false);
 
-  // Fetch stores when component mounts
+  // Check authentication first
+  useEffect(() => {
+    if (status === "unauthenticated" || (session && session.user?.role !== "admin")) {
+      router.push("/login");
+    }
+  }, [session, status, router]);
+
+  // Separate useEffect for data fetching to avoid infinite loops
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await fetchStores(true);
-        // Fetch reports - in a real app, this would be from an API
-        // For now, we'll use an empty array
-        setReports([]);
-        setIsLoading(false);
+        if (status === "authenticated" && session?.user?.role === "admin") {
+          // Only fetch if not already initialized or if forceUpdate has changed
+          if (!initialized.current || forceUpdate > 0) {
+            await fetchStores(true);
+            // Fetch reports - in a real app, this would be from an API
+            setReports([]);
+            setIsLoading(false);
+            initialized.current = true;
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         setIsLoading(false);
@@ -57,7 +64,8 @@ export default function AdminPage() {
     };
 
     fetchData();
-  }, [fetchStores, forceUpdate]);
+    // This effect should only run when forceUpdate changes or when the component mounts
+  }, [forceUpdate, session, status, fetchStores]);
 
   const tabs: Tab[] = [
     {
@@ -206,15 +214,7 @@ export default function AdminPage() {
     setIsStoreModalOpen(false);
   };
 
-  useEffect(() => {
-    if (!user || user.role !== "admin") {
-      router.push("/login");
-      return;
-    }
-    setIsLoading(false);
-  }, [user, router]);
-
-  if (isLoading || storesLoading) {
+  if (status === "loading" || isLoading || storesLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

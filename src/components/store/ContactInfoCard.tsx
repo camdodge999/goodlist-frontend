@@ -8,13 +8,11 @@ import { isValidJSON } from "@/utils/valid-json";
 interface ContactInfoCardProps {
   contactInfo: ContactInfo | string;
   userEmail: string;
-  isLoggedIn: boolean;
 }
 
-export default function ContactInfoCard({ contactInfo, userEmail, isLoggedIn }: ContactInfoCardProps) {
+export default function ContactInfoCard({ contactInfo, userEmail }: ContactInfoCardProps) {
   // Parse contactInfo if it's a string and valid JSON
   let contactData: ContactInfo | string = contactInfo;
-  console.log("contactData", contactData);
   
   if (typeof contactInfo === 'string') {
     if (isValidJSON(contactInfo)) {

@@ -12,6 +12,8 @@ import { Button } from '../ui/button';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import buddhistEra from "dayjs/plugin/buddhistEra"
+import { useSession } from 'next-auth/react';
+import { isValidJSON } from '@/utils/valid-json';
 dayjs.locale('th');
 dayjs.extend(buddhistEra);
 
@@ -19,9 +21,14 @@ interface StoreDetailDialogProps {
   store: Store | null;
   isOpen: boolean;
   onClose: () => void;
+  onApprove?: (storeId: number) => void;
+  onReject?: (storeId: number) => void;
+  onBan?: (storeId: number) => void;
+  onUnban?: (storeId: number) => void;
+  hideAdminActions?: boolean;
 }
 
-const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, onClose }) => {
+const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, onClose, onApprove, onReject, onBan, onUnban, hideAdminActions = false }) => {
   const [previewImage, setPreviewImage] = useState<{
     isOpen: boolean;
     url: string;
@@ -31,6 +38,9 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
     url: '',
     name: '',
   });
+
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin" && !hideAdminActions;
 
   if (!store) return null;
 
@@ -43,7 +53,7 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
   };
 
   try {
-    if (typeof store.contactInfo === 'string') {
+    if (typeof store.contactInfo === 'string' && isValidJSON(store.contactInfo)) {
       contactInfo = JSON.parse(store.contactInfo);
     } else if (store.contactInfo && typeof store.contactInfo !== 'string') {
       contactInfo = {
@@ -304,37 +314,57 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
             </div>
           </div>
 
-          {/* Footer Actions (for verified stores) */}
-          {store.isVerified !== null && (
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex justify-end gap-2">
-              <Button
-                variant="primary"
-                onClick={onClose}
-              >
-                ปิด
-              </Button>
-              {/* {store.isVerified === true && (
-                <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
-                  อนุมัติ
-                </button>
-              )}
-              {store.isVerified === false && (
-                <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
-                  ปฏิเสธ
-                </button>
-              )}
-              {store.isVerified === null && (
-                <>
-                  <button className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
-                    ปฏิเสธ
-                  </button>
-                  <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
-                    อนุมัติ
-                  </button>
-                </>
-              )} */}
-            </div>
-          )}
+          {/* Footer Actions (based on user role) */}
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex justify-end gap-2">
+            <Button
+              variant="primary"
+              onClick={onClose}
+            >
+              ปิด
+            </Button>
+            
+            {/* Admin-only actions */}
+            {isAdmin && (
+              <>
+                {store.isVerified === null && !store.isBanned && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="border-green-500 text-green-600 hover:bg-green-50"
+                      onClick={() => onApprove && onApprove(store.id)}
+                    >
+                      อนุมัติ
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-red-500 text-red-600 hover:bg-red-50"
+                      onClick={() => onReject && onReject(store.id)}
+                    >
+                      ปฏิเสธ
+                    </Button>
+                  </>
+                )}
+                {store.isVerified === true && !store.isBanned && (
+                  <Button
+                    variant="outline"
+                    className="border-red-500 text-red-600 hover:bg-red-50"
+                    onClick={() => onBan && onBan(store.id)}
+                  >
+                    แบนร้านค้า
+                  </Button>
+                )}
+                {store.isBanned && (
+                  <Button
+                    variant="outline"
+                    className="border-green-500 text-green-600 hover:bg-green-50"
+                    onClick={() => onUnban && onUnban(store.id)}
+                  >
+                    ยกเลิกแบน
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

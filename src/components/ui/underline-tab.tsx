@@ -24,7 +24,7 @@ export default function UnderlineTab({ tabs, activeTab, onTabChange }: Underline
               `}
           >
             <span>{tab.name}</span>
-            {tab.count && ( 
+            {(tab.count || tab.count === 0) && ( 
               <span className="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs">
                 {tab.count}
               </span>

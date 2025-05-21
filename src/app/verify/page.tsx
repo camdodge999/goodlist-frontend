@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useUser, UserProvider } from "@/contexts/UserContext";
 import { useStore, StoreProvider } from "@/contexts/StoreContext";
-import { useShowDialog } from "@/hooks/useShowDialog";
+import useShowDialog from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
 
 // Components

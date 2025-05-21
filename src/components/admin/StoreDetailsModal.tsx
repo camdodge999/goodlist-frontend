@@ -11,11 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Store } from "@/types/stores";
+import { formatDate, getAuthenticatedImageUrl } from "@/lib/utils";
+import defaultLogo from "@images/logo.webp";
 
-// Fallback default logo
-const defaultLogo = {
-  src: "/images/logo.webp"
-};
 
 interface StoreDetailsModalProps {
   isOpen: boolean;
@@ -36,20 +34,8 @@ export default function StoreDetailsModal({
   onBan,
   onUnban
 }: StoreDetailsModalProps) {
-  // Format date helper
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  };
-
   // Check if store has additional property (might be custom field)
-  const isAdditionalStore = store?.userId > 0 && store?.isVerified === null && !store?.isBanned;
+  const isAdditionalStore = store?.userId && store?.userId > 0 && store?.isVerified === null && !store?.isBanned;
 
   if (!store) return null;
 
@@ -64,14 +50,14 @@ export default function StoreDetailsModal({
             <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
               <Image
                 src={
-                  store.imageStore ||
+                  getAuthenticatedImageUrl(store.imageStore) ||
                   "/images/logo.webp"
                 }
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement;
                   target.srcset = defaultLogo.src;
                 }}
-                alt={store.storeName}
+                alt={store.storeName || "ไม่มีชื่อร้าน"}
                 fill
                 className="object-cover"
               />

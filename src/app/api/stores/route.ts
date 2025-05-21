@@ -46,8 +46,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     const contentType = request.headers.get('content-type') || '';
     const isFormData = contentType.includes('multipart/form-data');
 
-    console.log(isFormData);
-    
     let body;
     
     if (isFormData) {
@@ -104,7 +102,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
 
 async function createStore(request: NextRequest, body: any): Promise<BodyResponse<Store>> {
   // For FormData, we use it directly - fetchWithAuth handles it correctly
-  console.log(body);
   const result = await fetchWithAuth<BodyResponse<Store>>({
     request,
     url: `${process.env.NEXTAUTH_BACKEND_URL}/api/store/createStore`,
@@ -122,8 +119,6 @@ async function createStore(request: NextRequest, body: any): Promise<BodyRespons
 async function fetchAllStores(
   request: NextRequest
 ): Promise<BodyResponse<{storeDetail: Store[]}>> {
-  // Accept token as a parameter
-  console.log(`${process.env.NEXTAUTH_BACKEND_URL}/store/`);
   const result = await fetchWithAuth<BodyResponse<{storeDetail: Store[]}>>({
     request,
     url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/store/`,

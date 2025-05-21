@@ -109,14 +109,12 @@ export default function StoreDetailClientWithContext() {
               <ContactInfoCard
                 contactInfo={store.contactInfo as ContactInfo}
                 userEmail={store.email}
-                isLoggedIn={session?.user?.email !== null}
               />
 
               {/* Additional Information */}
               <AdditionalInfoCard
                 createdAt={store.createdAt}
                 bankAccount={store.bankAccount}
-                isLoggedIn={session?.user?.email !== null}
               />
             </div>
           </div>

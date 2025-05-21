@@ -156,7 +156,8 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
       <StoreDetailDialog 
         store={selectedStore} 
         isOpen={showStoreDetails} 
-        onClose={handleCloseStoreDetails} 
+        onClose={handleCloseStoreDetails}
+        hideAdminActions={true} 
       />
     </div>
   );

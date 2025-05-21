@@ -7,7 +7,7 @@ interface UseStoreFilteringOptions {
   itemsPerPage?: number;
 }
 
-export function useStoreFiltering(stores: Store[], options: UseStoreFilteringOptions = {}) {
+export default function useStoreFiltering(stores: Store[], options: UseStoreFilteringOptions = {}) {
   const { itemsPerPage = 6 } = options;
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);

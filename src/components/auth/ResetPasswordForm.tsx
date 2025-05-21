@@ -10,7 +10,7 @@ import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useReactActionState, getFieldError } from "@/utils/forms/useReactActionState";
 import { FormLabel } from "@/components/ui/form-label";
-import { useShowDialog } from "@/hooks/useShowDialog";
+import useShowDialog from "@/hooks/useShowDialog";  
 import StatusDialog from "@/components/common/StatusDialog";
 
 interface ResetPasswordFormProps {

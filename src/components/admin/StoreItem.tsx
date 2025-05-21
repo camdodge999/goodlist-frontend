@@ -3,15 +3,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle, 
   faTimesCircle,
-  faExclamationTriangle
+  faExclamationTriangle,
+  faHammer
 } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button";
 import { Store } from "@/types/stores";
-
-// Fallback default logo
-const defaultLogo = {
-  src: "/images/logo.webp"
-};
+import defaultLogo from "@images/logo.webp";
+import { isValidJSON } from "@/utils/valid-json";
+import { getAuthenticatedImageUrl } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface StoreItemProps {
   store: Store;
@@ -38,12 +38,12 @@ export default function StoreItem({
   const isAdditionalStore = store.userId > 0 && store.isVerified === null && !store.isBanned;
 
   return (
-    <div className="px-4 py-4 sm:px-6">
+    <div className="px-4 py-4 sm:px-6 cursor-pointer" onClick={() => onViewStore(store)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
             <Image 
-              src={store.imageStore || "/images/logo.webp"}
+              src={getAuthenticatedImageUrl(store.imageStore) || "/images/logo.webp"}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.srcset = defaultLogo.src;
@@ -61,15 +61,35 @@ export default function StoreItem({
               {store.storeName}
             </button>
             <p className="text-xs text-gray-500">
-              {typeof store.contactInfo === 'string' 
+              {typeof store.contactInfo === 'string' && isValidJSON(store.contactInfo)
                 ? JSON.parse(store.contactInfo).line 
-                : store.contactInfo?.line}
+                : typeof store.contactInfo !== 'string' ? store.contactInfo?.line : ''}
             </p>
-            {isAdditionalStore && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                คำขอเพิ่มร้านค้า
-              </span>
-            )}
+            <div className="flex flex-wrap gap-1 mt-1">
+              {isAdditionalStore && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  คำขอเพิ่มร้านค้า
+                </span>
+              )}
+              {store.isVerified === true && (
+                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                  <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 mr-1" />
+                  ผ่านการตรวจสอบ
+                </Badge>
+              )}
+              {store.isVerified === false && !store.isBanned && (
+                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                  <FontAwesomeIcon icon={faTimesCircle} className="w-3 h-3 mr-1" />
+                  ไม่ผ่านการตรวจสอบ
+                </Badge>
+              )}
+              {store.isBanned && (
+                <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-200">
+                  <FontAwesomeIcon icon={faHammer} className="w-3 h-3 mr-1" />
+                  ถูกแบน
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
         <div className="ml-2 flex-shrink-0 flex space-x-2">
@@ -77,55 +97,77 @@ export default function StoreItem({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onViewReport(store)}
-              className="text-yellow-600 hover:text-yellow-700 border-yellow-600 hover:border-yellow-700 hover:bg-yellow-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewReport(store);
+              }}
+              className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600"
             >
               <FontAwesomeIcon icon={faExclamationTriangle} className="w-4 h-4 mr-1" />
-              ดูรายละเอียด
+              <span className="hidden sm:inline">ดูรายละเอียด</span>  
             </Button>
           )}
           {store.isVerified === null && !store.isBanned && (
             <>
               <Button
-                variant="outline"
                 size="sm"
-                onClick={() => onApproveStore(store.id)}
-                className="text-green-600 hover:text-green-700 border-green-600 hover:border-green-700 hover:bg-green-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onApproveStore(store.id);
+                }}
+                className="bg-green-600 text-white hover:bg-green-700 border-green-600"
               >
                 <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-1" />
-                อนุมัติ
+                <span className="hidden sm:inline">อนุมัติ</span>  
               </Button>
               <Button
-                variant="outline"
                 size="sm"
-                onClick={() => onRejectStore(store.id)}
-                className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700 hover:bg-red-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRejectStore(store.id);
+                }}
+                className="bg-red-600 text-white hover:bg-red-700 border-red-600"   
               >
                 <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-1" />
-                ปฏิเสธ
+                <span className="hidden sm:inline">ปฏิเสธ</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBanStore(store.id);
+                }}
+                className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600"
+              >
+                <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">แบน</span>
               </Button>
             </>
           )}
           {store.isVerified === true && !store.isBanned && (
             <Button
-              variant="outline"
               size="sm"
-              onClick={() => onBanStore(store.id)}
-              className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700 hover:bg-red-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBanStore(store.id);
+              }}
+              className="bg-red-600 text-white hover:bg-red-700 border-red-600" 
             >
-              <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-1" />
-              แบนร้านค้า
+              <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">แบนร้านค้า</span>
             </Button>
           )}
           {store.isBanned && (
             <Button
-              variant="outline"
               size="sm"
-              onClick={() => onUnbanStore(store.id)}
-              className="text-green-600 hover:text-green-700 border-green-600 hover:border-green-700 hover:bg-green-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUnbanStore(store.id);
+              }}
+              className="bg-green-600 text-white hover:bg-green-700 border-green-600"
             >
               <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-1" />
-              ยกเลิกแบน
+              <span className="hidden sm:inline">ยกเลิกแบน</span>
             </Button>
           )}
         </div>

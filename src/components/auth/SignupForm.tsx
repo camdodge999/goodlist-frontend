@@ -14,7 +14,7 @@ import Spinner from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faEye, faEyeSlash, faUser, faEnvelope, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
-import { useShowDialog } from "@/hooks/useShowDialog";
+import useShowDialog from "@/hooks/useShowDialog";  
 import StatusDialog from "@/components/common/StatusDialog";
 import { signIn } from "next-auth/react";
 import { FormLabel } from "../ui/form-label";

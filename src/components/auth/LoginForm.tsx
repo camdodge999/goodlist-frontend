@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash, faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
-import { useShowDialog } from "@/hooks/useShowDialog";
+import useShowDialog from "@/hooks/useShowDialog";  
 import StatusDialog from "@/components/common/StatusDialog";
 import { FormLabel } from "@/components/ui/form-label";
 

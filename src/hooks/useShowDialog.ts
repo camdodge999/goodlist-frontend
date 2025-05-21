@@ -7,7 +7,7 @@ interface DialogOptions {
   onButtonClick?: () => void;
 }
 
-export function useShowDialog() {
+export default function useShowDialog() {
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>("");

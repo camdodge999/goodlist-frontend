@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 
 interface StoreContextProps {
   stores: Store[];
+  adminStores: Store[];
   updateStore: (storeId: number, updates: Partial<Store>) => Promise<Store | null>;
   deleteStore: (storeId: number) => Promise<boolean>;
   addStore: (newStore: FormData) => Promise<Store | null>;
@@ -14,6 +15,7 @@ interface StoreContextProps {
   error: string | null;
   refreshStores: () => Promise<Store[]>;
   fetchStores: (force?: boolean) => Promise<Store[]>;
+  fetchAdminStores: () => Promise<Store[]>;
   getFeaturedStores: (limit?: number) => Store[];
   getStoreById: (storeId: number | string) => Promise<Store | null>;
 }
@@ -27,6 +29,7 @@ const StoreContext = createContext<StoreContextProps | undefined>(undefined);
 
 export function StoreProvider({ children, initialStores = [] }: StoreProviderProps) {
   const [stores, setStores] = useState<Store[]>(initialStores);
+  const [adminStores, setAdminStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<number | null>(
@@ -84,6 +87,33 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       setIsLoading(false);
     }
   };
+
+  const fetchAdminStores = async () => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session?.user?.token}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error fetching admin stores: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.statusCode === 200 && data.data) {
+      setAdminStores(data.data);
+      return data.data;
+    } else {
+      throw new Error(data.message || 'Failed to fetch admin stores');
+    }
+  }
 
   // Initialize with API data only if no initialStores were provided
   useEffect(() => {
@@ -238,7 +268,8 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
   const getStoreById = async (storeId: number | string): Promise<Store | null> => {
     try {
       // First check if we have it in our local state
-      const localStore = stores.find(store => store.id === Number(storeId));
+      const role = session?.user?.role; 
+      const localStore = role === "admin" ? adminStores.find(store => store.id === Number(storeId)) : stores.find(store => store.id === Number(storeId));
       if (localStore) {
         return localStore;
       }
@@ -282,6 +313,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     <StoreContext.Provider
       value={{
         stores,
+        adminStores,
         updateStore,
         deleteStore,
         addStore,
@@ -289,6 +321,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         error,
         refreshStores,
         fetchStores,
+        fetchAdminStores,
         getFeaturedStores,
         getStoreById,
       }}

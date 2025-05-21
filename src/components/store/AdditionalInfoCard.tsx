@@ -9,14 +9,12 @@ import 'dayjs/locale/th';
 interface AdditionalInfoCardProps {
   createdAt: string;
   bankAccount: string;
-  isLoggedIn: boolean;
   verificationAudit?: StoreAudit;
 }
 
 export default function AdditionalInfoCard({ 
   createdAt, 
   bankAccount, 
-  isLoggedIn,
   verificationAudit 
 }: AdditionalInfoCardProps) {
   return (
@@ -46,17 +44,17 @@ export default function AdditionalInfoCard({
                 variant="outline"
                 className="bg-green-50 text-green-700 border-green-200"
               >
-                {isLoggedIn ? bankAccount : "••••••••••"}
+                {bankAccount}
               </Badge>
             </div>
-            {!isLoggedIn && (
+            {/* {!isLoggedIn && (
               <div className="mt-2 flex items-center gap-2 text-yellow-600 bg-yellow-50 p-3 rounded-md">
                 <FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5" />
                 <p className="text-sm">
                   กรุณาเข้าสู่ระบบเพื่อดูรายละเอียดบัญชีธนาคาร
                 </p>
               </div>
-            )}
+            )} */}
           </dd>
         </div>
 

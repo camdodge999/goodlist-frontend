@@ -6,7 +6,7 @@ import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.sche
 import { User as AuthUser } from "@/types/auth";
 import { User as AppUser } from "@/types/users";
 import StatusDialog from "@/components/common/StatusDialog";
-import { useShowDialog } from "@/hooks/useShowDialog";
+import useShowDialog from "@/hooks/useShowDialog";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 

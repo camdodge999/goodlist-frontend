@@ -16,7 +16,7 @@ import ProfileStores from "@/components/profile/ProfileStores";
 import ProfileSettings from "@/components/profile/ProfileSettings";
 import OtpModal from "@/components/profile/OtpModal";
 import StatusDialog from "@/components/common/StatusDialog";
-import { useShowDialog } from "@/hooks/useShowDialog";
+import useShowDialog from "@/hooks/useShowDialog";
 
 // Types
 import { Store } from "@/types/stores";

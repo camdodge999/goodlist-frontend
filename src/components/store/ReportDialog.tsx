@@ -117,7 +117,7 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="scam" id="scam" />
-                <Label htmlFor="scam">หลอกลวง/โกง</Label>
+                <Label htmlFor="scam">หลอกลวง</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="fake" id="fake" />

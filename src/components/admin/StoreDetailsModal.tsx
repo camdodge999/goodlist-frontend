@@ -5,7 +5,8 @@ import {
   faTimesCircle,
   faFileAlt,
   faUser,
-  faCalendar
+  faCalendar,
+  faHammer
 } from '@fortawesome/free-solid-svg-icons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -75,8 +76,8 @@ export default function StoreDetailsModal({
                 )}
                 {store.isBanned && (
                   <Badge variant="destructive">
-                    <FontAwesomeIcon icon={faTimesCircle} className="w-3 h-3 mr-1" />
-                    ถูกแบน
+                    <FontAwesomeIcon icon={faHammer} className="w-3 h-3 mr-1" />
+                    <span>ถูกแบน</span>
                   </Badge>
                 )}
                 {isAdditionalStore && (
@@ -156,7 +157,7 @@ export default function StoreDetailsModal({
                   }}
                 >
                   <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-2" />
-                  อนุมัติ
+                  <span>อนุมัติ</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -167,21 +168,21 @@ export default function StoreDetailsModal({
                   }}
                 >
                   <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-2" />
-                  ปฏิเสธ
+                  <span>ปฏิเสธ</span>
                 </Button>
               </>
             )}
             {store.isVerified === true && !store.isBanned && (
               <Button
                 variant="outline"
-                className="border-red-500 text-red-600 hover:bg-red-50"
                 onClick={() => {
                   onBan(store.id);
                   onClose();
                 }}
+                className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600"
               >
-                <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-2" />
-                แบนร้านค้า
+                <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">แบน</span>
               </Button>
             )}
             {store.isBanned && (
@@ -194,7 +195,7 @@ export default function StoreDetailsModal({
                 }}
               >
                 <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-2" />
-                ยกเลิกแบน
+                <span>ยกเลิกแบน</span>
               </Button>
             )}
             <Button onClick={onClose}>ปิด</Button>

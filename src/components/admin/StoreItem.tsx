@@ -151,11 +151,11 @@ export default function StoreItem({
                 e.stopPropagation();
                 onBanStore(store.id);
               }}
-              className="bg-red-600 text-white hover:bg-red-700 border-red-600" 
-            >
-              <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">แบนร้านค้า</span>
-            </Button>
+              className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600"
+              >
+                <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">แบน</span>
+              </Button>
           )}
           {store.isBanned && (
             <Button

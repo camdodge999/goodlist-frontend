@@ -109,7 +109,7 @@ const CallToAction = () => (
           </Button>
           <Button asChild variant="primary" className="bg-white text-blue-600 hover:bg-blue-50">
             <Link href="/report">
-              <span>แจ้งร้านค้าโกง</span>
+              <span>รายงานร้านค้า</span>
               <FontAwesomeIcon icon={faExclamationTriangle} className="ml-2" />
             </Link>
           </Button>

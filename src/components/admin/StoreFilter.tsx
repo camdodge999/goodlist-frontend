@@ -2,15 +2,22 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { faFilter } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Store } from '@/types/stores';
+
 
 export type VerificationFilter = 'all' | 'approved' | 'rejected';
 
 interface StoreFilterProps {
     activeFilter: VerificationFilter;
+    stores: Store[];
     onFilterChange: (filter: VerificationFilter) => void;
 }
 
-export default function StoreFilter({ activeFilter, onFilterChange }: StoreFilterProps) {
+export default function StoreFilter({ activeFilter, onFilterChange, stores }: StoreFilterProps) {
+    const verifiedStores = stores.filter((store) => store.isVerified === true).length;
+    const rejectedStores = stores.filter((store) => store.isVerified === false).length;
+    console.log(stores)
+
     return (
         <div className="flex flex-row items-center gap-2 mb-4">
             <div className="flex flex-row items-center gap-2">
@@ -23,7 +30,7 @@ export default function StoreFilter({ activeFilter, onFilterChange }: StoreFilte
                     onClick={() => onFilterChange('all')}
                     size="sm"
                 >
-                    ทั้งหมด
+                    <span>ทั้งหมด</span>
                 </Button>
                 <Button
                     variant={activeFilter === 'approved' ? 'default' : 'outline'}
@@ -31,7 +38,7 @@ export default function StoreFilter({ activeFilter, onFilterChange }: StoreFilte
                     size="sm"
                     className={activeFilter === 'approved' ? 'bg-green-600 hover:bg-green-700' : ''}
                 >
-                    อนุมัติ
+                    <span>อนุมัติ ({verifiedStores})</span>
                 </Button>
                 <Button
                     variant={activeFilter === 'rejected' ? 'default' : 'outline'}
@@ -39,7 +46,7 @@ export default function StoreFilter({ activeFilter, onFilterChange }: StoreFilte
                     size="sm"
                     className={activeFilter === 'rejected' ? 'bg-red-600 hover:bg-red-700' : ''}
                 >
-                    ปฏิเสธ
+                    <span>ปฏิเสธ ({rejectedStores})</span>
                 </Button>
             </div>
         </div>

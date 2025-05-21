@@ -169,6 +169,7 @@ export default function AdminPage() {
             {/* Show filter buttons only for verified stores tab */}
             {activeTab === 'verified' && (
               <StoreFilter 
+                stores={displayedStores}
                 activeFilter={verificationFilter}
                 onFilterChange={setVerificationFilter}
               />

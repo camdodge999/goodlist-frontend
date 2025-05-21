@@ -23,7 +23,7 @@ export default function useNavigation() {
     const baseItems: NavItem[] = [
       { name: "หน้าแรก", href: "/", icon: faHome },
       { name: "ร้านค้า", href: "/stores", icon: faStore },
-      { name: "แจ้งร้านโกง", href: "/report", icon: faExclamation },
+      { name: "รายงานร้านค้า", href: "/report", icon: faExclamation },
     ];
 
     // Use currentUser from UserContext if available, otherwise fall back to session

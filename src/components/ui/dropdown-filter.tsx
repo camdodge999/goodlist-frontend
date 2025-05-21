@@ -16,6 +16,7 @@ export interface DropdownFilterProps<T> {
   validationError?: string;
   noResultsMessage?: string;
   className?: string;
+  tabNavigatesItems?: boolean;
 }
 
 export function DropdownFilter<T>({
@@ -28,14 +29,16 @@ export function DropdownFilter<T>({
   placeholder = "Search...",
   validationError,
   noResultsMessage = "No results found",
-  className
+  className,
+  tabNavigatesItems = true
 }: DropdownFilterProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const listRef = useRef<HTMLUListElement>(null);
+  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   
   // Key repeat handling
   const keyDownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -81,10 +84,12 @@ export function DropdownFilter<T>({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Reset highlighted index when filtered items change
+  // Reset highlighted index when dropdown closes
   useEffect(() => {
-    setHighlightedIndex(-1);
-  }, [filteredItems]);
+    if (!isDropdownOpen) {
+      setHighlightedIndex(-1);
+    }
+  }, [isDropdownOpen]);
 
   // Handle key action based on key name
   const handleKeyAction = (key: string) => {
@@ -92,13 +97,16 @@ export function DropdownFilter<T>({
 
     switch (key) {
       case "ArrowDown":
+      case "Tab": // Handle Tab like ArrowDown
         setHighlightedIndex((prev) => {
-          const nextIndex = prev < filteredItems.length - 1 ? prev + 1 : prev;
-          return nextIndex;
+          return prev < filteredItems.length - 1 ? prev + 1 : 0; // Loop back to top
         });
         break;
       case "ArrowUp":
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      case "ShiftTab": // Handle Shift+Tab like ArrowUp
+        setHighlightedIndex((prev) => 
+          prev > 0 ? prev - 1 : filteredItems.length - 1 // Loop back to bottom
+        );
         break;
       case "Home":
         setHighlightedIndex(0);
@@ -150,12 +158,14 @@ export function DropdownFilter<T>({
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isDropdownOpen) {
-      if (e.key === "ArrowDown" || e.key === "Enter") {
-        setIsDropdownOpen(true);
-        return;
-      }
+    // Handle dropdown open/close
+    if (e.key === "ArrowDown" && !isDropdownOpen) {
+      e.preventDefault();
+      setIsDropdownOpen(true);
+      return;
     }
+
+    if (!isDropdownOpen) return;
 
     // Handle special keys that shouldn't repeat
     switch (e.key) {
@@ -164,29 +174,28 @@ export function DropdownFilter<T>({
         if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
           onSelectItem(filteredItems[highlightedIndex]);
           setIsDropdownOpen(false);
-          inputRef.current?.blur();
+          inputRef.current?.focus();
         }
         return;
       case "Escape":
         e.preventDefault();
         setIsDropdownOpen(false);
-        inputRef.current?.blur();
+        inputRef.current?.focus();
         return;
       case "Tab":
-        if (isDropdownOpen) {
+        if (tabNavigatesItems) {
           e.preventDefault();
           if (e.shiftKey) {
             // Shift+Tab - move up
-            setHighlightedIndex((prev) => 
-              prev > 0 ? prev - 1 : filteredItems.length - 1
-            );
+            handleKeyAction("ShiftTab");
           } else {
             // Tab - move down
-            setHighlightedIndex((prev) => 
-              prev < filteredItems.length - 1 ? prev + 1 : 0
-            );
+            handleKeyAction("Tab");
           }
+          return;
         }
+        // If tabNavigatesItems is false, let Tab handle normal navigation
+        setIsDropdownOpen(false);
         return;
     }
 
@@ -208,10 +217,33 @@ export function DropdownFilter<T>({
   // Toggle dropdown
   const toggleDropdown = () => {
     setIsDropdownOpen(prev => !prev);
-    if (!isDropdownOpen && filteredItems.length > 0) {
-      setHighlightedIndex(0);
+    if (!isDropdownOpen) {
+      // Focus the input when opening
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
   };
+
+  // Handle item click
+  const handleItemClick = (item: T) => {
+    onSelectItem(item);
+    setIsDropdownOpen(false);
+    inputRef.current?.focus();
+  };
+
+  // Focus an item directly
+  const focusItem = (index: number) => {
+    if (index >= 0 && index < filteredItems.length) {
+      setHighlightedIndex(index);
+      if (itemRefs.current[index]) {
+        itemRefs.current[index]?.focus();
+      }
+    }
+  };
+
+  // Generate a unique ID for ARIA attributes
+  const dropdownId = useRef(`dropdown-filter-${Math.random().toString(36).substr(2, 9)}`);
 
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
@@ -219,7 +251,7 @@ export function DropdownFilter<T>({
         <Input
           ref={inputRef}
           type="text"
-          className={cn("pr-16", validationError && "border-red-300 focus-visible:ring-red-500")}
+          className={cn("pl-10 pr-8", validationError && "border-red-300 focus-visible:ring-red-500")}
           placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => {
@@ -230,17 +262,21 @@ export function DropdownFilter<T>({
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           aria-expanded={isDropdownOpen}
-          aria-controls="dropdown-filter-list"
+          aria-controls={dropdownId.current}
           aria-haspopup="listbox"
+          aria-autocomplete="list"
           role="combobox"
         />
-        <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-3">
+        <div className="absolute inset-y-0 left-0 flex items-center gap-1 pl-3">
           <FontAwesomeIcon icon={faMagnifyingGlass} className="h-5 w-5 text-gray-400" />
+        </div>
+        <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-3">
           <button
             type="button"
             className="p-1 hover:bg-gray-100 rounded-full"
             onClick={toggleDropdown}
             aria-label={isDropdownOpen ? "Close dropdown" : "Open dropdown"}
+            tabIndex={0}
           >
             <FontAwesomeIcon 
               icon={isDropdownOpen ? faChevronUp : faChevronDown} 
@@ -257,47 +293,52 @@ export function DropdownFilter<T>({
       <AnimatePresence>
         {isDropdownOpen && (
           <motion.div
-            id="dropdown-filter-list"
-            role="listbox"
-            aria-label="Search results"
             initial={{ opacity: 0, y: -10, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: -10, height: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-gray-200"
           >
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item, index) => (
-                <motion.div
-                  ref={(el) => {
-                    itemRefs.current[index] = el;
-                  }}
-                  key={getItemId(item)}
-                  id={`dropdown-item-${getItemId(item)}`}
-                  role="option"
-                  aria-selected={highlightedIndex === index}
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  className={cn(
-                    "cursor-pointer",
-                    highlightedIndex === index && "outline outline-2 outline-offset-[-2px] outline-blue-300"
-                  )}
-                  onClick={() => {
-                    onSelectItem(item);
-                    setIsDropdownOpen(false);
-                  }}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                  tabIndex={-1}
-                >
-                  {renderItem(item, highlightedIndex === index, selectedItem === item)}
-                </motion.div>
-              ))
-            ) : (
-              <div className="px-4 py-2 text-sm text-gray-500">
-                {noResultsMessage}
-              </div>
-            )}
+            <ul 
+              id={dropdownId.current}
+              ref={listRef}
+              role="listbox"
+              aria-label="Search results"
+              className="w-full"
+              tabIndex={-1}
+            >
+              {filteredItems.length > 0 ? (
+                filteredItems.map((item, index) => (
+                  <motion.li
+                    ref={(el) => {
+                      itemRefs.current[index] = el;
+                    }}
+                    key={getItemId(item)}
+                    id={`dropdown-item-${getItemId(item)}`}
+                    role="option"
+                    aria-selected={highlightedIndex === index}
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    className={cn(
+                      "cursor-pointer",
+                      highlightedIndex === index && "bg-gray-100",
+                      selectedItem === item && "font-medium"
+                    )}
+                    onClick={() => handleItemClick(item)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    tabIndex={-1} // Remove from tab sequence, but allow programmatic focus
+                    onFocus={() => setHighlightedIndex(index)}
+                  >
+                    {renderItem(item, highlightedIndex === index, selectedItem === item)}
+                  </motion.li>
+                ))
+              ) : (
+                <li className="px-4 py-2 text-sm text-gray-500" role="option" aria-selected="false">
+                  {noResultsMessage}
+                </li>
+              )}
+            </ul>
           </motion.div>
         )}
       </AnimatePresence>

@@ -2,7 +2,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle, 
   faTimesCircle, 
-  faFileAlt
+  faFileAlt,
+  faHammer
 } from '@fortawesome/free-solid-svg-icons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -138,8 +139,8 @@ export default function ReportsModal({
                 onClose();
               }}
             >
-              <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-2" />
-              แบนร้านค้า
+              <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-2" />
+              <span>แบนร้านค้า</span>
             </Button>
             <Button onClick={onClose}>ปิด</Button>
           </div>

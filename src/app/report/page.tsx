@@ -3,7 +3,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: 'รายงาน - Goodlistseller',
-  description: 'รายงานร้านค้าที่มีการโกงหรือการละเมิดสิทธิของผู้บริโภค',
+  description: 'รายงานร้านค้าที่มีการการละเมิดสิทธิของผู้บริโภค',
 };
 
 export default function Page() {

@@ -2,23 +2,9 @@ import React from "react";
 import Image from "next/image";
 import { DropdownFilter } from "@/components/ui/dropdown-filter";
 import defaultLogo from "@images/logo.webp";
+import { Store } from "@/types/stores";
+import { ContactInfo } from "@/types/stores";
 
-type ContactInfo = {
-  line?: string;
-  facebook?: string;
-  phone?: string;
-  address?: string;
-};
-
-type Store = {
-  id: number;
-  userId: number;
-  storeName: string;
-  contactInfo: ContactInfo;
-  imageUrl?: string;
-  isVerified: boolean;
-  isBanned: boolean;
-};
 
 interface StoreSearchProps {
   stores: Store[];
@@ -35,17 +21,19 @@ export default function StoreSearch({
 }: StoreSearchProps) {
   // Filter function for stores
   const filterStore = (store: Store, query: string) => {
+    if (!query.trim()) return true; // Show all when empty
+    
     const searchLower = query.toLowerCase();
     const nameMatch = store.storeName.toLowerCase().includes(searchLower);
-    const lineMatch = store.contactInfo.line ? 
+    const lineMatch = typeof store.contactInfo === 'object' && store.contactInfo?.line ? 
       store.contactInfo.line.toLowerCase().includes(searchLower) : 
       false;
-    return (nameMatch || lineMatch) && store.isVerified && !store.isBanned;
+    return (nameMatch || lineMatch) && (store.isVerified === true) && !store.isBanned;
   };
 
   // Render function for store items
   const renderStoreItem = (store: Store, isHighlighted: boolean, isSelected: boolean) => (
-    <div className={`flex items-center gap-3 px-4 py-2 ${isSelected ? "bg-blue-50" : isHighlighted ? "bg-gray-100" : "hover:bg-gray-50"}`}>
+    <div className={`flex items-center gap-3 ${isSelected ? "bg-blue-50" : isHighlighted ? "bg-gray-100" : "hover:bg-gray-50"}`}>
       <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
         <Image
           src={store.imageUrl || "/images/logo.webp"}
@@ -64,7 +52,7 @@ export default function StoreSearch({
           {store.storeName}
         </p>
         <p className="text-xs text-gray-500 truncate">
-          {store.contactInfo.line}
+          {typeof store.contactInfo === 'object' ? store.contactInfo?.line : ''}
         </p>
       </div>
       {store.isVerified && (
@@ -77,6 +65,11 @@ export default function StoreSearch({
     </div>
   );
 
+  // Display the store name in the input when selected
+  const displaySelectedLabel = (store: Store) => {
+    return store.storeName;
+  };
+
   return (
     <DropdownFilter
       items={stores}
@@ -88,6 +81,7 @@ export default function StoreSearch({
       placeholder="พิมพ์ชื่อร้านค้า หรือ Line ID..."
       validationError={validationError}
       noResultsMessage="ไม่พบร้านค้าที่ค้นหา"
+      displaySelectedLabel={displaySelectedLabel}
     />
   );
 } 

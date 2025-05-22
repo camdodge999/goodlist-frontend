@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
-import { mockStores } from "@/data/mockData";
 import { reportFormSchema, ReportFormSchema } from "@/validators/report.schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -18,18 +17,24 @@ import FormSection from "@/components/report/FormSection";
 import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
 
+// Contexts
+import { useStore } from "@/contexts/StoreContext";
+import { useReport } from "@/contexts/ReportContext";
 import { Store } from "@/types/stores";
-import { Report } from "@/types/report";
-
-
+import Spinner from "../ui/Spinner";
+import { useSession } from "next-auth/react";
 
 export default function ReportPage() {
   const router = useRouter();
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<Partial<ReportFormSchema>>({});
+  
+  // Use contexts
+  const { stores, fetchStores, isLoading: storesLoading } = useStore();
+  const { submitReport, isLoading: reportSubmitting, error: reportError } = useReport();
+  const { data: session } = useSession();
   
   // Initialize dialog hooks
   const {
@@ -48,6 +53,22 @@ export default function ReportPage() {
     displayErrorDialog,
     handleErrorClose,
   } = useShowDialog();
+
+  // Fetch stores when component mounts
+  useEffect(() => {
+    fetchStores();
+  }, [fetchStores]);
+
+  // Show error dialog if report submission fails
+  useEffect(() => {
+    if (reportError) {
+      displayErrorDialog({
+        title: "เกิดข้อผิดพลาด",
+        message: reportError,
+        buttonText: "ลองใหม่"
+      });
+    }
+  }, [reportError, displayErrorDialog]);
 
   // Update formData and reset validation error
   const updateFormData = (field: keyof ReportFormSchema, value: any) => {
@@ -135,57 +156,48 @@ export default function ReportPage() {
       return;
     }
     
-    setIsSubmitting(true);
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Create new report
-      const newReport = {
-        id: Date.now().toString(),
-        storeId: selectedStore!.id.toString(),
-        reason: formData.reason!,
-        evidenceUrl: URL.createObjectURL(evidenceFile!),
-        createdAt: new Date().toISOString(),
-        status: "pending",
-      };
-
-      // Add to mockReports (this would be an API call in a real app)
-      console.log("Report submitted:", newReport);
-
-      // Show success dialog instead of alert
-      displaySuccessDialog({
-        title: "ส่งรายงานสำเร็จ",
-        message: "ขอบคุณสำหรับรายงาน เราจะตรวจสอบข้อมูลของคุณโดยเร็วที่สุด",
-        buttonText: "กลับสู่หน้าหลัก",
-        onButtonClick: () => {
-          // Reset form
-          setSelectedStore(null);
-          setFormData({});
-          setEvidenceFile(null);
-          setValidationErrors({});
-          
-          // Redirect to home page
-          router.push("/");
+      // Submit report using the context
+      const result = await submitReport(formData as ReportFormSchema);
+      
+      if (result.success) {
+        // Show success dialog
+        displaySuccessDialog({
+          title: "ส่งรายงานสำเร็จ",
+          message: "ขอบคุณสำหรับรายงาน เราจะตรวจสอบข้อมูลของคุณโดยเร็วที่สุด",
+          buttonText: "กลับสู่หน้าหลัก",
+          onButtonClick: () => {
+            // Reset form
+            setSelectedStore(null);
+            setFormData({});
+            setEvidenceFile(null);
+            setValidationErrors({});
+            
+            // Redirect to home page
+            router.push("/");
+          }
+        });
+      } else {
+        // If authentication is required but user is not logged in
+        if (result.message === "กรุณาเข้าสู่ระบบก่อนทำรายการ" && !session) {
+          router.push('/auth/signin?callbackUrl=/report');
+          return;
         }
-      });
+        
+        // Show error in form
+        setValidationErrors(prev => ({
+          ...prev,
+          form: result.message
+        }));
+      }
     } catch (err) {
       console.error("Error submitting report:", err);
       
-      // Show error dialog instead of alert
-      displayErrorDialog({
-        title: "เกิดข้อผิดพลาด",
-        message: "เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง",
-        buttonText: "ลองใหม่"
-      });
-      
+      // Show error in form
       setValidationErrors(prev => ({
         ...prev,
         form: "เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง"
       }));
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -222,7 +234,7 @@ export default function ReportPage() {
                 description="ค้นหาและเลือกร้านค้าที่ต้องการรายงาน"
               >
                 <StoreSearch 
-                  stores={mockStores} 
+                  stores={stores} 
                   selectedStore={selectedStore} 
                   onSelectStore={handleStoreSelect}
                   validationError={validationErrors.storeId}
@@ -245,8 +257,8 @@ export default function ReportPage() {
 
               <FormSection 
                 number={3} 
-                label="แนบหลักฐาน" 
-                description="อัพโหลดรูปภาพหรือเอกสารที่แสดงถึงการกระทำที่ไม่เหมาะสม"
+                label="หลักฐาน" 
+                description="อัพโหลดภาพหรือเอกสารเพื่อเป็นหลักฐานประกอบการรายงาน"
               >
                 <FileUpload 
                   onFileChange={handleFileChange}
@@ -257,22 +269,36 @@ export default function ReportPage() {
                   accept="image/png,image/jpeg,application/pdf"
                 />
               </FormSection>
+            </div>
 
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  className="px-4 py-2"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "กำลังส่งรายงาน..." : "ส่งรายงาน"}
-                </Button>
-              </div>
+            <div className="mt-8 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={reportSubmitting}
+              >
+                ยกเลิก
+              </Button>
+              <Button 
+                type="submit"
+                disabled={reportSubmitting || Object.keys(validationErrors).length > 0}
+              >
+                {reportSubmitting ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    กำลังส่งรายงาน...
+                  </>
+                ) : (
+                  'ส่งรายงาน'
+                )}
+              </Button>
             </div>
           </form>
         </div>
       </div>
-      
-      {/* Status Dialogs */}
+
+      {/* Success Dialog */}
       <StatusDialog
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
@@ -282,7 +308,8 @@ export default function ReportPage() {
         buttonText={successButtonText}
         onButtonClick={handleSuccessClose}
       />
-      
+
+      {/* Error Dialog */}
       <StatusDialog
         isOpen={showErrorDialog}
         setIsOpen={setShowErrorDialog}

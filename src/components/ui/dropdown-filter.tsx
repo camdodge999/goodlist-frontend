@@ -17,6 +17,7 @@ export interface DropdownFilterProps<T> {
   noResultsMessage?: string;
   className?: string;
   tabNavigatesItems?: boolean;
+  displaySelectedLabel?: (item: T) => string;
 }
 
 export function DropdownFilter<T>({
@@ -30,11 +31,13 @@ export function DropdownFilter<T>({
   validationError,
   noResultsMessage = "No results found",
   className,
-  tabNavigatesItems = true
+  tabNavigatesItems = true,
+  displaySelectedLabel
 }: DropdownFilterProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isFocused, setIsFocused] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
@@ -47,6 +50,15 @@ export function DropdownFilter<T>({
   const currentKeyRef = useRef<string | null>(null);
   const initialRepeatDelayMs = 500; // Initial delay before key repeat starts
   const repeatIntervalMs = 100;     // Interval between repeated actions
+
+  // Update the input value when selectedItem changes
+  useEffect(() => {
+    if (selectedItem && displaySelectedLabel) {
+      if (!isFocused) {
+        setSearchQuery(displaySelectedLabel(selectedItem));
+      }
+    }
+  }, [selectedItem, displaySelectedLabel, isFocused]);
 
   // Filter items based on search query
   const filteredItems = items.filter(item => filterFunction(item, searchQuery));
@@ -79,18 +91,29 @@ export function DropdownFilter<T>({
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+        setIsFocused(false);
+        
+        // Restore the selected item label when clicking outside
+        if (selectedItem && displaySelectedLabel) {
+          setSearchQuery(displaySelectedLabel(selectedItem));
+        }
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [selectedItem, displaySelectedLabel]);
 
   // Reset highlighted index when dropdown closes
   useEffect(() => {
     if (!isDropdownOpen) {
       setHighlightedIndex(-1);
+      
+      // Reset search query to selected item display when dropdown closes
+      if (selectedItem && displaySelectedLabel) {
+        setSearchQuery(displaySelectedLabel(selectedItem));
+      }
     }
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, selectedItem, displaySelectedLabel]);
 
   // Handle key action based on key name
   const handleKeyAction = (key: string) => {
@@ -203,13 +226,22 @@ export function DropdownFilter<T>({
         if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
           onSelectItem(filteredItems[highlightedIndex]);
           setIsDropdownOpen(false);
-          inputRef.current?.focus();
+          setIsFocused(false);
+          if (displaySelectedLabel) {
+            setSearchQuery(displaySelectedLabel(filteredItems[highlightedIndex]));
+          }
+          inputRef.current?.blur();
         }
         return;
       case "Escape":
         e.preventDefault();
         setIsDropdownOpen(false);
-        inputRef.current?.focus();
+        setIsFocused(false);
+        // Restore selected item label
+        if (selectedItem && displaySelectedLabel) {
+          setSearchQuery(displaySelectedLabel(selectedItem));
+        }
+        inputRef.current?.blur();
         return;
       case "Tab":
         if (tabNavigatesItems) {
@@ -221,6 +253,7 @@ export function DropdownFilter<T>({
         }
         // If tabNavigatesItems is false, let Tab handle normal navigation
         setIsDropdownOpen(false);
+        setIsFocused(false);
         return;
     }
 
@@ -241,12 +274,22 @@ export function DropdownFilter<T>({
 
   // Toggle dropdown
   const toggleDropdown = () => {
-    setIsDropdownOpen(prev => !prev);
-    if (!isDropdownOpen) {
-      // Focus the input when opening
+    const newIsOpen = !isDropdownOpen;
+    setIsDropdownOpen(newIsOpen);
+    
+    if (newIsOpen) {
+      // Focus the input and clear for searching when opening
       setTimeout(() => {
         inputRef.current?.focus();
+        setIsFocused(true);
+        setSearchQuery("");
       }, 0);
+    } else {
+      // Restore selected item when closing
+      if (selectedItem && displaySelectedLabel) {
+        setSearchQuery(displaySelectedLabel(selectedItem));
+      }
+      setIsFocused(false);
     }
   };
 
@@ -254,17 +297,36 @@ export function DropdownFilter<T>({
   const handleItemClick = (item: T) => {
     onSelectItem(item);
     setIsDropdownOpen(false);
-    inputRef.current?.focus();
+    setIsFocused(false);
+    
+    // Explicitly set the input value to the selected item's label
+    if (displaySelectedLabel) {
+      setSearchQuery(displaySelectedLabel(item));
+    }
+    
+    inputRef.current?.blur();
   };
 
-  // Focus an item directly
-  const focusItem = (index: number) => {
-    if (index >= 0 && index < filteredItems.length) {
-      setHighlightedIndex(index);
-      if (itemRefs.current[index]) {
-        itemRefs.current[index]?.focus();
-      }
+  // Handle input focus
+  const handleInputFocus = () => {
+    setIsDropdownOpen(true);
+    setIsFocused(true);
+    // Clear search query when focusing to allow new search
+    setSearchQuery("");
+  };
+
+  // Handle input blur
+  const handleInputBlur = (e: React.FocusEvent) => {
+    // Don't reset if clicking on dropdown items
+    if (dropdownRef.current?.contains(e.relatedTarget as Node)) {
+      return;
     }
+    
+    // Only update on blur if not clicking inside the dropdown
+    if (!isDropdownOpen && selectedItem && displaySelectedLabel) {
+      setSearchQuery(displaySelectedLabel(selectedItem));
+    }
+    setIsFocused(false);
   };
 
   // Generate a unique ID for ARIA attributes
@@ -283,7 +345,8 @@ export function DropdownFilter<T>({
             setSearchQuery(e.target.value);
             setIsDropdownOpen(true);
           }}
-          onFocus={() => setIsDropdownOpen(true)}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           aria-expanded={isDropdownOpen}

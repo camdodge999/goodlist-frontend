@@ -1,0 +1,176 @@
+"use client";
+
+import { createContext, useContext, useState, ReactNode } from "react";
+import { useSession } from "next-auth/react";
+import { ReportFormSchema } from "@/validators/report.schema";
+import { useRouter } from "next/navigation";
+import { StoreReport } from "@/types/stores";
+
+interface ReportContextProps {
+  submitReport: (reportData: ReportFormSchema) => Promise<{ success: boolean; message: string; report?: StoreReport }>;
+  userReports: StoreReport[];
+  isLoading: boolean;
+  error: string | null;
+  fetchUserReports: () => Promise<StoreReport[]>;
+  clearReportError: () => void;
+}
+
+interface ReportProviderProps {
+  children: ReactNode;
+}
+
+const ReportContext = createContext<ReportContextProps | undefined>(undefined);
+
+export function ReportProvider({ children }: ReportProviderProps) {
+  const [userReports, setUserReports] = useState<StoreReport[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  // Clear error state
+  const clearReportError = () => {
+    setError(null);
+  };
+
+  // Submit a new report
+  const submitReport = async (reportData: ReportFormSchema): Promise<{ success: boolean; message: string; report?: StoreReport }> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('storeId', reportData.storeId.toString());
+      formData.append('reason', reportData.reason);
+      formData.append('evidence', reportData.evidence);
+
+      // Set up headers based on authentication status
+      const headers: Record<string, string> = {};
+      if (session?.user?.token) {
+        headers['Authorization'] = `Bearer ${session.user.token}`;
+      }
+      
+      // Make API request
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL || ''}/api/report`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // If unauthorized and not already on login page, redirect to login
+        if (response.status === 401 && !window.location.pathname.includes('/auth/signin')) {
+          router.push('/auth/signin?callbackUrl=/report');
+          return { 
+            success: false, 
+            message: "กรุณาเข้าสู่ระบบก่อนทำรายการ" 
+          };
+        }
+        throw new Error(data.message || "เกิดข้อผิดพลาดในการส่งรายงาน");
+      }
+
+      // Check if the response contains the expected data
+      if ((data.statusCode === 201 || data.statusCode === 200) && data.data) {
+        // Add the new report to the user reports list
+        const newReport: StoreReport = data.data;
+        setUserReports(prev => [newReport, ...prev]);
+        
+        return { 
+          success: true, 
+          message: "ส่งรายงานสำเร็จ", 
+          report: newReport 
+        };
+      } else {
+        throw new Error(data.message || "เกิดข้อผิดพลาดในการส่งรายงาน");
+      }
+    } catch (err) {
+      console.error("Error submitting report:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      
+      return { 
+        success: false, 
+        message: errorMessage 
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch reports submitted by the current user
+  const fetchUserReports = async (): Promise<StoreReport[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // If no session, we can't fetch user reports
+      if (!session?.user?.token) {
+        return [];
+      }
+
+      // Set up headers with authentication
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session.user.token) {
+        headers['Authorization'] = `Bearer ${session.user.token}`;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL || ''}/api/reports/user`, {
+        method: 'GET',
+        headers,
+      });
+
+      // Handle unauthorized response
+      if (response.status === 401) {
+        if (!window.location.pathname.includes('/auth/signin')) {
+          router.push('/auth/signin?callbackUrl=/user/reports');
+        }
+        return [];
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "เกิดข้อผิดพลาดในการดึงข้อมูลรายงาน");
+      }
+
+      if (data.statusCode === 200 && data.data) {
+        setUserReports(data.data);
+        return data.data;
+      } else {
+        throw new Error(data.message || "เกิดข้อผิดพลาดในการดึงข้อมูลรายงาน");
+      }
+    } catch (err) {
+      console.error("Error fetching user reports:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value = {
+    submitReport,
+    userReports,
+    isLoading,
+    error,
+    fetchUserReports,
+    clearReportError,
+  };
+
+  return <ReportContext.Provider value={value}>{children}</ReportContext.Provider>;
+}
+
+export function useReport() {
+  const context = useContext(ReportContext);
+  if (context === undefined) {
+    throw new Error("useReport must be used within a ReportProvider");
+  }
+  return context;
+} 

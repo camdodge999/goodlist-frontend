@@ -37,6 +37,7 @@ export function DropdownFilter<T>({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   
@@ -97,7 +98,6 @@ export function DropdownFilter<T>({
 
     switch (key) {
       case "ArrowDown":
-      case "Tab": // Handle Tab like ArrowDown
         setHighlightedIndex((prev) => {
           return prev < filteredItems.length - 1 ? prev + 1 : 0; // Loop back to top
         });
@@ -123,6 +123,35 @@ export function DropdownFilter<T>({
       case "PageUp":
         setHighlightedIndex((prev) => Math.max(prev - 5, 0));
         break;
+    }
+  };
+
+  // Handle Tab key specifically - with special handling for last item
+  const handleTabKey = (shiftKey: boolean) => {
+    if (filteredItems.length === 0) {
+      setIsDropdownOpen(false);
+      return false; // Let default tab behavior happen
+    }
+
+    if (shiftKey) {
+      // Shift+Tab - move up
+      handleKeyAction("ShiftTab");
+      return true; // Prevent default
+    } else {
+      // Tab - check if we're on the last item
+      if (highlightedIndex === filteredItems.length - 1) {
+        // At last item, close dropdown and let tab continue to next element
+        setIsDropdownOpen(false);
+        return false; // Let default tab behavior happen
+      } else if (highlightedIndex === -1) {
+        // Nothing selected yet, select first item
+        setHighlightedIndex(0);
+        return true; // Prevent default
+      } else {
+        // Not at last item, move to next item
+        setHighlightedIndex(prev => prev + 1);
+        return true; // Prevent default
+      }
     }
   };
 
@@ -184,13 +213,9 @@ export function DropdownFilter<T>({
         return;
       case "Tab":
         if (tabNavigatesItems) {
-          e.preventDefault();
-          if (e.shiftKey) {
-            // Shift+Tab - move up
-            handleKeyAction("ShiftTab");
-          } else {
-            // Tab - move down
-            handleKeyAction("Tab");
+          const shouldPreventDefault = handleTabKey(e.shiftKey);
+          if (shouldPreventDefault) {
+            e.preventDefault();
           }
           return;
         }
@@ -243,7 +268,7 @@ export function DropdownFilter<T>({
   };
 
   // Generate a unique ID for ARIA attributes
-  const dropdownId = useRef(`dropdown-filter-${Math.random().toString(36).substr(2, 9)}`);
+  const dropdownId = useRef(`dropdown-filter-${Math.random().toString(36).substring(2, 9)}`);
 
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
@@ -272,6 +297,7 @@ export function DropdownFilter<T>({
         </div>
         <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-3">
           <button
+            ref={dropdownButtonRef}
             type="button"
             className="p-1 hover:bg-gray-100 rounded-full"
             onClick={toggleDropdown}
@@ -321,7 +347,7 @@ export function DropdownFilter<T>({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.03 }}
                     className={cn(
-                      "cursor-pointer",
+                      "cursor-pointer px-4 py-2",
                       highlightedIndex === index && "bg-gray-100",
                       selectedItem === item && "font-medium"
                     )}

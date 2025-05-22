@@ -15,33 +15,13 @@ import StoreSearch from "@/components/report/StoreSearch";
 import ReasonTextarea from "@/components/report/ReasonTextarea";
 import FileUpload from "@/components/report/FileUpload";
 import FormSection from "@/components/report/FormSection";
+import StatusDialog from "@/components/common/StatusDialog";
+import useShowDialog from "@/hooks/useShowDialog";
 
-// Define types
-type ContactInfo = {
-  line?: string;
-  facebook?: string;
-  phone?: string;
-  address?: string;
-};
+import { Store } from "@/types/stores";
+import { Report } from "@/types/report";
 
-type Store = {
-  id: number;
-  userId: number;
-  storeName: string;
-  contactInfo: ContactInfo;
-  imageUrl?: string;
-  isVerified: boolean;
-  isBanned: boolean;
-};
 
-type Report = {
-  id: string;
-  store_id: number;
-  reason: string;
-  evidence_url: string;
-  created_at: string;
-  status: "pending" | "valid" | "invalid";
-};
 
 export default function ReportPage() {
   const router = useRouter();
@@ -50,6 +30,24 @@ export default function ReportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<Partial<ReportFormSchema>>({});
+  
+  // Initialize dialog hooks
+  const {
+    showSuccessDialog,
+    setShowSuccessDialog,
+    successMessage,
+    successTitle,
+    successButtonText,
+    displaySuccessDialog,
+    handleSuccessClose,
+    showErrorDialog,
+    setShowErrorDialog,
+    errorMessage,
+    errorTitle,
+    errorButtonText,
+    displayErrorDialog,
+    handleErrorClose,
+  } = useShowDialog();
 
   // Update formData and reset validation error
   const updateFormData = (field: keyof ReportFormSchema, value: any) => {
@@ -144,31 +142,44 @@ export default function ReportPage() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Create new report
-      const newReport: Report = {
+      const newReport = {
         id: Date.now().toString(),
-        store_id: selectedStore!.id,
+        storeId: selectedStore!.id.toString(),
         reason: formData.reason!,
-        evidence_url: URL.createObjectURL(evidenceFile!),
-        created_at: new Date().toISOString(),
+        evidenceUrl: URL.createObjectURL(evidenceFile!),
+        createdAt: new Date().toISOString(),
         status: "pending",
       };
 
       // Add to mockReports (this would be an API call in a real app)
       console.log("Report submitted:", newReport);
 
-      // Show success message
-      alert("ส่งรายงานเรียบร้อยแล้ว");
-
-      // Reset form
-      setSelectedStore(null);
-      setFormData({});
-      setEvidenceFile(null);
-      setValidationErrors({});
-
-      // Redirect to home page
-      router.push("/");
+      // Show success dialog instead of alert
+      displaySuccessDialog({
+        title: "ส่งรายงานสำเร็จ",
+        message: "ขอบคุณสำหรับรายงาน เราจะตรวจสอบข้อมูลของคุณโดยเร็วที่สุด",
+        buttonText: "กลับสู่หน้าหลัก",
+        onButtonClick: () => {
+          // Reset form
+          setSelectedStore(null);
+          setFormData({});
+          setEvidenceFile(null);
+          setValidationErrors({});
+          
+          // Redirect to home page
+          router.push("/");
+        }
+      });
     } catch (err) {
       console.error("Error submitting report:", err);
+      
+      // Show error dialog instead of alert
+      displayErrorDialog({
+        title: "เกิดข้อผิดพลาด",
+        message: "เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง",
+        buttonText: "ลองใหม่"
+      });
+      
       setValidationErrors(prev => ({
         ...prev,
         form: "เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง"
@@ -260,6 +271,27 @@ export default function ReportPage() {
           </form>
         </div>
       </div>
+      
+      {/* Status Dialogs */}
+      <StatusDialog
+        isOpen={showSuccessDialog}
+        setIsOpen={setShowSuccessDialog}
+        type="success"
+        message={successMessage}
+        title={successTitle}
+        buttonText={successButtonText}
+        onButtonClick={handleSuccessClose}
+      />
+      
+      <StatusDialog
+        isOpen={showErrorDialog}
+        setIsOpen={setShowErrorDialog}
+        type="error"
+        message={errorMessage}
+        title={errorTitle}
+        buttonText={errorButtonText}
+        onButtonClick={handleErrorClose}
+      />
     </div>
   );
 } 

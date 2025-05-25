@@ -8,6 +8,7 @@ import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { reportFormSchema, ReportFormSchema } from "@/validators/report.schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
 // Custom components
 import StoreSearch from "@/components/report/StoreSearch";
@@ -199,32 +200,33 @@ export default function ReportPage() {
   };
 
   return (
-    <div className="py-8">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-4 py-5 sm:px-6">
-            <div className="flex items-center gap-3">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="w-8 h-8 text-red-500" />
-              <h1 className="text-2xl font-bold text-gray-900">
+    <div className="report-page py-8">
+      <div className="report-container max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Card className="report-card">
+          <CardHeader className="report-header">
+            <div className="report-title-section flex items-center gap-3">
+              <FontAwesomeIcon icon={faExclamationTriangle} className="report-icon w-8 h-8 text-red-500" />
+              <CardTitle className="report-title text-2xl">
                 รายงานร้านค้า
-              </h1>
+              </CardTitle>
             </div>
-            <p className="mt-2 text-sm text-gray-500">
+            <CardDescription className="report-description">
               กรอกข้อมูลเพื่อรายงานร้านค้าที่มีพฤติกรรมไม่เหมาะสม
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
 
-          <form
-            className="border-t border-gray-200 px-4 py-5 sm:px-6"
-            onSubmit={handleSubmit}
-          >
+          <CardContent className="report-content">
+            <form
+              className="report-form"
+              onSubmit={handleSubmit}
+            >
             {validationErrors.form && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{validationErrors.form}</p>
+              <div className="form-error-message mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="error-text text-sm text-red-600">{validationErrors.form}</p>
               </div>
             )}
 
-            <div className="space-y-6">
+            <div className="form-sections space-y-6">
               <FormSection 
                 number={1} 
                 label="เลือกร้านค้า" 
@@ -268,22 +270,25 @@ export default function ReportPage() {
               </FormSection>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3">
+            <div className="form-actions mt-8 flex justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
                 disabled={reportSubmitting}
+                className="cancel-button"
               >
                 ยกเลิก
               </Button>
               <Button 
                 type="submit"
                 disabled={reportSubmitting || Object.keys(validationErrors).length > 0}
+                className="submit-button"
+                variant="primary"
               >
                 {reportSubmitting ? (
                   <>
-                    <Spinner className="mr-2 h-4 w-4" />
+                    <Spinner className="loading-spinner mr-2 h-4 w-4" />
                     กำลังส่งรายงาน...
                   </>
                 ) : (
@@ -291,8 +296,9 @@ export default function ReportPage() {
                 )}
               </Button>
             </div>
-          </form>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Success Dialog */}

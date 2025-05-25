@@ -138,34 +138,34 @@ export default function AdminPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="admin-page-loading flex justify-center items-center h-screen">
+        <div className="loading-spinner animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-2xl font-semibold text-gray-900">
+    <div className="admin-page py-8">
+      <div className="admin-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="admin-header sm:flex sm:items-center">
+          <div className="admin-header-content sm:flex-auto">
+            <h1 className="admin-title text-2xl font-semibold text-gray-900">
               จัดการร้านค้า
             </h1>
-            <p className="mt-2 text-sm text-gray-700">
+            <p className="admin-description mt-2 text-sm text-gray-700">
               จัดการสถานะและตรวจสอบร้านค้าทั้งหมด
             </p>
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="admin-content mt-8">
           <UnderlineTab
             tabs={tabs} 
             activeTab={activeTab} 
             onTabChange={setActiveTab} 
           />
 
-          <div className="mt-6">
+          <div className="admin-main-content mt-6">
             {/* Show filter buttons only for verified stores tab */}
             {activeTab === 'verified' && (
               <StoreFilter 
@@ -175,10 +175,10 @@ export default function AdminPage() {
               />
             )}
             
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <ul role="list" className="divide-y divide-gray-200">
+            <div className="admin-stores-list bg-white shadow overflow-hidden sm:rounded-md">
+              <ul role="list" className="stores-list divide-y divide-gray-200">
                 {displayedStores.map((store) => (
-                  <li key={store.id}>
+                  <li key={store.id} className="store-item">
                     <StoreItem
                       store={store}
                       activeTab={activeTab}
@@ -192,7 +192,7 @@ export default function AdminPage() {
                   </li>
                 ))}
                 {displayedStores.length === 0 && (
-                  <li className="px-4 py-8 text-center text-gray-500">
+                  <li className="empty-state px-4 py-8 text-center text-gray-500">
                     ไม่พบร้านค้าในหมวดหมู่นี้
                   </li>
                 )}
@@ -210,25 +210,29 @@ export default function AdminPage() {
       </div>
 
       {/* Store Details Modal */}
-      <StoreDetailDialog
-        isOpen={isStoreModalOpen}
-        onClose={handleCloseStoreModal}
-        store={selectedStore}
-        onApprove={handleApproveStore}
-        onReject={handleRejectStore}
-        onBan={handleBanStore}
-        onUnban={handleUnbanStore}
-        hideAdminActions={false}
-      />
+      <div className="admin-store-modal">
+        <StoreDetailDialog
+          isOpen={isStoreModalOpen}
+          onClose={handleCloseStoreModal}
+          store={selectedStore}
+          onApprove={handleApproveStore}
+          onReject={handleRejectStore}
+          onBan={handleBanStore}
+          onUnban={handleUnbanStore}
+          hideAdminActions={false}
+        />
+      </div>
 
       {/* Reports Modal */}
-      <ReportsModal
-        isOpen={isReportModalOpen}
-        onClose={handleCloseReport}
-        selectedReport={selectedReport}
-        onUpdateReportStatus={handleUpdateModalReportStatus}
-        onBanStore={handleBanStore}
-      />
+      <div className="admin-reports-modal">
+        <ReportsModal
+          isOpen={isReportModalOpen}
+          onClose={handleCloseReport}
+          selectedReport={selectedReport}
+          onUpdateReportStatus={handleUpdateModalReportStatus}
+          onBanStore={handleBanStore}
+        />
+      </div>
     </div>
   );
 } 

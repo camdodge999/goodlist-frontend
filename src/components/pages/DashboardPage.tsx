@@ -69,19 +69,19 @@ export default function DashboardPage({
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">My Dashboard</h1>
-      <Tabs defaultValue="requests" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="requests">Store Requests</TabsTrigger>
-          <TabsTrigger value="reports">My Reports</TabsTrigger>
+    <div className="dashboard-page container mx-auto py-8">
+      <h1 className="dashboard-title text-3xl font-bold mb-8">My Dashboard</h1>
+      <Tabs defaultValue="requests" className="dashboard-tabs space-y-4">
+        <TabsList className="dashboard-tabs-list">
+          <TabsTrigger value="requests" className="store-requests-tab">Store Requests</TabsTrigger>
+          <TabsTrigger value="reports" className="my-reports-tab">My Reports</TabsTrigger>
         </TabsList>
-        <TabsContent value="requests" className="space-y-4">
+        <TabsContent value="requests" className="store-requests-content space-y-4">
           <StoreRequestsList 
             storeRequests={storeRequests} 
           />
         </TabsContent>
-        <TabsContent value="reports" className="space-y-4">
+        <TabsContent value="reports" className="my-reports-content space-y-4">
           <ReportsList reports={reports} />
         </TabsContent>
       </Tabs>

@@ -135,6 +135,7 @@ export default function FileUpload({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onClick={() => document.getElementById("file-upload")?.click()}
         >
           <FontAwesomeIcon 
             icon={faCloudArrowUp} 
@@ -157,7 +158,6 @@ export default function FileUpload({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => document.getElementById("file-upload")?.click()}
               >
                 เลือกไฟล์
               </Button>

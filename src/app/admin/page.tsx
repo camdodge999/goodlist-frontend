@@ -25,6 +25,8 @@ async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
       }
     );
 
+
+
     if (!response.ok) {
       console.error(`Error fetching admin stores: ${response.statusText}`);
       return [];
@@ -33,6 +35,7 @@ async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
     const data = await response.json();
     
     if (data.statusCode === 200 && data.data?.storeDetail) {
+      console.log("RESPONSE", data.data.storeDetail);
       return data.data.storeDetail;
     }
     

@@ -1,7 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import defaultImage from '@images/logo.webp';
 
 interface DocumentPreviewDialogProps {
@@ -11,24 +10,22 @@ interface DocumentPreviewDialogProps {
   documentName?: string;
 }
 
-const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ 
-  isOpen, 
-  onClose, 
+const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
+  isOpen,
+  onClose,
   imageUrl,
   documentName
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl p-0 overflow-y-auto max-h-[90vh]">
+        <DialogHeader className="space-y-6">
+          <DialogTitle className="hidden">
+            <span className="text-lg font-semibold mb-4">{documentName || 'เอกสาร'}</span>
+          </DialogTitle>
+          <DialogDescription className="hidden"></DialogDescription>
+        </DialogHeader>
         <div className="relative p-4">
-          <button 
-            type="button"
-            onClick={onClose} 
-            className="absolute top-2 right-2 p-1 rounded-full bg-gray-100 hover:bg-gray-200 z-10"
-          >
-            <X size={20} />
-          </button>
-          <h3 className="text-lg font-semibold mb-4">{documentName || 'เอกสาร'}</h3>
           <div className="relative w-full h-[70vh]">
             <Image
               src={imageUrl}
@@ -38,7 +35,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
               }}
               alt={documentName || 'Document preview'}
               fill
-              className="object-contain"
+              className="object-contain max-h-[70vh]"
             />
           </div>
         </div>

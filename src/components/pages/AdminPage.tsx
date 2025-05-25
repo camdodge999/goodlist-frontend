@@ -171,6 +171,16 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
     setIsReportDetailModalOpen(false);
   };
 
+  // Enhanced dialog close handlers that refresh data on success
+  const handleSuccessCloseWithRefresh = async () => {
+    handleSuccessClose();
+    // Refresh data after successful operations
+    await Promise.all([
+      refreshStores(),
+      fetchAllReports()
+    ]);
+  };
+
   // Async handlers for store actions with dialog feedback
   const handleApproveStoreWithDialog = async (storeId: number) => {
     const result = await handleApproveStore(storeId);
@@ -322,7 +332,7 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
         message={successMessage}
         title={successTitle}
         buttonText={successButtonText}
-        onButtonClick={handleSuccessClose}
+        onButtonClick={handleSuccessCloseWithRefresh}
       />
 
       <StatusDialog

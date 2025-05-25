@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Download, Eye } from 'lucide-react';    
 import { Store } from '@/types/stores';
 import { getAuthenticatedImageUrl } from '@/lib/utils';
@@ -132,15 +132,16 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
           <DialogHeader className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
             <DialogTitle className="text-xl font-medium">รายละเอียดร้านค้า</DialogTitle>
           </DialogHeader>
+          <DialogDescription className="hidden"></DialogDescription>
 
           <div className="p-0">
             {/* Store Header Image */}
-            <div className="relative w-full h-48 border-b border-gray-200">
+            <div className="relative w-full h-64 border-b border-gray-200">
               <Image
+                fill
                 src={getAuthenticatedImageUrl(store.imageStore) || defaultImage.src}
                 alt={`รูปภาพร้าน ${store.storeName}`}
-                fill
-                className="object-cover"
+                className="object-contain"
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement;
                   target.srcset = defaultImage.src;

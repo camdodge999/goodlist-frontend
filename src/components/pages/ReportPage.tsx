@@ -32,7 +32,7 @@ export default function ReportPage() {
   const [formData, setFormData] = useState<Partial<ReportFormSchema>>({});
   
   // Use contexts
-  const { stores, fetchStores, isLoading: storesLoading } = useStore(); 
+  const { stores, fetchStores } = useStore(); 
   const { submitReport, isLoading: reportSubmitting, error: reportError } = useReport();
   const { data: session } = useSession();
   

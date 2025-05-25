@@ -184,9 +184,9 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
           // Show stores that have reports
           return allReports.some((report) => report.storeId === store.id) && store.isBanned === false;
         case "verified":
-          return store.isVerified !== null && !store.isBanned;
+          return store.isVerified !== null && store.isBanned === false;
         case "additional":
-          return store.userId > 0 && store.isVerified === null && !store.isBanned;
+          return store.userId > 0 && store.isVerified === null && store.isBanned === false;
         case "banned":
           return store.isBanned === true;
         default:
@@ -200,22 +200,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     return allReports.filter((report) => report.storeId === storeId);
   }, [allReports]);
 
-  // Helper function to refresh data with delay
-  const refreshDataWithDelay = useCallback(async (delayMs: number = 500) => {
-    console.log(`useAdminStores: Scheduling data refresh in ${delayMs}ms...`);
-    setTimeout(async () => {
-      try {
-        console.log('useAdminStores: Executing delayed data refresh...');
-        await Promise.all([
-          fetchAdminStores(),
-          fetchAllReports()
-        ]);
-        console.log('useAdminStores: Delayed data refresh complete');
-      } catch (error) {
-        console.error('useAdminStores: Error during delayed refresh:', error);
-      }
-    }, delayMs);
-  }, [fetchAdminStores, fetchAllReports]);
+
 
   // Handle report status updates using context
   const handleUpdateReportStatus = useCallback(async (reportId: string, newStatus: "valid" | "invalid"): Promise<{ success: boolean; message: string }> => {
@@ -229,9 +214,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
         // Return success immediately for dialog display
         const response = { success: true, message: `อัปเดตสถานะรายงานสำเร็จ` };
         
-        // Schedule data refresh with 0.5s delay
-        refreshDataWithDelay(500);
-        
         return response;
       } else {
         console.error(`Failed to update report ${reportId} status`);
@@ -241,7 +223,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error updating report status:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [contextUpdateReportStatus, refreshDataWithDelay]);
+  }, [contextUpdateReportStatus]);
 
   const handleApproveStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
@@ -249,9 +231,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       if (result) {
         // Return success immediately for dialog display
         const response = { success: true, message: "อนุมัติร้านค้าสำเร็จ" };
-        
-        // Schedule data refresh with 0.5s delay
-        refreshDataWithDelay(500);
         
         return response;
       } else {
@@ -263,7 +242,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error approving store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError, refreshDataWithDelay]);
+  }, [verifyStore, storeError]);
 
   const handleRejectStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
@@ -271,9 +250,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       if (result) {
         // Return success immediately for dialog display
         const response = { success: true, message: "ปฏิเสธร้านค้าสำเร็จ" };
-        
-        // Schedule data refresh with 0.5s delay
-        refreshDataWithDelay(500);
         
         return response;
       } else {
@@ -285,7 +261,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error rejecting store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError, refreshDataWithDelay]);
+  }, [verifyStore, storeError]);
 
   const handleBanStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
@@ -294,9 +270,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       if (result) {
         // Return success immediately for dialog display
         const response = { success: true, message: "แบนร้านค้าสำเร็จ" };
-        
-        // Schedule data refresh with 0.5s delay
-        refreshDataWithDelay(500);
         
         return response;
       } else {
@@ -308,7 +281,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error banning store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError, refreshDataWithDelay]);
+  }, [verifyStore, storeError]);
 
   const handleUnbanStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
@@ -316,9 +289,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       if (result) {
         // Return success immediately for dialog display
         const response = { success: true, message: "ยกเลิกแบนร้านค้าสำเร็จ" };
-        
-        // Schedule data refresh with 0.5s delay
-        refreshDataWithDelay(500);
         
         return response;
       } else {
@@ -330,7 +300,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error unbanning store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError, refreshDataWithDelay]);
+  }, [verifyStore, storeError]);
 
   // Refresh function for manual data refresh
   const refreshStores = useCallback(async () => {

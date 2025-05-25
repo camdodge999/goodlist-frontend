@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,11 +7,22 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { ReportReason } from "@/types/stores";
+import { z } from "zod";
+
+// Custom components following ReportPage pattern
+import ReasonTextarea from "@/components/report/ReasonTextarea";
+import FileUpload from "@/components/report/FileUpload";
+import FormSection from "@/components/report/FormSection";
+import StatusDialog from "@/components/common/StatusDialog";
+import useShowDialog from "@/hooks/useShowDialog";
+import Spinner from "@/components/ui/Spinner";
+
+// Validation and types
+import { reportFormSchema, ReportFormSchema } from "@/validators/report.schema";
+
+// Contexts
+import { useReport } from "@/contexts/ReportContext";
 
 interface ReportDialogProps {
   isOpen: boolean;
@@ -20,198 +31,271 @@ interface ReportDialogProps {
 }
 
 export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDialogProps) {
-  const [reportReason, setReportReason] = useState<ReportReason | "">("");
-  const [reportDetails, setReportDetails] = useState("");
-  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Partial<ReportFormSchema>>({
+    storeId: storeId
+  });
+  
+  // Use report context
+  const { submitReport, isLoading: reportSubmitting, error: reportError } = useReport();
+  
+  // Initialize dialog hooks
+  const {
+    showSuccessDialog,
+    setShowSuccessDialog,
+    successMessage,
+    successTitle,
+    successButtonText,
+    displaySuccessDialog,
+    handleSuccessClose,
+    showErrorDialog,
+    setShowErrorDialog,
+    errorMessage,
+    errorTitle,
+    errorButtonText,
+    displayErrorDialog,
+    handleErrorClose,
+  } = useShowDialog();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Update storeId when prop changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      storeId: storeId
+    }));
+  }, [storeId]);
+
+  // Show error dialog if report submission fails
+  useEffect(() => {
+    if (reportError) {
+      displayErrorDialog({
+        title: "เกิดข้อผิดพลาด",
+        message: reportError,
+        buttonText: "ลองใหม่"
+      });
+    }
+  }, [reportError, displayErrorDialog]);
+
+  // Update formData and reset validation error
+  const updateFormData = (field: keyof ReportFormSchema, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    resetValidationError(field);
+  };
+
+  // Reset specific validation error
+  const resetValidationError = (field: keyof ReportFormSchema) => {
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  };
+
+  // Handle reason change
+  const handleReasonChange = (value: string) => {
+    updateFormData('reason', value);
+  };
+
+  // Handle file change
+  const handleFileChange = (file: File | null) => {
     if (file) {
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        alert("ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 10MB");
-        return;
-      }
-      // Check file type
-      const validTypes = ["image/jpeg", "image/png", "application/pdf"];
-      if (!validTypes.includes(file.type)) {
-        alert("รองรับเฉพาะไฟล์ PNG, JPG และ PDF เท่านั้น");
-        return;
-      }
-      setEvidenceFile(file);
+      updateFormData('evidence', file);
+    } else {
+      const newFormData = { ...formData };
+      delete newFormData.evidence;
+      setFormData(newFormData);
+      setValidationErrors(prev => ({
+        ...prev,
+        evidence: "กรุณาอัพโหลดหลักฐาน"
+      }));
     }
   };
 
-  const handleReportSubmit = async () => {
-    if (!reportReason || !reportDetails || !evidenceFile) {
-      alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+  // Validate all fields before submission
+  const validateForm = (): boolean => {
+    try {
+      // Use Zod schema to validate the form data
+      reportFormSchema.parse(formData);
+      
+      // If validation passes, clear any existing errors
+      setValidationErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Format Zod validation errors
+        const formattedErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            const field = err.path[0].toString();
+            if (!formattedErrors[field]) {
+              formattedErrors[field] = err.message;
+            }
+          }
+        });
+        setValidationErrors(formattedErrors);
+      } else {
+        // Handle unexpected errors
+        setValidationErrors({
+          form: "เกิดข้อผิดพลาดในการตรวจสอบข้อมูล กรุณาลองใหม่อีกครั้ง"
+        });
+        console.error("Validation error:", error);
+      }
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate all fields using Zod
+    if (!validateForm()) {
       return;
     }
-
-    setIsSubmitting(true);
+    
     try {
-      // Simulate API call or call actual API in production
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Create a unique filename
-      const fileExtension = evidenceFile.name.split(".").pop();
-      const timestamp = Date.now();
-      const fileName = `report_${storeId}_${timestamp}.${fileExtension}`;
-
-      // In a real application, you would upload the file to a server or cloud storage
-      const evidenceUrl = URL.createObjectURL(evidenceFile);
-
-      // Create report object to send to API
-      const reportData = {
-        storeId,
-        reason: reportReason as ReportReason,
-        details: reportDetails,
-        evidenceFilename: fileName,
-      };
-
-      console.log("Submitting report:", reportData);
-      // Here you would make an API call to submit the report
-      // await reportStoreAPI(reportData, evidenceFile);
-
-      // Reset form and close dialog
-      resetForm();
-      onOpenChange(false);
-
-      // Show success message
-      alert("รายงานของคุณถูกส่งเรียบร้อยแล้ว");
-    } catch (error) {
-      console.error("Error submitting report:", error);
-      alert("เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      setIsSubmitting(false);
+      // Submit report using the context
+      const result = await submitReport(formData as ReportFormSchema);
+      
+      if (result.success) {
+        // Show success dialog
+        displaySuccessDialog({
+          title: "ส่งรายงานสำเร็จ",
+          message: "ขอบคุณสำหรับรายงาน เราจะตรวจสอบข้อมูลของคุณโดยเร็วที่สุด",
+          buttonText: "ปิด",
+          onButtonClick: () => {
+            // Reset form and close dialog
+            resetForm();
+            onOpenChange(false);
+          }
+        });
+      } else {
+        // Show error in form
+        setValidationErrors(prev => ({
+          ...prev,
+          form: result.message
+        }));
+      }
+    } catch (err) {
+      console.error("Error submitting report:", err);
+      
+      // Show error in form
+      setValidationErrors(prev => ({
+        ...prev,
+        form: "เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง"
+      }));
     }
   };
 
   const resetForm = () => {
-    setReportReason("");
-    setReportDetails("");
-    setEvidenceFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    setFormData({ storeId: storeId });
+    setValidationErrors({});
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>รายงานร้านค้า</DialogTitle>
-          <DialogDescription>
-            กรุณาระบุเหตุผลและรายละเอียดในการรายงานร้านค้านี้
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label>เหตุผลในการรายงาน</Label>
-            <RadioGroup
-              value={reportReason}
-              onValueChange={(value) => setReportReason(value as ReportReason)}
-              className="grid gap-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="scam" id="scam" />
-                <Label htmlFor="scam">หลอกลวง</Label>
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>รายงานร้านค้า</DialogTitle>
+            <DialogDescription>
+              กรุณาระบุเหตุผลและรายละเอียดในการรายงานร้านค้านี้
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {validationErrors.form && (
+              <div className="form-error-message p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="error-text text-sm text-red-600">{validationErrors.form}</p>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="fake" id="fake" />
-                <Label htmlFor="fake">สินค้าปลอม/ของเลียนแบบ</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="inappropriate" id="inappropriate" />
-                <Label htmlFor="inappropriate">เนื้อหาไม่เหมาะสม</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="other" id="other" />
-                <Label htmlFor="other">อื่นๆ</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="details">รายละเอียดเพิ่มเติม</Label>
-            <Textarea
-              id="details"
-              value={reportDetails}
-              onChange={(e) => setReportDetails(e.target.value)}
-              placeholder="กรุณาระบุรายละเอียดเพิ่มเติม..."
-              className="min-h-[100px]"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>อัพโหลดหลักฐาน</Label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-500 transition-colors duration-200">
-              <div className="space-y-1 text-center">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  stroke="currentColor"
-                  fill="none"
-                  viewBox="0 0 48 48"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <div className="flex text-sm text-gray-600">
-                  <label
-                    htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                  >
-                    <span>อัพโหลดไฟล์</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      accept="image/*,.pdf"
-                      onChange={handleFileChange}
-                      ref={fileInputRef}
-                    />
-                  </label>
-                  <p className="pl-1">หรือลากไฟล์มาวาง</p>
-                </div>
-                <p className="text-xs text-gray-500">
-                  PNG, JPG, PDF ขนาดไม่เกิน 10MB
-                </p>
-                {evidenceFile && (
-                  <p className="text-xs text-green-600 mt-2">
-                    เลือกไฟล์: {evidenceFile.name}
-                  </p>
-                )}
-              </div>
+            )}
+
+            <div className="form-sections space-y-4">
+              <FormSection 
+                number={1} 
+                label="เหตุผล" 
+                description="ระบุเหตุผลที่คุณต้องการรายงานร้านค้านี้"
+              >
+                <ReasonTextarea 
+                  value={formData.reason || ''} 
+                  onChange={handleReasonChange}
+                  validationError={validationErrors.reason}
+                  schema={reportFormSchema.shape.reason}
+                  placeholder="อธิบายรายละเอียดของปัญหาที่คุณพบ..."
+                  rows={3}
+                />
+              </FormSection>
+
+              <FormSection 
+                number={2} 
+                label="หลักฐาน" 
+                description="อัพโหลดภาพหรือเอกสารเพื่อเป็นหลักฐานประกอบการรายงาน"
+              >
+                <FileUpload 
+                  onFileChange={handleFileChange}
+                  validationError={validationErrors.evidence}
+                  fileSchema={reportFormSchema.shape.evidence}
+                  label="อัพโหลดไฟล์"
+                  description="PNG, JPG, PDF ขนาดไม่เกิน 10MB"
+                  accept="image/png,image/jpeg,application/pdf"
+                />
+              </FormSection>
             </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              resetForm();
-              onOpenChange(false);
-            }}
-            disabled={isSubmitting}
-          >
-            ยกเลิก
-          </Button>
-          <Button
-            onClick={handleReportSubmit}
-            disabled={
-              !reportReason || !reportDetails || !evidenceFile || isSubmitting
-            }
-          >
-            {isSubmitting ? "กำลังส่ง..." : "ส่งรายงาน"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+            <DialogFooter className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  resetForm();
+                  onOpenChange(false);
+                }}
+                disabled={reportSubmitting}
+              >
+                ยกเลิก
+              </Button>
+              <Button 
+                type="submit"
+                disabled={reportSubmitting || Object.keys(validationErrors).length > 0}
+                variant="default"
+              >
+                {reportSubmitting ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    กำลังส่งรายงาน...
+                  </>
+                ) : (
+                  'ส่งรายงาน'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <StatusDialog
+        isOpen={showSuccessDialog}
+        setIsOpen={setShowSuccessDialog}
+        type="success"
+        message={successMessage}
+        title={successTitle}
+        buttonText={successButtonText}
+        onButtonClick={handleSuccessClose}
+      />
+
+      {/* Error Dialog */}
+      <StatusDialog
+        isOpen={showErrorDialog}
+        setIsOpen={setShowErrorDialog}
+        type="error"
+        message={errorMessage}
+        title={errorTitle}
+        buttonText={errorButtonText}
+        onButtonClick={handleErrorClose}
+      />
+    </>
   );
 } 

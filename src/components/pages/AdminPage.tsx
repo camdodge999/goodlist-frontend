@@ -292,7 +292,7 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
                   await refreshStores();
                 }}
               >
-                รีเฟรชข้อมูล
+                <span>รีเฟรชข้อมูล</span>
               </Button>
             </div>
           </div>

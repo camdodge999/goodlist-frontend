@@ -236,7 +236,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       
       const data = await response.json();
 
-      if (data.statusCode === 200 && data.data) {
+      if (data.statusCode === 201 && data.data) {
         // Update both local state and global cache
         const updatedStores = stores.map((store) =>
           store.id === storeId ? { ...store, ...data.data } : store

@@ -66,7 +66,8 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
     handleBanStore,
     handleUnbanStore,
     handleUpdateReportStatus,
-    reports
+    reports,
+    refreshStores
   } = useAdminStores({ initialStores });
 
   // UI state
@@ -272,28 +273,6 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
         <div className="ml-4 text-gray-600">
           กำลังโหลดข้อมูลร้านค้า
         </div>
-
-        {/* Success Dialog */}
-        <StatusDialog
-          isOpen={showSuccessDialog}
-          setIsOpen={setShowSuccessDialog}
-          type="success"
-          message={successMessage}
-          title={successTitle}
-          buttonText={successButtonText}
-          onButtonClick={handleSuccessClose}
-        />
-
-        {/* Error Dialog */}
-        <StatusDialog
-          isOpen={showErrorDialog}
-          setIsOpen={setShowErrorDialog}
-          type="error"
-          message={errorMessage}
-          title={errorTitle}
-          buttonText={errorButtonText}
-          onButtonClick={handleErrorClose}
-        />
       </div>
     );
   }
@@ -305,6 +284,7 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
 
   return (
     <>
+      {/* Global Status Dialogs - Always available */}
       <StatusDialog
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
@@ -315,7 +295,6 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
         onButtonClick={handleSuccessClose}
       />
 
-      {/* Error Dialog */}
       <StatusDialog
         isOpen={showErrorDialog}
         setIsOpen={setShowErrorDialog}
@@ -325,8 +304,6 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
         buttonText={errorButtonText}
         onButtonClick={handleErrorClose}
       />
-
-
 
       <div className="admin-page py-8">
         <div className="admin-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -348,12 +325,11 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
               <button
                 type="button"
                 onClick={async () => {
-                  console.log('Manual refresh triggered');
-                  await fetchAllReports();
+                  await refreshStores();
                 }}
                 className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto"
               >
-                รีเฟรชรายงาน ({allReports.length})
+                รีเฟรชข้อมูล 
               </button>
             </div>
           </div>

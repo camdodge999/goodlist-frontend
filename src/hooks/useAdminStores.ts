@@ -15,7 +15,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
   const [activeTab, setActiveTab] = useState<string>("pending");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [adminStores, setAdminStores] = useState<Store[]>(initialStores);
-  const [forceUpdate, setForceUpdate] = useState<number>(0);
   const initialized = useRef<boolean>(initialStores.length > 0);
 
   // Use ReportContext for report management
@@ -58,7 +57,8 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
 
       const data = await response.json();
 
-      if (data.statusCode === 201 && data.data) {
+      if (data.statusCode === 200 && data.data) {
+        console.log('useAdminStores: Fetched admin stores:', data.data.length);
         setAdminStores(data.data);
         return data.data;
       } else {
@@ -141,15 +141,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     initializeData();
   }, [session?.user?.token]);
 
-  // Force refresh when forceUpdate changes
-  useEffect(() => {
-    if (forceUpdate > 0) {
-      Promise.all([
-        fetchAdminStores(),
-        fetchAllReports()
-      ]);
-    }
-  }, [forceUpdate]);
+
 
   // Calculate tabs with report counts
   const tabs: Tab[] = useMemo(() => [
@@ -208,6 +200,23 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     return allReports.filter((report) => report.storeId === storeId);
   }, [allReports]);
 
+  // Helper function to refresh data with delay
+  const refreshDataWithDelay = useCallback(async (delayMs: number = 500) => {
+    console.log(`useAdminStores: Scheduling data refresh in ${delayMs}ms...`);
+    setTimeout(async () => {
+      try {
+        console.log('useAdminStores: Executing delayed data refresh...');
+        await Promise.all([
+          fetchAdminStores(),
+          fetchAllReports()
+        ]);
+        console.log('useAdminStores: Delayed data refresh complete');
+      } catch (error) {
+        console.error('useAdminStores: Error during delayed refresh:', error);
+      }
+    }, delayMs);
+  }, [fetchAdminStores, fetchAllReports]);
+
   // Handle report status updates using context
   const handleUpdateReportStatus = useCallback(async (reportId: string, newStatus: "valid" | "invalid"): Promise<{ success: boolean; message: string }> => {
     try {
@@ -216,7 +225,14 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       const success = await contextUpdateReportStatus(reportId, apiStatus as "valid" | "invalid");
       if (success) {
         console.log(`Report ${reportId} status updated to ${newStatus}`);
-        return { success: true, message: `อัปเดตสถานะรายงานสำเร็จ` };
+        
+        // Return success immediately for dialog display
+        const response = { success: true, message: `อัปเดตสถานะรายงานสำเร็จ` };
+        
+        // Schedule data refresh with 0.5s delay
+        refreshDataWithDelay(500);
+        
+        return response;
       } else {
         console.error(`Failed to update report ${reportId} status`);
         return { success: false, message: `ไม่สามารถอัปเดตสถานะรายงานได้ กรุณาลองใหม่อีกครั้ง` };
@@ -225,14 +241,19 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error updating report status:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [contextUpdateReportStatus]);
+  }, [contextUpdateReportStatus, refreshDataWithDelay]);
 
   const handleApproveStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
       const result = await verifyStore(storeId, true, false);
       if (result) {
-        setForceUpdate(prev => prev + 1);
-        return { success: true, message: "อนุมัติร้านค้าสำเร็จ" };
+        // Return success immediately for dialog display
+        const response = { success: true, message: "อนุมัติร้านค้าสำเร็จ" };
+        
+        // Schedule data refresh with 0.5s delay
+        refreshDataWithDelay(500);
+        
+        return response;
       } else {
         // Get error from StoreContext if available
         const contextError = storeError || "ไม่สามารถอนุมัติร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
@@ -242,14 +263,19 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error approving store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError]);
+  }, [verifyStore, storeError, refreshDataWithDelay]);
 
   const handleRejectStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
       const result = await verifyStore(storeId, false, false);
       if (result) {
-        setForceUpdate(prev => prev + 1);
-        return { success: true, message: "ปฏิเสธร้านค้าสำเร็จ" };
+        // Return success immediately for dialog display
+        const response = { success: true, message: "ปฏิเสธร้านค้าสำเร็จ" };
+        
+        // Schedule data refresh with 0.5s delay
+        refreshDataWithDelay(500);
+        
+        return response;
       } else {
         // Get error from StoreContext if available
         const contextError = storeError || "ไม่สามารถปฏิเสธร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
@@ -259,14 +285,20 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error rejecting store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError]);
+  }, [verifyStore, storeError, refreshDataWithDelay]);
 
   const handleBanStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
       const result = await verifyStore(storeId, false, true);
+      console.log("RESULT", result);
       if (result) {
-        setForceUpdate(prev => prev + 1);
-        return { success: true, message: "แบนร้านค้าสำเร็จ" };
+        // Return success immediately for dialog display
+        const response = { success: true, message: "แบนร้านค้าสำเร็จ" };
+        
+        // Schedule data refresh with 0.5s delay
+        refreshDataWithDelay(500);
+        
+        return response;
       } else {
         // Get error from StoreContext if available
         const contextError = storeError || "ไม่สามารถแบนร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
@@ -276,14 +308,19 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error banning store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError]);
+  }, [verifyStore, storeError, refreshDataWithDelay]);
 
   const handleUnbanStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
       const result = await verifyStore(storeId, true, false);
       if (result) {
-        setForceUpdate(prev => prev + 1);
-        return { success: true, message: "ยกเลิกแบนร้านค้าสำเร็จ" };
+        // Return success immediately for dialog display
+        const response = { success: true, message: "ยกเลิกแบนร้านค้าสำเร็จ" };
+        
+        // Schedule data refresh with 0.5s delay
+        refreshDataWithDelay(500);
+        
+        return response;
       } else {
         // Get error from StoreContext if available
         const contextError = storeError || "ไม่สามารถยกเลิกแบนร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
@@ -293,17 +330,17 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       console.error("Error unbanning store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [verifyStore, storeError]);
+  }, [verifyStore, storeError, refreshDataWithDelay]);
 
   // Refresh function for manual data refresh
   const refreshStores = useCallback(async () => {
-    setForceUpdate(prev => prev + 1);
+    console.log('useAdminStores: Manual refresh triggered');
     const [stores] = await Promise.all([
       fetchAdminStores(),
       fetchAllReports()
     ]);
     return stores;
-  }, []);
+  }, [fetchAdminStores, fetchAllReports]);
 
   return {
     tabs,

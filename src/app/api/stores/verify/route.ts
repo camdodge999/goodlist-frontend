@@ -37,7 +37,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       return NextResponse.json({
         statusCode: 201,
         message: "Store verified successfully",
-        data: result?.data
+        data: result?.data?.verifyStore
       }, { status: 201 });
     } else {
       return NextResponse.json(
@@ -63,10 +63,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   }
 }
 
-async function verifyStore(request: NextRequest, body: any): Promise<BodyResponse<Store>> {
+async function verifyStore(request: NextRequest, body: any): Promise<BodyResponse<{verifyStore: Store}>> {
   try {
     // For FormData, we use it directly - fetchWithAuth handles it correctly
-    const result = await fetchWithAuth<BodyResponse<Store>>({
+    const result = await fetchWithAuth<BodyResponse<{verifyStore: Store}>>({
       request,
       url: `${process.env.NEXTAUTH_BACKEND_URL}/api/store/VerifyStore/${body.id}`,
       method: 'POST',

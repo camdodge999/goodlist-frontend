@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { metadataPages } from "@/consts/metadata";
 
 export const metadata: Metadata = {
-  title: metadataPages.login.title, 
+  title: metadataPages.login.title,
   description: metadataPages.login.description,
 };
 

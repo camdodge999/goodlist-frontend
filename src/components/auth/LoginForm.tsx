@@ -49,7 +49,7 @@ export default function LoginForm(): JSX.Element {
         router.push("/profile");
       }, 1000);
     }
-  }, [router, showSuccessDialog]);
+  }, [showSuccessDialog]);
 
   const validateForm = (): boolean => {
     // Client-side validation using zod
@@ -103,12 +103,10 @@ export default function LoginForm(): JSX.Element {
       });
       
       // End loading state
+      console.log("result", result)
       setIsPending(false);
     
-      if (result?.error) {
-        const errorMessage = getErrorMessage(result.error);
-        displayErrorDialog(errorMessage);
-      } else if (result?.ok) {
+      if (result?.ok && !result?.error) {
         // Authentication successful
         displaySuccessDialog({
           message: "เข้าสู่ระบบสำเร็จ",
@@ -119,8 +117,9 @@ export default function LoginForm(): JSX.Element {
           }
         });
         
-        // Set the flag to navigate on next effect run
-        shouldNavigateRef.current = true;
+      } else if (result?.error) {
+        const errorMessage = getErrorMessage(result.error);
+        displayErrorDialog(errorMessage);
       } else {
         // Handle unexpected result format
         console.error("Unexpected signIn result:", result);

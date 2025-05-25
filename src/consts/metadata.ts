@@ -56,5 +56,12 @@ export const metadataPages = {
         keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
         author: "Goodlist Seller",
         robots: "index, follow",
+    },
+    contact:{  
+        title: 'ติดต่อเรา | Goodlistseller',
+        description: 'ติดต่อทีมงาน Goodlistseller - แพลตฟอร์มร้านค้าออนไลน์ที่น่าเชื่อถือในประเทศไทย',
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
     }
 }

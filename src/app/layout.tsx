@@ -5,11 +5,11 @@ import "./globals.css";
 import NavBar from "@/components/layout/NavBar";
 import { NextAuthProvider } from "@/providers/NextAuthProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProviders } from "@/providers/AppProviders";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Session } from "next-auth";
+
 const prompt = localFont({
   src: [
     {
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://goodlist.com"),
   title: "Goodlist Seller",
   description: "Platform for verified online stores",
-  openGraph:{
+  openGraph: {
     title: "Goodlist Seller",
     description: "Platform for verified online stores",
     images: [
@@ -67,19 +67,17 @@ export default async function RootLayout({
 }) {
   // Pre-fetch the session on the server for better initial loading experience
   const session = await getServerSession(authOptions);
-  
+
   return (
     <html lang="th" className={`${prompt.className} antialiased`}>
       <body>
-          <NextAuthProvider session={session as unknown as Session}>
-            <AuthProvider>
-              <AppProviders>
-                <NavBar />
-                <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
-                <ToastProvider />
-              </AppProviders>
-            </AuthProvider>
-          </NextAuthProvider>
+        <NextAuthProvider session={session as unknown as Session}>
+          <AppProviders>
+            <NavBar />
+            <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
+            <ToastProvider />
+          </AppProviders>
+        </NextAuthProvider>
       </body>
     </html>
   );

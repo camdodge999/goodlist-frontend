@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection, WhyChooseSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection, GettingStartedSection } from "@/components/landing";
-import { StoreProvider } from "@/contexts/StoreContext";    
 import { metadataPages } from "@/consts/metadata";
 
 export const metadata: Metadata = {
@@ -16,7 +15,7 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
 
   return (
-    <StoreProvider>
+    <>
       {/* Hero Section */}
       <HeroSection session={session} />
 
@@ -37,6 +36,6 @@ export default async function Home() {
 
       {/* Footer with sitemap and contact info */}
       <Footer />
-    </StoreProvider>
+    </>
   );
 } 

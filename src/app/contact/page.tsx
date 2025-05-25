@@ -10,10 +10,11 @@ import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { metadataPages } from "@/consts/metadata";
 
 export const metadata: Metadata = {
-  title: 'ติดต่อเรา | Goodlistseller',
-  description: 'ติดต่อทีมงาน Goodlistseller - แพลตฟอร์มร้านค้าออนไลน์ที่น่าเชื่อถือในประเทศไทย',
+  title: metadataPages.contact.title,  
+  description: metadataPages.contact.description,
 };
 
 export default function ContactPage() {

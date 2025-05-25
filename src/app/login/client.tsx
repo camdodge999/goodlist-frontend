@@ -1,26 +1,10 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoginForm from "@/components/auth/LoginForm";
 
 export default function LoginClientPage() {
     const { status } = useSession();
-    const router = useRouter();
-    const searchParams = useSearchParams();
-
-    const handleRedirect = useCallback(() => {
-        // If the user is already authenticated, redirect to the callback URL or profile
-        if (status === "authenticated") {
-            const callbackUrl = searchParams.get('callbackUrl') || '/profile';
-            router.push(callbackUrl);
-        }
-    }, [status, router, searchParams]);
-
-    useEffect(() => {
-        handleRedirect();
-    }, [handleRedirect]);
 
     if (status === "loading" || status === "authenticated") {   
         return (

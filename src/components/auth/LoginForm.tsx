@@ -124,7 +124,7 @@ export default function LoginForm(): JSX.Element {
       } else {
         // Handle unexpected result format
         console.error("Unexpected signIn result:", result);
-        displayErrorDialog("เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองอีกครั้ง");
+        displayErrorDialog("เกิดข้อผิดพลาดที่ไม่สามารถระบุได้ กรุณาลองอีกครั้ง");
       }
     } catch (error) {
       setIsPending(false);

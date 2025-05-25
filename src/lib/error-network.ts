@@ -8,6 +8,7 @@ export const NETWORK_ERRORS = {
     SERVER_ERROR_500: "SERVER_ERROR_500",
     SERVER_ERROR_404: "SERVER_ERROR_404",
     SERVER_ERROR_503: "SERVER_ERROR_503",
+    SERVER_ERROR_401: "SERVER_ERROR_401",
     INVALID_RESPONSE_FORMAT: "INVALID_RESPONSE_FORMAT",
     INVALID_TOKEN_FORMAT: "INVALID_TOKEN_FORMAT",
 }
@@ -33,6 +34,9 @@ export const getErrorMessage = (error: string) => {
          break;
        case NETWORK_ERRORS.SERVER_ERROR_503:
          errorMessage = "เซิร์ฟเวอร์ไม่พร้อมใช้งาน กรุณาลองอีกครั้งในภายหลัง";
+         break;
+      case NETWORK_ERRORS.SERVER_ERROR_401:
+         errorMessage = "อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง";
          break;
        case NETWORK_ERRORS.INVALID_RESPONSE_FORMAT:
          errorMessage = "ข้อมูลตอบกลับจากเซิร์ฟเวอร์ไม่ถูกต้อง";

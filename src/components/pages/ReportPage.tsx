@@ -201,7 +201,7 @@ export default function ReportPage() {
 
   return (
     <div className="report-page py-8">
-      <div className="report-container max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="report-container sm:min-w-xl lg:min-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card className="report-card">
           <CardHeader className="report-header">
             <div className="report-title-section flex items-center gap-3">

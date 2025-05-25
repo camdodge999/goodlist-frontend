@@ -9,8 +9,8 @@ import {
 import ContentWidth from "@/components/layout/ContentWidth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { howItWorksSteps, safetyLevels } from "@/consts/storeChecker";
-import { Step, SafetyLevel } from "@/types/storeChecker";
+import { howItWorksSteps } from "@/consts/storeChecker";
+import { Step } from "@/types/storeChecker";
 // Header component
 const SectionHeader = () => (
   <div className="text-center mb-16">
@@ -32,10 +32,12 @@ const SearchTool = () => (
         placeholder="ใส่ชื่อร้านค้าหรือ URL ที่ต้องการตรวจสอบ" 
         className="flex-1"
       />
-      <Button className="bg-blue-600 hover:bg-blue-700">
-        <FontAwesomeIcon icon={faSearch} className="mr-2" />
-        ตรวจสอบร้านค้า
-      </Button>
+      <Link href="/stores?search=">
+        <Button className="bg-blue-600 hover:bg-blue-700" >
+          <FontAwesomeIcon icon={faSearch} className="mr-2" />
+          <span>ตรวจสอบร้านค้า</span>
+        </Button>
+      </Link>
     </div>
   </div>
 );
@@ -59,24 +61,6 @@ const HowItWorks = () => (
   </div>
 );
 
-// Safety levels component
-const SafetyLevelsSection = () => (
-  <div className="mb-20">
-    <h3 className="text-2xl font-bold text-center mb-12">ระดับความน่าเชื่อถือ</h3>
-    
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {safetyLevels.map((level: SafetyLevel) => (
-        <div key={level.id} className={`bg-white rounded-xl p-6 shadow-md border-t-4 ${level.borderColor}`}>
-          <div className="flex items-center mb-4">
-            <FontAwesomeIcon icon={level.icon} className={`${level.textColor} text-2xl mr-3`} />
-            <h4 className="text-xl font-semibold">{level.title}</h4>
-          </div>
-          <p className="text-gray-600">{level.description}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
 
 // Safety tips CTA component
 const SafetyTipsCTA = () => (
@@ -110,7 +94,6 @@ export function StoreCheckerSection() {
         <SearchTool />
         {/* <ExampleResults /> */}
         <HowItWorks />
-        <SafetyLevelsSection />
         <SafetyTipsCTA />
       </ContentWidth>
     </section>

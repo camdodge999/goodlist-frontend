@@ -10,7 +10,6 @@ import StoreDescription from "./StoreDescription";
 import ContactInfoCard from "./ContactInfoCard";
 import AdditionalInfoCard from "./AdditionalInfoCard";
 import ReportDialog from "./ReportDialog";
-import { getCurrentUser } from "@/lib/api/users";
 
 interface StoreDetailClientProps {
   store: Store;
@@ -22,24 +21,6 @@ export default function StoreDetailClient({
   store
 }: StoreDetailClientProps) {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [authState, setAuthState] = useState<{ isLoggedIn: boolean; user: User | null }>({
-    isLoggedIn: false,
-    user: null
-  });
-
-  // Fetch auth state on component mount
-  useEffect(() => {
-    const fetchAuth = async () => {
-      try {
-        const result = await getCurrentUser();
-        setAuthState(result);
-      } catch (error) {
-        console.error("Error fetching auth state:", error);
-      }
-    };
-    
-    fetchAuth();
-  }, []);
 
   return (
     <div className="py-8">
@@ -64,7 +45,6 @@ export default function StoreDetailClient({
               <AdditionalInfoCard 
                 createdAt={store.createdAt}
                 bankAccount={store.bankAccount}
-                isLoggedIn={authState.isLoggedIn}
               />
             </div>
           </div>
@@ -78,7 +58,7 @@ export default function StoreDetailClient({
                 onClick={() => setIsReportDialogOpen(true)}
               >
                 <FontAwesomeIcon icon={faExclamationTriangle} className="w-4 h-4" />
-                รายงานร้านค้า
+                <span>รายงานร้านค้า</span>
               </Button>
             </div>
           </div>

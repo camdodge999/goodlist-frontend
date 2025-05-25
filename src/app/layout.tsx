@@ -9,7 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProviders } from "@/providers/AppProviders";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-
+import { Session } from "next-auth";
 const prompt = localFont({
   src: [
     {
@@ -71,7 +71,7 @@ export default async function RootLayout({
   return (
     <html lang="th" className={`${prompt.className} antialiased`}>
       <body>
-          <NextAuthProvider session={session}>
+          <NextAuthProvider session={session as unknown as Session}>
             <AuthProvider>
               <AppProviders>
                 <NavBar />

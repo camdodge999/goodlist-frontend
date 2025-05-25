@@ -4,10 +4,11 @@ import { authOptions } from "@/lib/auth";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection, WhyChooseSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection, GettingStartedSection } from "@/components/landing";
 import { StoreProvider } from "@/contexts/StoreContext";    
+import { metadataPages } from "@/consts/metadata";
 
 export const metadata: Metadata = {
-  title: 'Goodlistseller - ร้านค้าออนไลน์ที่คุณไว้ใจได้',
-  description: 'แพลตฟอร์มที่ช่วยให้คุณค้นหาร้านค้าออนไลน์ที่เชื่อถือได้ในประเทศไทย',
+  title: metadataPages.main.title,
+  description: metadataPages.main.description,
 };
 
 export default async function Home() {

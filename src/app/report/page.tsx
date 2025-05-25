@@ -1,11 +1,16 @@
 import ReportPage from "@/components/pages/ReportPage";
 import { Metadata } from "next";
+import { metadataPages } from "@/consts/metadata";
 
 export const metadata: Metadata = {
-  title: 'รายงาน - Goodlistseller',
-  description: 'รายงานร้านค้าที่มีการการละเมิดสิทธิของผู้บริโภค',
+  title: metadataPages.report.title,
+  description: metadataPages.report.description,
 };
 
 export default function Page() {
-  return <ReportPage />;
+  return (
+    <div className="h-[calc(100vh-100px)] flex items-center justify-center">
+      <ReportPage />
+    </div>
+  );
 } 

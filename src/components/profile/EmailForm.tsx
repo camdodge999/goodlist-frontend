@@ -1,6 +1,5 @@
 import React, { useState, FormEvent } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form-label";
 import { motion } from "framer-motion";
 import dayjs from "dayjs";
@@ -29,7 +28,6 @@ export default function EmailForm({
     onChangeEmail
 }: EmailFormProps) {
     const [newEmail, setNewEmail] = useState("");
-    const [passwordError, setPasswordError] = useState("");
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -37,11 +35,10 @@ export default function EmailForm({
         if (!newEmail) {
             return;
         }
-
+        
         try {
             await onChangeEmail(newEmail);
             setNewEmail("");
-            setPasswordError("");
         } catch (error) {
             console.error("Error changing email:", error);
         }

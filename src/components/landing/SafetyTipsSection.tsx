@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from "next/image";
 import Link from "next/link";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -15,8 +14,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { faqs } from "@/consts/faqs";
 import { safetyTips } from '@/consts/safetyTip';
 import { FAQ } from "@/types/faq";
-import { SafetyTip } from "@/types/safetyTip";
-import defaultLogo from "@images/logo.webp";
 import SafetyTipCard from './SafetyTipsCard';
 
 // Get popular FAQs
@@ -102,7 +99,7 @@ const CallToAction = () => (
         </p>
         <div className="flex flex-col md:flex-row gap-4">
           <Button asChild variant="primary" className="bg-white text-blue-600 hover:bg-blue-50">
-            <Link href="/store-checker">
+            <Link href="/stores">
               <span>ตรวจสอบร้านค้าเลย</span>
               <FontAwesomeIcon icon={faSearch} className="ml-2" />
             </Link>

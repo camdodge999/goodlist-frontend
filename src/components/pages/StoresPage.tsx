@@ -102,13 +102,13 @@ export default function StoresPage() {
           </div>
         ) : (
           <>
-            {filteredStores.length === 0 ? (
+            {filteredStores.length === 0 && !error ? (
               <div className="text-center py-12">
                 <p className="text-gray-500">ไม่พบร้านค้าที่ตรงกับการค้นหา</p>
               </div>
             ) : (
               <>
-                <StoreGrid stores={currentStores} />
+                <StoreGrid stores={currentStores} error={error} />
 
                 <StorePagination 
                   currentPage={currentPage}

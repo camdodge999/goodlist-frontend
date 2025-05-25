@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendar, faCreditCard, faShield, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faCalendar, faCreditCard, faShield } from '@fortawesome/free-solid-svg-icons';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StoreAudit } from "@/types/stores";

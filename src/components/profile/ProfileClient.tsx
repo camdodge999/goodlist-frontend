@@ -1,11 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import dayjs from 'dayjs';
-import 'dayjs/locale/th';
-import { useSession } from "next-auth/react";
 import { profileTabs } from "@/consts/profileTab";
 import UnderlineTab from "@/components/ui/underline-tab";
 import { useUser } from "@/contexts/UserContext";
@@ -19,7 +14,6 @@ import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
 
 // Types
-import { Store } from "@/types/stores";
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
 import { User } from "@/types/users";
 
@@ -29,7 +23,6 @@ interface ProfileClientProps {
 
 // ProfileClient component handles user profile management
 export default function ProfileClient({ user }: ProfileClientProps) {
-  const router = useRouter();
   const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut } = useUser();
   const [activeTab, setActiveTab] = useState("stores");
   const [isEditing, setIsEditing] = useState(false);
@@ -58,7 +51,15 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   } = useShowDialog();
 
   // Create individual refs for each OTP input
-  const inputRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+  // Initialize refs
+  useEffect(() => {
+    inputRefs.current = inputRefs.current.slice(0, 6);
+    while (inputRefs.current.length < 6) {
+      inputRefs.current.push(null);
+    }
+  }, []);
 
   const [formData, setFormData] = useState<ProfileFormSchema>({
     name: "",
@@ -96,8 +97,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           await fetchUserProfile(user.id, true);
           initialized.current = true;
         }
-      } catch (err) {
-        console.error("Error fetching user profile:", err);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
       }
     };
 
@@ -129,8 +130,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         setLastEmailChange(lastChangeDate);
       }
     }
-    // Remove displayUser from dependency array but keep updateFormWithUserData logic
-  }, [user.id, fetchUserProfile]);
+  }, [user.id, fetchUserProfile, displayUser]);
 
   // Add a separate effect to update form data when displayUser changes
   useEffect(() => {
@@ -140,15 +140,11 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         email: displayUser.email || "",
         phoneNumber: displayUser.phoneNumber || "",
         address: displayUser.address || "",
+        logo_url: displayUser.logo_url || "",
       });
       setTempEmail(displayUser.email || "");
     }
   }, [displayUser]);
-
-  // Comment out the useEffect for logging stores - it's not needed in production
-  // useEffect(() => {
-  //   console.log('User stores updated:', userStores);
-  // }, [userStores]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -183,7 +179,9 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
       // Focus the last input
       const lastInputIndex = Math.min(pastedValues.length - 1, 5);
-      inputRefs[lastInputIndex]?.current?.focus();
+      if (inputRefs.current[lastInputIndex]) {
+        inputRefs.current[lastInputIndex]?.focus();
+      }
       return;
     }
 
@@ -194,14 +192,18 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
     // Auto-focus next input
     if (value && index < 5) {
-      inputRefs[index + 1]?.current?.focus();
+      if (inputRefs.current[index + 1]) {
+        inputRefs.current[index + 1]?.focus();
+      }
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otpValues[index] && index > 0) {
       // Move to previous input on backspace
-      inputRefs[index - 1]?.current?.focus();
+      if (inputRefs.current[index - 1]) {
+        inputRefs.current[index - 1]?.focus();
+      }
     }
   };
 
@@ -232,7 +234,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setOtp("");
       setOtpValues(["", "", "", "", "", ""]);
       setOtpSent(false);
-    } catch (err) {
+    } catch {
+      // Handle error without variable
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsVerifying(false);
@@ -247,7 +250,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       // Simulate API call to send OTP
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setOtpSent(true);
-    } catch (err) {
+    } catch {
+      // Handle error without variable
       setError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSendingOtp(false);
@@ -378,7 +382,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       });
       setIsChangingPassword(false);
       setIsEditing(false);
-    } catch (err) {
+    } catch {
+      // Handle error without variable
       setPasswordError("รหัสผ่านเดิมไม่ถูกต้อง");
       setIsChangingPassword(false);
     }
@@ -470,7 +475,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                 user={displayUser}
                 formData={formData}
                 passwordData={passwordData}
-                tempEmail={tempEmail}
                 previewImage={previewImage}
                 isEditing={isEditing}
                 canChangeEmail={canChangeEmail}
@@ -484,7 +488,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                 onChangePassword={handleChangePassword}
                 onSaveProfile={handleSaveProfile}
                 onEditToggle={handleEditToggle}
-                fileInputRef={fileInputRef as unknown as React.RefObject<HTMLInputElement>}
+                fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
               />
             )}
           </div>

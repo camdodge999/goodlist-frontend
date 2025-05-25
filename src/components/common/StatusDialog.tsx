@@ -1,6 +1,6 @@
 "use client";
 
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,8 @@ export default function StatusDialog({
   buttonText = "ตกลง",
   onButtonClick,
 }: StatusDialogProps) {
+  const isHandlingClick = useRef(false);
+  
   if (!type) return null;
   
   const isSuccess = type === 'success';
@@ -40,14 +42,33 @@ export default function StatusDialog({
   const icon = isSuccess ? faCheckCircle : faExclamationCircle;
 
   const handleButtonClick = () => {
+    if (isHandlingClick.current) return;
+    isHandlingClick.current = true;
+    
     setIsOpen(false);
+    
+    // Use setTimeout to ensure the dialog closing animation completes
+    // before executing the callback to prevent UI glitches
     if (onButtonClick) {
-      onButtonClick();
+      setTimeout(() => {
+        onButtonClick();
+        isHandlingClick.current = false;
+      }, 100);
+    } else {
+      setTimeout(() => {
+        isHandlingClick.current = false;
+      }, 100);
     }
+  };
+  
+  // Handle dialog close from outside (like clicking backdrop)
+  const handleOpenChange = (open: boolean) => {
+    if (isHandlingClick.current) return;
+    setIsOpen(open);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-xl p-8">
         <DialogHeader className="space-y-6">
           <div className={`flex justify-center mb-6 ${iconColor}`}>

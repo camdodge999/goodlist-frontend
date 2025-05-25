@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useStore } from "@/contexts/StoreContext";
 import { Store, ContactInfo } from "@/types/stores";
-import { Skeleton } from "@/components/ui/skeleton";
 import { isValidJSON } from "@/utils/valid-json";
-import Image from "next/image";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,14 +20,11 @@ import AdditionalInfoCard from "./AdditionalInfoCard";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-import { useSession } from "next-auth/react";
 import ReportDialog from "./ReportDialog";
 import StoreDetailClientSkeleton from "./StoreDetailClientSkeleton";
 
 export default function StoreDetailClientWithContext() {
   const params = useParams();
-  const router = useRouter();
-  const { data: session } = useSession();
   const { getStoreById, isLoading, error } = useStore();
   const [store, setStore] = useState<Store | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -128,7 +123,7 @@ export default function StoreDetailClientWithContext() {
                 onClick={() => setIsReportDialogOpen(true)}
               >
                 <FontAwesomeIcon icon={faExclamationTriangle} className="w-4 h-4" />
-                รายงานร้านค้า
+                <span>รายงานร้านค้า</span>
               </Button>
             </div>
           </div>
@@ -141,9 +136,6 @@ export default function StoreDetailClientWithContext() {
         storeId={store.id}
         onOpenChange={setIsReportDialogOpen}
       />
-
-
-
     </div>
   );
 } 

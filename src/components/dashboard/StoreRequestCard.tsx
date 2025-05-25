@@ -11,13 +11,13 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { StoreRequest } from "@/types/stores";
+import { formatDate } from "@/lib/utils";
 
 interface StoreRequestCardProps {
   request: StoreRequest;
-  formatDateString: (dateString: string) => string;
 }
 
-export default function StoreRequestCard({ request, formatDateString }: StoreRequestCardProps) {
+export default function StoreRequestCard({ request }: StoreRequestCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -25,8 +25,8 @@ export default function StoreRequestCard({ request, formatDateString }: StoreReq
           <div>
             <CardTitle>{request.storeName}</CardTitle>
             <CardDescription>
-              Submitted on{" "}
-              {formatDateString(request.createdAt)}
+              <span className="font-bold">Submitted on:</span>{" "}
+              {formatDate(request.createdAt)}
             </CardDescription>
           </div>
           <Badge

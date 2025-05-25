@@ -65,11 +65,11 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
       <ul role="list" className="divide-y divide-gray-200">
         {stores.length === 0 ? (
-          <div className="px-4 py-8 text-center">
+          <li className="px-4 py-8 text-center">
             <FontAwesomeIcon icon={faStore} className="h-12 w-12 text-gray-300 mx-auto" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">ไม่มีร้านค้า</h3>
-            <p className="mt-1 text-sm text-gray-500">คุณยังไม่มีร้านค้า</p>
-          </div>
+            <span className="mt-2 text-sm font-medium text-gray-900">ไม่มีร้านค้า</span>
+            <span  className="mt-1 text-sm text-gray-500">คุณยังไม่มีร้านค้า</span>
+          </li>
         ) : (
           stores.map((store) => {
             // Parse contact info
@@ -129,12 +129,12 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
                         />
                       </div>
                       <div className="ml-4">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <span className="text-lg font-medium text-gray-900">
                           {store.storeName}
-                        </h3>
-                        <p className="text-sm text-gray-500">
+                        </span>
+                        <span className="text-sm text-gray-500">
                           {contactInfo.line}
-                        </p>
+                        </span>
                       </div>
                     </div>
                     <div className="ml-2 flex-shrink-0">

@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/Spinner";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useReactActionState, getFieldError } from "@/utils/forms/useReactActionState";
 import { FormLabel } from "@/components/ui/form-label";
 import useShowDialog from "@/hooks/useShowDialog";  
 import StatusDialog from "@/components/common/StatusDialog";
+import { ZodError } from "zod";
+import { emailSchema } from "@/validators/user.schema";
 
 interface ResetPasswordFormProps {
   onSuccess: () => void;
@@ -19,7 +20,8 @@ interface ResetPasswordFormProps {
 
 export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   const [email, setEmail] = useState<string>("");
-  const [action, setAction] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
   // Use the dialog hook
   const {
@@ -44,43 +46,78 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
     }
   }, [onSuccess, showSuccessDialog]);
 
-  // Use the server action state hook with React's useActionState
-  const { 
-    execute, 
-    isPending, 
-    errors, 
-    errorMessage: actionErrorMessage,
-    successMessage: actionSuccessMessage
-  } = useReactActionState(action || (async () => ({ status: "error", message: "Action not loaded" })), {
-    onSuccess: () => {
-      displaySuccessDialog({
-        title: "ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว",
-        message: actionSuccessMessage || `เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมล ${email} กรุณาตรวจสอบกล่องข้อความของคุณ`,
-        buttonText: "ตกลง",
-        onButtonClick: () => {
-          shouldCallSuccessRef.current = true;
-        }
-      });
-    },
-    onError: () => {
-      displayErrorDialog(actionErrorMessage || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+  const validateForm = (): boolean => {
+    try {
+      // Validate the email using zod schema
+      emailSchema.parse(email);
+      setFieldErrors({});
+      return true;
+    } catch (err) {
+      if (err instanceof ZodError) {
+        const errors: Record<string, string> = {};
+        err.errors.forEach((error) => {
+          if (error.path[0]) {
+            errors[error.path[0] as string] = error.message;
+          }
+        });
+        setFieldErrors({ email: err.errors[0]?.message || "อีเมลไม่ถูกต้อง" });
+      }
+      return false;
     }
-  });
+  };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    // Reset email-specific error when typing
+    if (fieldErrors.email) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.email;
+        return newErrors;
+      });
+    }
+    
     setEmail(e.target.value);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
-    if (!action) return;
+    if (!validateForm()) {
+      return;
+    }
     
-    // Create FormData object from the form
-    const formData = new FormData(e.currentTarget);
+    setIsLoading(true);
     
-    // Execute the server action
-    await execute(formData);
+    try {
+      // Call the reset password API endpoint
+      const response = await fetch('/api/user/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        displaySuccessDialog({
+          title: "ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว",
+          message: `เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมล ${email} กรุณาตรวจสอบกล่องข้อความของคุณ`,
+          buttonText: "ตกลง",
+          onButtonClick: () => {
+            shouldCallSuccessRef.current = true;
+          }
+        });
+      } else {
+        displayErrorDialog(data.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      }
+    } catch (error) {
+      console.error("Reset password error:", error);
+      displayErrorDialog("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -137,22 +174,22 @@ export default function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps)
                 placeholder="กรอกอีเมลของคุณ"
                 value={email}
                 onChange={handleEmailChange}
-                className={`pl-10 ${getFieldError("email", errors) ? "ring-2 ring-red-500" : ""}`}
+                className={`pl-10 ${fieldErrors.email ? "ring-2 ring-red-500" : ""}`}
               />
             </div>
-            {getFieldError("email", errors) && (
-              <p className="mt-1 text-sm text-red-500">{getFieldError("email", errors)}</p>
+            {fieldErrors.email && (
+              <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
             )}
           </div>
 
           <Button 
             type="submit" 
-            disabled={isPending || !action} 
+            disabled={isLoading} 
             variant="primary"
             className="w-full cursor-pointer"
           >
-            {isPending && <Spinner className="mr-2" />}
-            {isPending ? "กำลังส่งคำขอ..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
+            {isLoading && <Spinner className="mr-2" />}
+            {isLoading ? "กำลังส่งคำขอ..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
           </Button>
         </form>
       </motion.div>

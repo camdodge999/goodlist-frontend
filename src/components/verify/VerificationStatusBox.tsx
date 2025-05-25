@@ -5,7 +5,7 @@ import {
   faHourglassHalf, 
   faExclamationTriangle 
 } from '@fortawesome/free-solid-svg-icons';
-import { VerificationStatus, VerificationStatusType } from '@/types/verify';
+import { VerificationStatusType } from '@/types/verify';
 import { getStatusDetails } from '@/lib/verify';
 
 interface VerificationStatusBoxProps {

@@ -4,15 +4,13 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationTriangle, faRedo, faHome, faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
-import StoreHeader from "./StoreHeader";
 
 interface StoreErrorProps {
   message: string;
   onRetry: () => void;
-  showHeader?: boolean;
 }
 
-export default function StoreError({ message, onRetry, showHeader = true }: StoreErrorProps) {
+export default function StoreError({ message, onRetry }: StoreErrorProps) {
   return (
     <div className="py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

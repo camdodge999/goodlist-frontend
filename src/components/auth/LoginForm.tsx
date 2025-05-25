@@ -14,6 +14,7 @@ import { faEye, faEyeSlash, faEnvelope, faLock } from '@fortawesome/free-solid-s
 import useShowDialog from "@/hooks/useShowDialog";  
 import StatusDialog from "@/components/common/StatusDialog";
 import { FormLabel } from "@/components/ui/form-label";
+import { NETWORK_ERRORS, getErrorMessage } from "@/lib/error-network";
 
 export default function LoginForm(): JSX.Element {
   const router = useRouter();
@@ -103,11 +104,11 @@ export default function LoginForm(): JSX.Element {
       
       // End loading state
       setIsPending(false);
-      
+    
       if (result?.error) {
-        // Handle NextAuth authentication error
-        displayErrorDialog("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-      } else {
+        const errorMessage = getErrorMessage(result.error);
+        displayErrorDialog(errorMessage);
+      } else if (result?.ok) {
         // Authentication successful
         displaySuccessDialog({
           message: "เข้าสู่ระบบสำเร็จ",
@@ -120,11 +121,22 @@ export default function LoginForm(): JSX.Element {
         
         // Set the flag to navigate on next effect run
         shouldNavigateRef.current = true;
+      } else {
+        // Handle unexpected result format
+        console.error("Unexpected signIn result:", result);
+        displayErrorDialog("เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองอีกครั้ง");
       }
     } catch (error) {
       setIsPending(false);
       console.error("Error during form submission:", error);
-      displayErrorDialog("เกิดข้อผิดพลาดขณะเข้าสู่ระบบ กรุณาลองอีกครั้ง");
+      console.log(error);
+      
+      // Handle network errors or other exceptions
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        displayErrorDialog(getErrorMessage(NETWORK_ERRORS.NETWORK_ERROR));
+      } else {
+        displayErrorDialog(getErrorMessage(NETWORK_ERRORS.UNKNOWN_ERROR));
+      }
     }
   };
 

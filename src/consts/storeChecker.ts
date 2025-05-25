@@ -1,4 +1,4 @@
-import { faCheckCircle, faExclamationTriangle, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { faCheckCircle, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 
 
 // Example store data

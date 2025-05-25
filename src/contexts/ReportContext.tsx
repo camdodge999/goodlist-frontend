@@ -4,10 +4,11 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { ReportFormSchema } from "@/validators/report.schema";
 import { useRouter } from "next/navigation";
-import { StoreReport } from "@/types/stores";
+import { StoreReport, ReportReason } from "@/types/stores";
+import { Report } from "@/types/report";
 
 interface ReportContextProps {
-  submitReport: (reportData: ReportFormSchema) => Promise<{ success: boolean; message: string; report?: StoreReport }>;
+  submitReport: (reportData: ReportFormSchema) => Promise<{ success: boolean; message: string; report?: Report }>;
   userReports: StoreReport[];
   isLoading: boolean;
   error: string | null;
@@ -34,7 +35,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
   };
 
   // Submit a new report
-  const submitReport = async (reportData: ReportFormSchema): Promise<{ success: boolean; message: string; report?: StoreReport }> => {
+  const submitReport = async (reportData: ReportFormSchema): Promise<{ success: boolean; message: string; report?: Report }> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -75,8 +76,21 @@ export function ReportProvider({ children }: ReportProviderProps) {
       // Check if the response contains the expected data
       if ((data.statusCode === 201 || data.statusCode === 200) && data.data) {
         // Add the new report to the user reports list
-        const newReport: StoreReport = data.data;
-        setUserReports(prev => [newReport, ...prev]);
+        const newReport: Report = data.data;
+        
+        // Convert Report to StoreReport for state update
+        const storeReport: StoreReport = {
+          id: newReport.id,
+          storeId: Number(newReport.storeId),
+          reason: 'other' as ReportReason, // Default to 'other' as ReportReason type
+          details: newReport.reason,
+          evidenceUrl: newReport.evidenceUrl,
+          createdAt: newReport.createdAt,
+          status: newReport.status === 'pending' ? 'pending' : 
+                 newReport.status === 'valid' ? 'resolved' : 'dismissed'
+        };
+        
+        setUserReports(prev => [storeReport, ...prev]);
         
         return { 
           success: true, 
@@ -120,7 +134,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
         headers['Authorization'] = `Bearer ${session.user.token}`;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_URL || ''}/api/reports/user`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL || ''}/api/report`, {
         method: 'GET',
         headers,
       });

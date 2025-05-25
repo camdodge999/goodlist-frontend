@@ -14,7 +14,6 @@ import NavItems from "./NavItems";
 import type { NavItem } from "@/types/navbar";
 import UserMenu from "./UserMenu";
 import { User } from "@/types/users";
-import { usePathname } from "next/navigation";
 
 interface MobileMenuProps {
   navItems: NavItem[];

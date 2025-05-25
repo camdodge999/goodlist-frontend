@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BodyResponse } from '@/types/response';
 import { Store } from '@/types/stores';
 import { fetchWithAuth } from '@/lib/fetch-with-auth';
-import { UserResponse } from '@/types/users';
 
 export async function GET(
   request: NextRequest

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Link from "next/link";
 import Image from "next/image";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -9,7 +9,8 @@ import {
   faCommentDots,
   faGlobeAmericas,
   faArrowRight,
-  faSearch
+  faSearch,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import ContentWidth from "@/components/layout/ContentWidth";
 import { Button } from "@/components/ui/button";
@@ -129,6 +130,21 @@ const StoreContactInfo = ({ contactInfo }: { contactInfo: ContactInfo }) => (
   </div>
 );
 
+// Error component
+const ErrorMessage = () => (
+  <div className="flex flex-col items-center justify-center py-12 text-center">
+    <FontAwesomeIcon icon={faExclamationTriangle} className="text-5xl text-red-500 mb-4" />
+    <h3 className="text-xl font-semibold text-gray-900 mb-2">ไม่สามารถเชื่อมต่อได้</h3>
+    <p className="text-gray-600 mb-6">กรุณาลองใหม่อีกครั้ง</p>
+    <Button 
+      onClick={() => window.location.reload()}
+      className="bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-300 active:cursor-progress"
+    >
+      <span>ลองใหม่</span>
+    </Button>
+  </div>
+);
+
 // View all stores button component
 const ViewAllStoresButton = () => (
   <div className="mt-12 text-center">
@@ -139,7 +155,7 @@ const ViewAllStoresButton = () => (
     >
       <Link href="/stores">
         <FontAwesomeIcon icon={faSearch} className="mr-2" />
-        ดูร้านค้าทั้งหมด
+        <span>ดูร้านค้าทั้งหมด</span>
       </Link>
     </Button>
   </div>
@@ -147,8 +163,20 @@ const ViewAllStoresButton = () => (
 
 // Main component - now uses StoreContext instead of props
 export function FeaturedStoresSection() {
-  const { getFeaturedStores, isLoading } = useStore();
+  const { getFeaturedStores, isLoading, error } = useStore();
   const featuredStores = getFeaturedStores(3);
+  
+  // Show error state for server errors (including 500)
+  if (error) {
+    return (
+      <section className="py-24 bg-gray-50">
+        <ContentWidth>
+          <SectionHeader />
+          <ErrorMessage />
+        </ContentWidth>
+      </section>
+    );
+  }
   
   if (isLoading) {
     return (

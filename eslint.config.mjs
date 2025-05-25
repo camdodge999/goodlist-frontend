@@ -13,4 +13,19 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 
+
+
+// Ignore specific files
+eslintConfig.push({
+  files: [
+    "src/utils/valid-json.ts",
+  ],
+  rules: {
+    "no-console": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-empty-object-type": "off",
+  },
+});
+
 export default eslintConfig;

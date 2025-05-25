@@ -104,13 +104,6 @@ export async function PUT(
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const userId = parseInt(params.id);
-  
-}
 
 async function fetchProfileById(  
   request: NextRequest,

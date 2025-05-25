@@ -60,7 +60,7 @@ export default function useAdminStores() {
       name: "ร้านค้าที่ถูกแบน",
       count: adminStores.filter((s) => s.isBanned === true).length,
     },
-  ], [adminStores]);
+  ], [adminStores, reports.length]);
 
   const filteredStores = adminStores.filter((store) => {
     switch (activeTab) {

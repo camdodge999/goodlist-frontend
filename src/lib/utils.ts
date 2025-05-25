@@ -13,7 +13,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Format a date string into a readable format
  */
-export function formatDate(dateString: string, locale: string = 'en-US'): string {
+export function formatDate(dateString: string): string {
   return dayjs(dateString).locale('th').format('DD/MM/BBBB HH:mm');
 }
 

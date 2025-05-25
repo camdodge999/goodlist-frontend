@@ -27,12 +27,11 @@ import { useSession } from "next-auth/react";
 export default function ReportPage() {
   const router = useRouter();
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<Partial<ReportFormSchema>>({});
   
   // Use contexts
-  const { stores, fetchStores, isLoading: storesLoading } = useStore();
+  const { stores, fetchStores, isLoading: storesLoading } = useStore(); 
   const { submitReport, isLoading: reportSubmitting, error: reportError } = useReport();
   const { data: session } = useSession();
   
@@ -101,7 +100,6 @@ export default function ReportPage() {
 
   // Handle file change
   const handleFileChange = (file: File | null) => {
-    setEvidenceFile(file);
     if (file) {
       updateFormData('evidence', file);
     } else {
@@ -170,7 +168,6 @@ export default function ReportPage() {
             // Reset form
             setSelectedStore(null);
             setFormData({});
-            setEvidenceFile(null);
             setValidationErrors({});
             
             // Redirect to home page

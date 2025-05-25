@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQuestionCircle, faShieldAlt, faUserLock, faCookieBite, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faQuestionCircle, faShieldAlt, faUserLock, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { faqs } from "@/consts/faqs";
 import Link from "next/link";
 
@@ -15,7 +15,6 @@ export default function FAQPage() {
   const accountFaqs = faqs.filter(faq => faq.category === 'account');
   const policyFaqs = faqs.filter(faq => faq.category === 'policy');
   const securityFaqs = faqs.filter(faq => faq.category === 'security');
-  const cookiesFaqs = faqs.filter(faq => faq.category === 'cookies');
   const generalFaqs = faqs.filter(faq => faq.category === 'general');
 
   // Thai language content

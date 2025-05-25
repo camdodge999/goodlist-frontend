@@ -3,8 +3,6 @@ import Image from "next/image";
 import { DropdownFilter } from "@/components/ui/dropdown-filter";
 import defaultLogo from "@images/logo.webp";
 import { Store } from "@/types/stores";
-import { ContactInfo } from "@/types/stores";
-
 
 interface StoreSearchProps {
   stores: Store[];

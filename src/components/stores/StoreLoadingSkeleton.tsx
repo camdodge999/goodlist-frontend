@@ -2,27 +2,17 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import StoreHeader from "./StoreHeader";
 
 interface StoreLoadingSkeletonProps {
   count?: number;
-  showHeader?: boolean;
 }
 
 export default function StoreLoadingSkeleton({ 
   count = 6, 
-  showHeader = true 
 }: StoreLoadingSkeletonProps) {
   return (
     <div className="py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {showHeader && (
-          <StoreHeader
-            title={<Skeleton className="h-10 w-64" />}
-            isLoading={true}
-          />
-        )}
-        
+      <div className="max-w-9xl mx-auto">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: count }, (_, i) => (
             <Card key={i} className="overflow-hidden">

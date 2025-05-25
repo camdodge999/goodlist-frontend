@@ -8,12 +8,10 @@ import type { StoreRequest } from "@/types/stores";
 
 interface StoreRequestsListProps {
   storeRequests: StoreRequest[];
-  formatDateString: (dateString: string) => string;
 }
 
 export default function StoreRequestsList({ 
   storeRequests, 
-  formatDateString 
 }: StoreRequestsListProps) {
   if (storeRequests.length === 0) {
     return (
@@ -36,7 +34,6 @@ export default function StoreRequestsList({
         <StoreRequestCard 
           key={request.id} 
           request={request} 
-          formatDateString={formatDateString} 
         />
       ))}
     </div>

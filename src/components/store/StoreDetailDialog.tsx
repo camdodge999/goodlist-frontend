@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { X, FileText, Download, Eye } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';    
 import { Store } from '@/types/stores';
 import { getAuthenticatedImageUrl } from '@/lib/utils';
 import defaultImage from '@images/logo.webp';
@@ -14,6 +14,7 @@ import 'dayjs/locale/th';
 import buddhistEra from "dayjs/plugin/buddhistEra"
 import { useSession } from 'next-auth/react';
 import { isValidJSON } from '@/utils/valid-json';
+import { StoreDocument } from '@/types/stores';
 dayjs.locale('th');
 dayjs.extend(buddhistEra);
 
@@ -69,12 +70,10 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
 
   // Determine verification status and styling
   let verificationStatus = "";
-  let verificationDate = "";
   let statusColor = "";
 
   if (store.isVerified === true) {
     verificationStatus = "ผ่านการตรวจสอบ";
-    verificationDate = store.verifiedAt || "15 กุมภาพันธ์ 2566"; // Default date if not available
     statusColor = "text-green-600";
   } else if (store.isVerified === false) {
     verificationStatus = "ไม่ผ่านการตรวจสอบ";
@@ -85,7 +84,7 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
   }
 
   // Handle document view or download
-  const handleDocumentAction = (doc: any) => {
+  const handleDocumentAction = (doc: Partial<StoreDocument>) => {
     const documentUrl = getAuthenticatedImageUrl(doc.path || doc.url);
 
     if (!documentUrl) return;
@@ -209,7 +208,7 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
                         </div>
                         <button
                           className="text-blue-600 hover:text-blue-800 text-sm flex items-center cursor-pointer"
-                          onClick={() => handleDocumentAction(doc)}
+                          onClick={() => handleDocumentAction(doc as StoreDocument)}
                         >
                           {doc.type === 'certIncorp' || (doc.name && doc.name.includes('จดทะเบียน')) ? (
                             <>

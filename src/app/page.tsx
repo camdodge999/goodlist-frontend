@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection, WhyChooseSection, FeaturedStoresSection, StoreCheckerSection, SafetyTipsSection, GettingStartedSection } from "@/components/landing";
-import { Store } from "@/types/stores";
 import { StoreProvider } from "@/contexts/StoreContext";    
 
 export const metadata: Metadata = {
@@ -14,28 +13,9 @@ export const metadata: Metadata = {
 export default async function Home() {
   // Get the user session server-side
   const session = await getServerSession(authOptions);
-  
-  // Fetch stores from our API endpoint
-  const storesResponse = await fetch(
-    `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Adding cache options for better performance
-      next: { revalidate: 60 }, // Revalidate at most once per minute
-    }
-  );
-
-  // Parse the JSON response
-  const storesData = await storesResponse.json();
-
-  // Get stores from the response
-  const stores: Store[] = storesData.statusCode === 200 && storesData.data ? storesData.data : [];
 
   return (
-    <StoreProvider initialStores={stores}>
+    <StoreProvider>
       {/* Hero Section */}
       <HeroSection session={session} />
 

@@ -62,11 +62,6 @@ export default function SignupForm() {
     displayErrorDialog,
   } = useShowDialog();
 
-  const validateOTP = (otpCode: string): boolean => {
-    // Demo validation - in production this would be a server call
-    return otpCode === "000000";
-  }
-
   const handleOtpChange = (index: number, value: string): void => {
     const newOtpValues = [...otpValues];
     newOtpValues[index] = value;
@@ -339,7 +334,7 @@ export default function SignupForm() {
         const errorData = await response.json();
         displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
       }
-    } catch (_) {
+    } catch {
       // Ignore the error variable name but handle the error
       displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {

@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
-import NextAuth, { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+// import {  getToken } from "next-auth/jwt";
+// import NextAuth, { getServerSession } from "next-auth";
+// import { authOptions } from "@/lib/auth";
 import { withAuth } from "next-auth/middleware";
 
-const PATH_CONFIG = {
-  publicPaths: ["/login", "/logout", "/signup", "/forgot-password", "/stores", "/report", "/api/auth/error", "/", "/reset-password", "/api/user/register"],
-  protectedPaths: ["/admin", "/verify", "/profile"],
-  protectedBasePath: "/admin",
-  unauthorizedPath: "/unauthorized",
-  accessDeniedPath: "/access-denied",
-  loginPath: "/login",
-} as const;
+// const PATH_CONFIG = {
+//   publicPaths: ["/login", "/logout", "/signup", "/forgot-password", "/stores", "/report", "/api/auth/error", "/", "/reset-password", "/api/user/register"],
+//   protectedPaths: ["/admin", "/verify", "/profile"],
+//   protectedBasePath: "/admin",
+//   unauthorizedPath: "/unauthorized",
+//   accessDeniedPath: "/access-denied",
+//   loginPath: "/login",
+// } as const;
 
-const isPublicPath = (pathname: string): boolean =>
-  PATH_CONFIG.publicPaths.includes(pathname as typeof PATH_CONFIG.publicPaths[number]) ||
-  pathname === PATH_CONFIG.unauthorizedPath ||
-  pathname === PATH_CONFIG.accessDeniedPath;
+// const isPublicPath = (pathname: string): boolean =>
+//   PATH_CONFIG.publicPaths.includes(pathname as typeof PATH_CONFIG.publicPaths[number]) ||
+//   pathname === PATH_CONFIG.unauthorizedPath ||
+//   pathname === PATH_CONFIG.accessDeniedPath;
 
 const isApiRoute = (pathname: string): boolean => pathname.startsWith("/api/");
 

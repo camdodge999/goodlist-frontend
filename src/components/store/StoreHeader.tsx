@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser } from '@fortawesome/free-regular-svg-icons';
 import VerificationBadge from "@/components/ui/VerificationBadge";
 import Image from "next/image";
-import { Store, User } from "@/types/stores";
+import { Store } from "@/types/stores";
 import defaultLogo from "@images/logo-placeholder.png";
 import { getAuthenticatedImageUrl } from "@/lib/utils";
 

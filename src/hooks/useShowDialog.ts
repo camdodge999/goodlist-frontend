@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 interface DialogOptions {
   title?: string;
@@ -20,7 +20,7 @@ export default function useShowDialog() {
   const [onErrorButtonClick, setOnErrorButtonClick] = useState<(() => void) | undefined>(undefined);
 
   // Show success dialog with options
-  const displaySuccess = (options: string | DialogOptions) => {
+  const displaySuccess = useCallback((options: string | DialogOptions) => {
     if (typeof options === 'string') {
       setSuccessMessage(options);
       setSuccessTitle("สำเร็จ");
@@ -33,10 +33,10 @@ export default function useShowDialog() {
       if (options.onButtonClick) setOnSuccessButtonClick(() => options.onButtonClick);
     }
     setShowSuccessDialog(true);
-  };
+  }, []);
 
   // Show error dialog with options
-  const displayError = (options: string | DialogOptions) => {
+  const displayError = useCallback((options: string | DialogOptions) => {
     if (typeof options === 'string') {
       setErrorMessage(options);
       setErrorTitle("เกิดข้อผิดพลาด");
@@ -49,23 +49,43 @@ export default function useShowDialog() {
       if (options.onButtonClick) setOnErrorButtonClick(() => options.onButtonClick);
     }
     setShowErrorDialog(true);
-  };
+  }, []);
 
   // Close success dialog
-  const closeSuccessDialog = () => {
+  const closeSuccessDialog = useCallback(() => {
+    // First close the dialog
     setShowSuccessDialog(false);
+    
+    // Then execute the callback after a short delay to prevent loops
     if (onSuccessButtonClick) {
-      onSuccessButtonClick();
+      const callback = onSuccessButtonClick;
+      // Clear the callback before executing it to prevent potential loops
+      setOnSuccessButtonClick(undefined);
+      
+      // Use setTimeout to ensure the dialog is fully closed before executing callback
+      setTimeout(() => {
+        callback();
+      }, 100);
     }
-  };
+  }, [onSuccessButtonClick]);
 
   // Close error dialog
-  const closeErrorDialog = () => {
+  const closeErrorDialog = useCallback(() => {
+    // First close the dialog
     setShowErrorDialog(false);
+    
+    // Then execute the callback after a short delay to prevent loops
     if (onErrorButtonClick) {
-      onErrorButtonClick();
+      const callback = onErrorButtonClick;
+      // Clear the callback before executing it to prevent potential loops
+      setOnErrorButtonClick(undefined);
+      
+      // Use setTimeout to ensure the dialog is fully closed before executing callback
+      setTimeout(() => {
+        callback();
+      }, 100);
     }
-  };
+  }, [onErrorButtonClick]);
 
   return {
     // Success dialog props

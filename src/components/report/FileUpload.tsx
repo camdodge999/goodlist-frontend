@@ -9,7 +9,7 @@ import { z } from "zod";
 interface FileUploadProps {
   onFileChange: (file: File | null) => void;
   validationError?: string;
-  fileSchema: z.ZodType<any>;
+  fileSchema: z.ZodType<File>;
   label?: string;
   description?: string;
   accept?: string;
@@ -162,6 +162,8 @@ export default function FileUpload({
                 เลือกไฟล์
               </Button>
               <input
+                title="file-upload"
+                placeholder="file-upload"
                 id="file-upload"
                 name="file-upload"
                 type="file"

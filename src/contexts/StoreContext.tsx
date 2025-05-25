@@ -1,9 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Store } from "@/types/stores";
 import { useSession } from "next-auth/react";
+
+// Static cache to track if stores have been fetched globally
+let globalStoresCache: Store[] = [];
+let globalLastFetched: number | null = null;
 
 interface StoreContextProps {
   stores: Store[];
@@ -28,26 +32,30 @@ interface StoreProviderProps {
 const StoreContext = createContext<StoreContextProps | undefined>(undefined);
 
 export function StoreProvider({ children, initialStores = [] }: StoreProviderProps) {
-  const [stores, setStores] = useState<Store[]>(initialStores);
+  // Initialize stores from global cache if available, otherwise use initialStores
+  const [stores, setStores] = useState<Store[]>(
+    globalStoresCache.length > 0 ? globalStoresCache : initialStores
+  );
   const [adminStores, setAdminStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<number | null>(
-    initialStores.length > 0 ? Date.now() : null
+    globalLastFetched || (initialStores.length > 0 ? Date.now() : null)
   );
+  // Add a state to track fetch failures
+  const [fetchFailed, setFetchFailed] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
 
-  // Fetch stores from API
-  const fetchStores = async (force = false) => {
-    // If we have stores and they were fetched less than 1 minute ago, don't refetch
-    // unless force is true
-    if (
-      !force && 
-      stores.length > 0 && 
-      lastFetched && 
-      Date.now() - lastFetched < 60000
-    ) {
+  // Fetch stores from API - only fetch once unless forced
+  const fetchStores = useCallback(async (force = false) => {
+    // If we already have stores and it's not a forced refresh, return existing stores
+    if (!force && (globalStoresCache.length > 0 || stores.length > 0)) {
+      return stores.length > 0 ? stores : globalStoresCache;
+    }
+
+    // If we have a previous fetch failure and it's not a forced refresh, don't retry
+    if (fetchFailed && !force) {
       return stores;
     }
 
@@ -73,8 +81,17 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       const data = await response.json();
       
       if (data.statusCode === 200 && data.data) {
+        // Update both local state and global cache
         setStores(data.data);
-        setLastFetched(Date.now());
+        globalStoresCache = data.data;
+        
+        const now = Date.now();
+        setLastFetched(now);
+        globalLastFetched = now;
+        
+        // Reset fetch failure flag on success
+        setFetchFailed(false);
+        
         return data.data;
       } else {
         throw new Error(data.message || 'Failed to fetch stores');
@@ -82,48 +99,69 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } catch (err) {
       console.error('Error fetching stores:', err);
       setError(err instanceof Error ? err.message : String(err));
+      
+      // Set fetch failed flag to prevent immediate retries
+      setFetchFailed(true);
+      
       return stores; // Return existing stores on error
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [stores, fetchFailed]);
 
-  const fetchAdminStores = async () => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session?.user?.token}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
+  const fetchAdminStores = useCallback(async () => {
+    if (!session?.user?.token) return adminStores;
+    
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.user.token}`,
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error fetching admin stores: ${response.statusText}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`Error fetching admin stores: ${response.statusText}`);
+      const data = await response.json();
+
+      if (data.statusCode === 200 && data.data) {
+        setAdminStores(data.data);
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to fetch admin stores');
+      }
+    } catch (err) {
+      console.error('Error fetching admin stores:', err);
+      return adminStores;
     }
+  }, [session?.user?.token, adminStores]);
 
-    const data = await response.json();
-
-    if (data.statusCode === 200 && data.data) {
-      setAdminStores(data.data);
-      return data.data;
-    } else {
-      throw new Error(data.message || 'Failed to fetch admin stores');
-    }
-  }
-
-  // Initialize with API data only if no initialStores were provided
+  // Initialize with API data only if no initialStores were provided and global cache is empty
   useEffect(() => {
-    // Only fetch from client-side if we didn't get initialStores from server
-    if (initialStores.length === 0) {
+    if (globalStoresCache.length === 0 && initialStores.length === 0) {
       fetchStores();
+    } else if (initialStores.length > 0 && globalStoresCache.length === 0) {
+      // If we have initialStores but no global cache, update the global cache
+      globalStoresCache = initialStores;
+      globalLastFetched = Date.now();
+    }
+  }, [fetchStores, initialStores]);
+
+  // Update local stores when global cache changes - only run once on mount
+  useEffect(() => {
+    if (globalStoresCache.length > 0 && JSON.stringify(stores) !== JSON.stringify(globalStoresCache)) {
+      setStores(globalStoresCache);
     }
   }, []);
 
-  const updateStore = async (storeId: number, updates: Partial<Store>) => {
+  const updateStore = useCallback(async (storeId: number, updates: Partial<Store>) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -148,11 +186,14 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       const data = await response.json();
       
       if (data.statusCode === 200 && data.data) {
-        setStores((prevStores) =>
-          prevStores.map((store) =>
-            store.id === storeId ? { ...store, ...data.data.storeDetail } : store
-          )
+        // Update both local state and global cache
+        const updatedStores = stores.map((store) =>
+          store.id === storeId ? { ...store, ...data.data.storeDetail } : store
         );
+        
+        setStores(updatedStores);
+        globalStoresCache = updatedStores;
+        
         return data.data;
       } else {
         throw new Error(data.message || 'Failed to update store');
@@ -164,9 +205,9 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.user?.token, stores]);
 
-  const deleteStore = async (storeId: number) => {
+  const deleteStore = useCallback(async (storeId: number) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -190,9 +231,12 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       const data = await response.json();
       
       if (data.statusCode === 200) {
-        setStores((prevStores) =>
-          prevStores.filter((store) => store.id !== storeId)
-        );
+        // Update both local state and global cache
+        const filteredStores = stores.filter((store) => store.id !== storeId);
+        
+        setStores(filteredStores);
+        globalStoresCache = filteredStores;
+        
         return true;
       } else {
         throw new Error(data.message || 'Failed to delete store');
@@ -204,9 +248,9 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.user?.token, stores]);
 
-  const addStore = async (newStore: FormData) => {
+  const addStore = useCallback(async (newStore: FormData) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -229,7 +273,12 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       const data = await response.json();
       
       if (data.statusCode === 201 && data.data) {
-        setStores((prevStores) => [...prevStores, data.data]);
+        // Update both local state and global cache
+        const updatedStores = [...stores, data.data];
+        
+        setStores(updatedStores);
+        globalStoresCache = updatedStores;
+        
         return data.data;
       } else {
         throw new Error(data.message || 'Failed to add store');
@@ -241,11 +290,12 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.user?.token, stores]);
 
-  const refreshStores = async () => {
+  const refreshStores = useCallback(async () => {
     try {
       setIsLoading(true);
+      // Force refresh ignores the fetchFailed flag
       const updatedStores = await fetchStores(true);
       router.refresh(); // Refresh the current page to reflect new data
       return updatedStores;
@@ -255,17 +305,19 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchStores, router, stores]);
 
   // Get featured stores (verified stores)
-  const getFeaturedStores = (limit = 3) => {
-    return stores
-      .filter(store => store.isVerified)
-      .slice(0, limit);
-  };
+  const getFeaturedStores = useMemo(() => {
+    return (limit = 3) => {
+      return stores
+        .filter(store => store.isVerified)
+        .slice(0, limit);
+    };
+  }, [stores]);
 
   // Add a method to get a store by ID
-  const getStoreById = async (storeId: number | string): Promise<Store | null> => {
+  const getStoreById = useCallback(async (storeId: number | string): Promise<Store | null> => {
     try {
       // First check if we have it in our local state
       const role = session?.user?.role; 
@@ -307,7 +359,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [adminStores, session?.user?.role, stores]);
 
   return (
     <StoreContext.Provider

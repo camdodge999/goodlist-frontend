@@ -7,7 +7,7 @@ interface ReasonTextareaProps {
   value: string;
   onChange: (value: string) => void;
   validationError?: string;
-  schema: z.ZodType<any>;
+  schema: z.ZodString;
   placeholder?: string;
   rows?: number;
 }

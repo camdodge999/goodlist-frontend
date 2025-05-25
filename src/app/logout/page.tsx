@@ -21,7 +21,7 @@ export default function LogoutPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { toast } = useToast();
-  const { signOut, isLoading } = useUser();
+  const { signOut } = useUser();
   const [open, setOpen] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export default function LogoutPage() {
       
       // Redirect after a short delay to show the toast
       setTimeout(() => router.push("/"), 1500);
-    } catch (err) {
+    } catch {
       setError("ขออภัย เกิดข้อผิดพลาดในการออกจากระบบ กรุณาลองอีกครั้ง");
       setIsLoggingOut(false);
       

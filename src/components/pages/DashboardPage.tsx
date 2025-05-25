@@ -10,7 +10,6 @@ import StoreRequestsList from "@/components/dashboard/StoreRequestsList";
 import ReportsList from "@/components/dashboard/ReportsList";
 import DashboardLoading from "@/components/dashboard/DashboardLoading";
 import DashboardError from "@/components/dashboard/DashboardError";
-import { formatDateString } from "@/components/dashboard/DateFormatter";
 
 interface DashboardPageProps {
   userId?: string;
@@ -80,7 +79,6 @@ export default function DashboardPage({
         <TabsContent value="requests" className="space-y-4">
           <StoreRequestsList 
             storeRequests={storeRequests} 
-            formatDateString={formatDateString} 
           />
         </TabsContent>
         <TabsContent value="reports" className="space-y-4">

@@ -1,25 +1,16 @@
 import React from 'react';
 import Link from "next/link";
-import Image from "next/image";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import  { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faShieldAlt, 
   faSearch, 
-  faCheckCircle,
-  faExclamationTriangle,
-  faInfoCircle,
   faArrowRight,
 } from '@fortawesome/free-solid-svg-icons';
 import ContentWidth from "@/components/layout/ContentWidth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { exampleStores, howItWorksSteps, safetyLevels } from "@/consts/storeChecker";
-import { Step, StoreChecker, SafetyLevel } from "@/types/storeChecker";
-import defaultLogo from "@images/logo.webp";
-import { getTrustLevelColor, getTrustLevelIcon, getTrustLevelText, getTrustLevelDescription } from "@/lib/store-checker";
-import { getAuthenticatedImageUrl } from '@/lib/utils';
-
+import { howItWorksSteps, safetyLevels } from "@/consts/storeChecker";
+import { Step, SafetyLevel } from "@/types/storeChecker";
 // Header component
 const SectionHeader = () => (
   <div className="text-center mb-16">

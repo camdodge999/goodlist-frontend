@@ -1,7 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faCommentDots, faCreditCard, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
-import { faFacebook, faLine } from '@fortawesome/free-brands-svg-icons';
-import VerificationBadge from "./VerificationBadge";
+import { faStore, faCreditCard, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faFacebook, faLine } from '@fortawesome/free-brands-svg-icons';  
 import Link from "next/link";
 import Image from "next/image";
 import type { Store, ContactInfo } from "@/types/stores";

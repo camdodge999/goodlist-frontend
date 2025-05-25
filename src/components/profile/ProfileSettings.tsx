@@ -7,7 +7,6 @@ import { User as AuthUser } from "@/types/auth";
 import { User as AppUser } from "@/types/users";
 import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
-import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 
 // Create a union type that works with both User types
@@ -17,7 +16,6 @@ interface ProfileSettingsProps {
   user: User;
   formData: ProfileFormSchema;
   passwordData: PasswordFormSchema;
-  tempEmail: string;
   previewImage: string | null;
   isEditing: boolean;
   canChangeEmail: boolean;
@@ -38,7 +36,6 @@ export default function ProfileSettings({
   user,
   formData,
   passwordData,
-  tempEmail,
   previewImage,
   isEditing,
   canChangeEmail,

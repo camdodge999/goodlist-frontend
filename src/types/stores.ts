@@ -11,9 +11,7 @@ export interface StoreDocument {
   url: string;
   path?: string;
   type?: string;
-  createdAt?: string;
 }
-
 export interface Store {
   id: number;
   userId: number;
@@ -79,7 +77,6 @@ export interface StoreReport {
   reason: ReportReason;
   details: string;
   evidenceUrl: string;
-  evidenceFilename: string;
   createdAt: string;
   status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
 }

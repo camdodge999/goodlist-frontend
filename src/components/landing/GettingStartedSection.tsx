@@ -7,10 +7,8 @@ import ContentWidth from "@/components/layout/ContentWidth";
 import { 
   Search, 
   Store, 
-  Users, 
   FileCheck, 
   BadgeCheck,
-  RefreshCw,
   MessagesSquare
 } from "lucide-react";
 import { faUserGroup } from '@fortawesome/free-solid-svg-icons';

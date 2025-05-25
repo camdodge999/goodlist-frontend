@@ -51,6 +51,53 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  context: { params: { id: string } }
+): Promise<NextResponse<BodyResponse<Store>>> {
+  try {
+    const { id } = await Promise.resolve(context.params);
+    const storeId = await Promise.resolve(parseInt(id));
+
+    if (isNaN(storeId)) {
+      return NextResponse.json(
+        {
+          statusCode: 400,
+          message: 'Invalid store ID',
+          data: undefined,
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const result = await updateStoreById(request, storeId.toString(), body);
+
+    if (result.statusCode === 200) {
+      return NextResponse.json({
+        statusCode: 200,
+        data: result.data,
+        message: "Store updated successfully",
+      }, { status: 200 });
+    } else {
+      return NextResponse.json(
+        { 
+          statusCode: 400, 
+          message: result.message || "Failed to update store", 
+          data: undefined 
+        },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error("Error updating store:", error);
+    return NextResponse.json(
+      { statusCode: 500, message: "Internal server error", data: undefined },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -91,5 +138,23 @@ async function fetchStoreById(
     return result; // Typecast the result when the status is success
   } else {
     throw new Error(result.message || "Failed to fetch stores"); // Throw an error if the status is not success
+  }
+}
+
+async function updateStoreById(
+  request: NextRequest,
+  id: string,
+  updates: Partial<Store>
+): Promise<BodyResponse<{storeDetail: Store}>> {
+  const result = await fetchWithAuth<BodyResponse<{storeDetail: Store}>>({
+    request,
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/store/updateStore/${id}`,
+    method: "PUT",
+    body: updates
+  });
+  if (result.statusCode === 200) {
+    return result;
+  } else {
+    throw new Error(result.message || "Failed to update store");
   }
 }

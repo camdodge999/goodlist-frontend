@@ -86,3 +86,9 @@ export interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
 }
+
+// Store with joined reports data
+export interface StoreWithReports extends Store {
+  reports?: import('./report').Report[];
+  reportCount?: number;
+}

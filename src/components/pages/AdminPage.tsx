@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 
 import { 
   StoreItem, 
@@ -13,18 +11,29 @@ import { Store } from "@/types/stores";
 import { Report } from "@/types/report";
 import useAdminStores from "@/hooks/useAdminStores";
 import StoreDetailDialog from "@/components/store/StoreDetailDialog";
+import ReportDetailDialog from "@/components/store/ReportDetailDialog";
 import StorePagination from "@/components/stores/StorePagination";
 import StoreFilter, { VerificationFilter } from "@/components/admin/StoreFilter";
+import { useReport } from "@/contexts/ReportContext";
 
 interface SelectedReport {
   store: Store;
   reports: Report[];
 }
 
-export default function AdminPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  
+interface AdminPageProps {
+  initialStores?: Store[];
+}
+
+export default function AdminPage({ initialStores = [] }: AdminPageProps) {
+  // Use ReportContext directly to ensure reports are fetched
+  const { 
+    allReports, 
+    fetchAllReports, 
+    isLoading: reportsLoading,
+    error: reportsError 
+  } = useReport();
+
   // Use our custom hook for store and tab management
   const {
     tabs,
@@ -32,19 +41,21 @@ export default function AdminPage() {
     setActiveTab,
     filteredStores,
     isLoading,
-    getStoreReports,
     handleApproveStore,
     handleRejectStore,
     handleBanStore,
     handleUnbanStore,
-    handleUpdateReportStatus
-  } = useAdminStores();
-
+    handleUpdateReportStatus,
+    reports
+  } = useAdminStores({ initialStores });
+  
   // UI state
   const [selectedReport, setSelectedReport] = useState<SelectedReport | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [selectedSingleReport, setSelectedSingleReport] = useState<Report | null>(null);
+  const [isReportDetailModalOpen, setIsReportDetailModalOpen] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,22 +63,42 @@ export default function AdminPage() {
   
   // Filter state for verified stores
   const [verificationFilter, setVerificationFilter] = useState<VerificationFilter>('all');
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Check authentication first
+  // Explicitly fetch reports when AdminPage mounts
   useEffect(() => {
-    if (status === "unauthenticated" || (session && session.user?.role !== "admin")) {
-      router.push("/login");
-    }
-  }, [session, status, router]);
+    const initializeReports = async () => {
+      try {
+        console.log('AdminPage: Fetching reports...');
+        await fetchAllReports();
+        console.log('AdminPage: Reports fetched successfully', allReports.length);
+      } catch (error) {
+        console.error('AdminPage: Error fetching reports:', error);
+      }
+    };
 
-  const handleViewReport = (store: Store) => {
-    const storeReports = getStoreReports(store.id);
-    setSelectedReport({ store, reports: storeReports });
-    setIsReportModalOpen(true);
+    initializeReports();
+  }, [fetchAllReports]);
+
+  // Debug effect to log reports changes
+  useEffect(() => {
+    console.log('AdminPage: Reports updated:', {
+      allReportsCount: allReports.length,
+      reportsFromHook: reports.length,
+      reportsLoading,
+      reportsError
+    });
+  }, [allReports, reports, reportsLoading, reportsError]);
+
+  const handleViewSingleReport = (report: Report) => {
+    setSelectedSingleReport(report);
+    setIsReportDetailModalOpen(true);
   };
 
-  const handleUpdateModalReportStatus = (reportId: string, newStatus: "valid" | "invalid") => {
-    handleUpdateReportStatus(reportId, newStatus);
+  const handleUpdateModalReportStatus = async (reportId: string, newStatus: "valid" | "invalid") => {
+    await handleUpdateReportStatus(reportId, newStatus);
     
     // Update selected report to reflect changes
     if (selectedReport) {
@@ -76,6 +107,14 @@ export default function AdminPage() {
         reports: selectedReport.reports.map(r => 
           r.id === reportId ? {...r, status: newStatus} : r
         )
+      });
+    }
+
+    // Update single report if it's currently selected
+    if (selectedSingleReport && selectedSingleReport.id === reportId) {
+      setSelectedSingleReport({
+        ...selectedSingleReport,
+        status: newStatus
       });
     }
   };
@@ -95,9 +134,23 @@ export default function AdminPage() {
     setIsStoreModalOpen(false);
   };
 
+  const handleCloseReportDetailModal = () => {
+    setSelectedSingleReport(null);
+    setIsReportDetailModalOpen(false);
+  };
+
   // Apply filters and pagination to stores
   const displayedStores = useMemo(() => {
     let filteredResult = [...filteredStores];
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filteredResult = filteredResult.filter(store => 
+        store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        store.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        store.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
     
     // Apply verification filter if we're on the verified tab
     if (activeTab === 'verified') {
@@ -113,35 +166,53 @@ export default function AdminPage() {
     const endIndex = startIndex + itemsPerPage;
     
     return filteredResult.slice(startIndex, endIndex);
-  }, [filteredStores, activeTab, verificationFilter, currentPage, itemsPerPage]);
+  }, [filteredStores, activeTab, verificationFilter, searchQuery, currentPage, itemsPerPage]);
   
   // Calculate total pages
   const totalPages = useMemo(() => {
-    let count = filteredStores.length;
+    let filteredResult = [...filteredStores];
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filteredResult = filteredResult.filter(store => 
+        store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        store.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        store.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
     
     // Apply verification filter if we're on the verified tab
     if (activeTab === 'verified') {
       if (verificationFilter === 'approved') {
-        count = filteredStores.filter(store => store.isVerified === true).length;
+        filteredResult = filteredResult.filter(store => store.isVerified === true);
       } else if (verificationFilter === 'rejected') {
-        count = filteredStores.filter(store => store.isVerified === false).length;
+        filteredResult = filteredResult.filter(store => store.isVerified === false);
       }
     }
     
-    return Math.ceil(count / itemsPerPage);
-  }, [filteredStores, activeTab, verificationFilter, itemsPerPage]);
+    return Math.ceil(filteredResult.length / itemsPerPage);
+  }, [filteredStores, activeTab, verificationFilter, searchQuery, itemsPerPage]);
   
-  // Reset pagination when tab or filter changes
+  // Reset pagination when tab, filter, or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, verificationFilter]);
+  }, [activeTab, verificationFilter, searchQuery]);
 
-  if (status === "loading" || isLoading) {
+  if (isLoading || reportsLoading) {
     return (
       <div className="admin-page-loading flex justify-center items-center h-screen">
         <div className="loading-spinner animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="ml-4 text-gray-600">
+          {isLoading && "กำลังโหลดข้อมูลร้านค้า..."}
+          {reportsLoading && "กำลังโหลดข้อมูลรายงาน..."}
+        </div>
       </div>
     );
+  }
+
+  // Show error if reports failed to load
+  if (reportsError) {
+    console.error('AdminPage: Reports error:', reportsError);
   }
 
   return (
@@ -155,6 +226,23 @@ export default function AdminPage() {
             <p className="admin-description mt-2 text-sm text-gray-700">
               จัดการสถานะและตรวจสอบร้านค้าทั้งหมด
             </p>
+            {reportsError && (
+              <div className="mt-2 text-sm text-red-600">
+                เกิดข้อผิดพลาดในการโหลดรายงาน: {reportsError}
+              </div>
+            )}
+          </div>
+          <div className="admin-header-actions mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <button
+              type="button"
+              onClick={async () => {
+                console.log('Manual refresh triggered');
+                await fetchAllReports();
+              }}
+              className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto"
+            >
+              รีเฟรชรายงาน ({allReports.length})
+            </button>
           </div>
         </div>
 
@@ -169,9 +257,11 @@ export default function AdminPage() {
             {/* Show filter buttons only for verified stores tab */}
             {activeTab === 'verified' && (
               <StoreFilter 
-                stores={displayedStores}
+                stores={filteredStores}
                 activeFilter={verificationFilter}
                 onFilterChange={setVerificationFilter}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
               />
             )}
             
@@ -182,12 +272,14 @@ export default function AdminPage() {
                     <StoreItem
                       store={store}
                       activeTab={activeTab}
+                      reports={reports}
                       onViewStore={handleViewStore}
-                      onViewReport={handleViewReport}
+                      onViewReport={handleViewSingleReport}
                       onApproveStore={handleApproveStore}
                       onRejectStore={handleRejectStore}
                       onBanStore={handleBanStore}
                       onUnbanStore={handleUnbanStore}
+                      onUpdateReportStatus={handleUpdateReportStatus}
                     />
                   </li>
                 ))}
@@ -231,6 +323,18 @@ export default function AdminPage() {
           selectedReport={selectedReport}
           onUpdateReportStatus={handleUpdateModalReportStatus}
           onBanStore={handleBanStore}
+        />
+      </div>
+
+      {/* Report Detail Modal */}
+      <div className="admin-report-detail-modal">
+        <ReportDetailDialog
+          isOpen={isReportDetailModalOpen}
+          onClose={handleCloseReportDetailModal}
+          report={selectedSingleReport}
+          onUpdateStatus={handleUpdateModalReportStatus}
+          onBanStore={(storeId) => handleBanStore(parseInt(storeId))}
+          hideAdminActions={false}
         />
       </div>
     </div>

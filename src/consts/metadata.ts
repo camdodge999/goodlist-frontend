@@ -38,7 +38,21 @@ export const metadataPages = {
     },
     login:{
         title: "เข้าสู่ระบบ | Goodlistseller",
-        description: "เข้าสู่ระบบเพื่อใช้งานระบบ",
+        description: "เข้าสู่ระบบเพื่อใช้งาน Goodlistseller ค้นหาร้านค้าออนไลน์ที่น่าเชื่อถือและแชร์ประสบการณ์การซื้อสินค้า",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    signup:{
+        title: "สมัครสมาชิก | Goodlistseller",
+        description: "สมัครสมาชิกเพื่อใช้งาน Goodlistseller ค้นหาร้านค้าออนไลน์ที่น่าเชื่อถือและแชร์ประสบการณ์การซื้อสินค้า",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    "reset-password":{
+        title: "รีเซ็ตรหัสผ่าน | Goodlistseller",
+        description: "รีเซ็ตรหัสผ่านเพื่อใช้งาน Goodlistseller ค้นหาร้านค้าออนไลน์ที่น่าเชื่อถือและแชร์ประสบการณ์การซื้อสินค้า",
         keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
         author: "Goodlist Seller",
         robots: "index, follow",

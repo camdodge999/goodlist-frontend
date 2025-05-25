@@ -29,15 +29,20 @@ export default function OtpForm({
   onClose,
   onSendOtp
 }: OtpFormProps) {
-  const inputRefs = Array(6)
-    .fill(0)
-    .map(() => useRef<HTMLInputElement>(null));
+  const inputRef0 = useRef<HTMLInputElement>(null);
+  const inputRef1 = useRef<HTMLInputElement>(null);
+  const inputRef2 = useRef<HTMLInputElement>(null);
+  const inputRef3 = useRef<HTMLInputElement>(null);
+  const inputRef4 = useRef<HTMLInputElement>(null);
+  const inputRef5 = useRef<HTMLInputElement>(null);
+  
+  const inputRefs = [inputRef0, inputRef1, inputRef2, inputRef3, inputRef4, inputRef5];
 
   useEffect(() => {
     if (!otpSent && inputRefs[0]?.current) {
       inputRefs[0].current.focus();
     }
-  }, [otpSent]);
+  }, [otpSent, inputRefs]);
 
   const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

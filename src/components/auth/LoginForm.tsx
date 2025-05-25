@@ -272,7 +272,7 @@ export default function LoginForm(): JSX.Element {
             </Button>
           </div>
 
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <div className="flex items-center justify-between">
               <div className="text-sm">
                 <Link 
@@ -283,7 +283,7 @@ export default function LoginForm(): JSX.Element {
                 </Link>
               </div>
             </div>
-          </div>
+          </div> */}
         </form>
       </motion.div>
     </>

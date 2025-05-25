@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type KeyboardEvent, type ChangeEvent, type FormEvent, useEffect } from "react";
+import { useState, type ChangeEvent, type FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -26,11 +26,9 @@ export default function SignupForm() {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showTerms, setShowTerms] = useState<boolean>(false);
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [showOtpModal, setShowOtpModal] = useState<boolean>(false);
-  const [otp, setOtp] = useState<string>("");
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
   const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
@@ -43,9 +41,7 @@ export default function SignupForm() {
     hasLowercase: false,
     hasNumber: false
   });
-  const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [refNumber, setRefNumber] = useState<string>("");
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
   const [cooldownTimer, setCooldownTimer] = useState<NodeJS.Timeout | null>(null);
@@ -67,11 +63,6 @@ export default function SignupForm() {
     newOtpValues[index] = value;
     setOtpValues(newOtpValues);
     setOtp(newOtpValues.join(""));
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>): void => {
-    // This is a placeholder since the shadcn InputOTP component handles this internally
-    // No implementation needed
   };
 
   const validateForm = (): boolean => {
@@ -230,13 +221,6 @@ export default function SignupForm() {
       setError("");
     }
 
-    // Check if passwords match in real-time
-    if (newConfirmPassword.length > 0) {
-      setPasswordsMatch(newConfirmPassword === password);
-    } else {
-      setPasswordsMatch(null);
-    }
-
     setConfirmPassword(newConfirmPassword);
   };
 
@@ -248,7 +232,8 @@ export default function SignupForm() {
       return;
     }
 
-    setShowOtpModal(true);
+    // Start loading state for the submit button
+    setIsSendingOtp(true);
 
     try{
        // Call your authentication service
@@ -264,17 +249,33 @@ export default function SignupForm() {
         }),
       });
 
-      const { data } = await response.json();
-      setRefNumber(data.refNumber);
-      setOtpToken(data.otpToken);
+      if(response.ok){  
+        const { data } = await response.json();
+        setRefNumber(data.refNumber);
+        setOtpToken(data.otpToken);
+        
+        // Show success dialog first, then open OTP modal
+        displaySuccessDialog({
+          message: "ส่งข้อมูลการสมัครสมาชิกสำเร็จ! กรุณายืนยัน OTP",
+          title: "ส่งข้อมูลสำเร็จ",
+          buttonText: "ยืนยัน OTP",
+          onButtonClick: () => {
+            setShowOtpModal(true);
+          }
+        });
+      } else {
+        const errorData = await response.json();
+        displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
+      }
     } catch (error) {
       console.error("Error registering user:", error);
       displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSendingOtp(false);
     }
   };
 
   const handleVerifyOtp = async (): Promise<void> => {
-    console.log(validateOtp());
     if (!validateOtp()) {
       return;
     }
@@ -397,7 +398,7 @@ export default function SignupForm() {
       
       // Start the cooldown timer after successfully sending OTP
       startCooldownTimer();
-    } catch (_) {
+    } catch {
       // Ignore the error variable name but handle the error
       displayErrorDialog("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
@@ -407,7 +408,6 @@ export default function SignupForm() {
 
   const handleCloseOtpModal = (): void => {
     setShowOtpModal(false);
-    setOtp("");
     setOtpValues(["", "", "", "", "", ""]);
     setError("");
     setOtpSent(false);
@@ -464,7 +464,6 @@ export default function SignupForm() {
           isSendingOtp={isSendingOtp}
           otpSent={otpSent}
           onOtpChange={handleOtpChange}
-          onKeyDown={handleKeyDown}
           onVerify={handleVerifyOtp}
           onClose={handleCloseOtpModal}
           onSendOtp={handleSendOtp}
@@ -623,7 +622,7 @@ export default function SignupForm() {
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
+                  type="password"
                   placeholder="กรอกรหัสผ่านอีกครั้ง"
                   value={confirmPassword}
                   onChange={handleConfirmPasswordChange}
@@ -665,13 +664,13 @@ export default function SignupForm() {
             <Button
               type="submit"
               variant="primary"
-              disabled={isLoading || !acceptedTerms}
-              className="w-full cursor-pointer flex items-center justify-center"
+              disabled={!acceptedTerms || isSendingOtp}
+              className="w-full cursor-pointer flex items-center justify-center gap-2"
             >
-              {isLoading ? (
+              {isSendingOtp ? (
                 <Spinner />
               ) : null}
-              {isLoading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
+              {isSendingOtp ? "กำลังส่งข้อมูล..." : "สมัครสมาชิก"} 
             </Button>
           </div>
         </form>

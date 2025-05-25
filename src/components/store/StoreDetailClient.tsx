@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import { Store, User, StoreAudit, ContactInfo } from "@/types/stores";
+import { Store, ContactInfo } from "@/types/stores";
 import { Button } from "@/components/ui/button";
 import StoreHeader from "./StoreHeader";
 import StoreDescription from "./StoreDescription";
@@ -13,8 +13,6 @@ import ReportDialog from "./ReportDialog";
 
 interface StoreDetailClientProps {
   store: Store;
-  storeOwner: User;
-  verificationAudit?: StoreAudit;
 }
 
 export default function StoreDetailClient({ 

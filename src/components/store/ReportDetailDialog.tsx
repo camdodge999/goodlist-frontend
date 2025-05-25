@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Download, Eye } from 'lucide-react';    
 import { Report } from '@/types/report';
 import { getAuthenticatedImageUrl } from '@/lib/utils';
-import defaultImage from '@images/logo.webp';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import { Button } from '../ui/button';
 import dayjs from 'dayjs';

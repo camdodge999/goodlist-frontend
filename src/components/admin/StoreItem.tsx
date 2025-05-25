@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle, 
   faTimesCircle,
-  faExclamationTriangle,
   faHammer,
   faFileAlt,
   faChevronDown,

@@ -20,7 +20,6 @@ interface OtpModalProps {
   refNumber: string;
   cooldownSeconds: number;
   onOtpChange: (index: number, value: string) => void;
-  onKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
   onVerify: () => Promise<void>;
   onClose: () => void;
   onSendOtp: () => Promise<void>;

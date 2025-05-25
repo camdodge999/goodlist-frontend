@@ -73,52 +73,52 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
   }, [session?.user?.token]);
 
   // Enhanced update function with proper error handling
-  const updateStore = useCallback(async (storeId: number, updates: Partial<Store>): Promise<Store | null> => {
-    if (!session?.user?.token) {
-      console.error('No authentication token available for store update');
-      return null;
-    }
+  // const updateStore = useCallback(async (storeId: number, updates: Partial<Store>): Promise<Store | null> => {
+  //   if (!session?.user?.token) {
+  //     console.error('No authentication token available for store update');
+  //     return null;
+  //   }
 
-    try {
-      setIsLoading(true);
+  //   try {
+  //     setIsLoading(true);
       
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${session.user.token}`,  
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updates),
-        }
-      );
+  //     const response = await fetch(
+  //       `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
+  //       {
+  //         method: 'PUT',
+  //         headers: {
+  //           'Authorization': `Bearer ${session.user.token}`,  
+  //           'Content-Type': 'application/json',
+  //         },
+  //         body: JSON.stringify(updates),
+  //       }
+  //     );
 
-      if (!response.ok) {
-        throw new Error(`Error updating store: ${response.statusText}`);
-      }
+  //     if (!response.ok) {
+  //       throw new Error(`Error updating store: ${response.statusText}`);
+  //     }
 
-      const data = await response.json();
+  //     const data = await response.json();
       
-      if (data.statusCode === 200 && data.data) {
-        // Update local state
-        setAdminStores(prevStores => 
-          prevStores.map(store => 
-            store.id === storeId ? { ...store, ...data.data.storeDetail } : store
-          )
-        );
+  //     if (data.statusCode === 200 && data.data) {
+  //       // Update local state
+  //       setAdminStores(prevStores => 
+  //         prevStores.map(store => 
+  //           store.id === storeId ? { ...store, ...data.data.storeDetail } : store
+  //         )
+  //       );
         
-        return data.data.storeDetail;
-      } else {
-        throw new Error(data.message || 'Failed to update store');
-      }
-    } catch (err) {
-      console.error('Error updating store:', err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session?.user?.token]);
+  //       return data.data.storeDetail;
+  //     } else {
+  //       throw new Error(data.message || 'Failed to update store');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error updating store:', err);
+  //     return null;
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [session?.user?.token]);
 
   // Initialize data if not already done
   useEffect(() => {

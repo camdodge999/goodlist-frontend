@@ -6,14 +6,14 @@ import NavItems from "./NavItems";
 import UserMenu from "./UserMenu";
 import useNavigation from "@/hooks/useNavigation";
 import { useUser } from "@/contexts/UserContext";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";  
 import { useRouter } from "next/navigation";
 import { Session } from "next-auth";
 
 export default function NavBar({ session }: { session: Session | null }) {
   const router = useRouter();
   const { navItems } = useNavigation();
-  const { currentUser, isLoading, signOut } = useUser();
+  const { currentUser, isLoading } = useUser();  
   
   // Use server session to determine initial authentication state
   const hasServerSession = !!session?.user;

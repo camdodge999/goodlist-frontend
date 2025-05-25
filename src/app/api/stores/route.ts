@@ -99,7 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   }
 }
 
-async function createStore(request: NextRequest, body: any): Promise<BodyResponse<Store>> {
+async function createStore(request: NextRequest, body: FormData | object): Promise<BodyResponse<Store>> {
   // For FormData, we use it directly - fetchWithAuth handles it correctly
   const result = await fetchWithAuth<BodyResponse<Store>>({
     request,

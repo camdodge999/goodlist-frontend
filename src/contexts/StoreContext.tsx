@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 
 // Static cache to track if stores have been fetched globally
 let globalStoresCache: Store[] = [];
-let globalLastFetched: number | null = null;
 
 interface StoreContextProps {
   stores: Store[];
@@ -40,9 +39,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
   const [adminStores, setAdminStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetched, setLastFetched] = useState<number | null>(
-    globalLastFetched || (initialStores.length > 0 ? Date.now() : null)
-  );
   // Add a state to track fetch failures
   const [fetchFailed, setFetchFailed] = useState(false);
   const router = useRouter();
@@ -85,10 +81,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         // Update both local state and global cache
         setStores(data.data);
         globalStoresCache = data.data;
-
-        const now = Date.now();
-        setLastFetched(now);
-        globalLastFetched = now;
 
         // Reset fetch failure flag on success
         setFetchFailed(false);
@@ -151,7 +143,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } else if (initialStores.length > 0 && globalStoresCache.length === 0) {
       // If we have initialStores but no global cache, update the global cache
       globalStoresCache = initialStores;
-      globalLastFetched = Date.now();
     }
   }, [fetchStores, initialStores]);
 

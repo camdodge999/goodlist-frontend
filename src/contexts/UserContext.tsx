@@ -24,7 +24,7 @@ interface UserContextProps {
   error: string | null;
   refreshUser: () => Promise<User | null>;
   fetchUserProfile: (userId: string, forceRefresh?: boolean) => Promise<User | null>;
-  verifyUser: (userId: string, verificationData: any) => Promise<boolean>;
+  verifyUser: (userId: string, verificationData: FormData | object) => Promise<boolean>;
   getVerificationStatus: () => "not_started" | "pending" | "verified" | "banned";
   signOut: () => Promise<void>;
 }
@@ -38,7 +38,7 @@ interface UserProviderProps {
 const UserContext = createContext<UserContextProps | undefined>(undefined);
 
 // Create a promise cache to prevent duplicate requests
-const requestCache: Record<string, Promise<any>> = {};
+const requestCache: Record<string, Promise<User | null>> = {};
 
 export function UserProvider({ children, initialUser = null, initialSession = null }: UserProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
@@ -197,7 +197,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     }
   };
 
-  const verifyUser = async (userId: string, verificationData: any) => {
+  const verifyUser = async (userId: string, verificationData: FormData | object) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -211,7 +211,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         headers: {
           'Authorization': `Bearer ${session?.user?.token}`,
         },
-        body: verificationData,
+        body: verificationData as unknown as BodyInit,
       };
       
       // Only set Content-Type for JSON data

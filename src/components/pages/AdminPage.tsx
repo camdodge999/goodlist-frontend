@@ -31,7 +31,6 @@ interface AdminPageProps {
 export default function AdminPage({ initialStores = [] }: AdminPageProps) {
   // Use ReportContext directly to ensure reports are fetched
   const {
-    allReports,
     fetchAllReports,
     isLoading: reportsLoading,
     error: reportsError
@@ -93,9 +92,7 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
   useEffect(() => {
     const initializeReports = async () => {
       try {
-        console.log('AdminPage: Fetching reports...');
         await fetchAllReports();
-        console.log('AdminPage: Reports fetched successfully', allReports.length);
       } catch (error) {
         console.error('AdminPage: Error fetching reports:', error);
       }
@@ -104,15 +101,6 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
     initializeReports();
   }, [fetchAllReports]);
 
-  // Debug effect to log reports changes
-  useEffect(() => {
-    console.log('AdminPage: Reports updated:', {
-      allReportsCount: allReports.length,
-      reportsFromHook: reports.length,
-      reportsLoading,
-      reportsError
-    });
-  }, [allReports, reports, reportsLoading, reportsError]);
 
   const handleViewSingleReport = (report: Report) => {
     setSelectedSingleReport(report);

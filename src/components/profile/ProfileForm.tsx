@@ -1,4 +1,4 @@
-import React, { useRef, FormEvent } from "react";
+import React, { FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,9 +16,6 @@ dayjs.locale('th');
 interface ProfileFormProps {
   initialData: ProfileFormSchema;
   isEditing: boolean;
-  canChangeEmail: boolean;
-  lastEmailChange: Date | null;
-  emailError: string;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSaveProfile: () => Promise<void>;
@@ -30,9 +27,6 @@ interface ProfileFormProps {
 export default function ProfileForm({
   initialData,
   isEditing,
-  canChangeEmail,
-  lastEmailChange,
-  emailError,
   onInputChange,
   onImageChange,
   onSaveProfile,

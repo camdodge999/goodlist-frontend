@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BodyResponse } from '@/types/response';
-import { User } from '@/types/users';
 import { fetchWithAuth } from '@/lib/fetch-with-auth';
 
 // POST handler for /api/user/verify/[id]
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } =  params;
+    const { id } = await context.params;
     const userId = parseInt(id);
 
     if (isNaN(userId)) {
@@ -64,11 +63,11 @@ export async function POST(
 async function verifyUser(
   request: NextRequest,
   id: string,
-  formData: FormData | any
-): Promise<BodyResponse<any>> {
+  formData: FormData | object
+): Promise<BodyResponse<unknown>> {
   try {
     // Use fetchWithAuth to handle token extraction and API call
-    const result = await fetchWithAuth<BodyResponse<any>>({
+    const result = await fetchWithAuth<BodyResponse<unknown>>({
       request,
       url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/user/verify/${id}`,
       method: "POST",

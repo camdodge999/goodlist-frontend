@@ -71,7 +71,7 @@ export default function ReportPage() {
   }, [reportError, displayErrorDialog]);
 
   // Update formData and reset validation error
-  const updateFormData = (field: keyof ReportFormSchema, value: any) => {
+  const updateFormData = (field: keyof ReportFormSchema, value: number | string | File | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

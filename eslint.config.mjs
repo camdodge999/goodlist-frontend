@@ -19,6 +19,9 @@ const eslintConfig = [
 eslintConfig.push({
   files: [
     "src/utils/valid-json.ts",
+    "src/contexts/UserContext.tsx",
+    "src/app/api/user/verify/[id]/route.ts",
+    "src/app/api/stores/verify/route.ts"
   ],
   rules: {
     "no-console": "off",

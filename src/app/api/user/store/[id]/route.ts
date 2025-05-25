@@ -43,32 +43,6 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const storeId = parseInt(params.id);
-  
-}
-
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const storeId = parseInt(params.id);
-  
-}
-
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const storeId = parseInt(params.id);
-  
-}
-
 async function fetchUserStores(
   request: NextRequest,
   userId: string

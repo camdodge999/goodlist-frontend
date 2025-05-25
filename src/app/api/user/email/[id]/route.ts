@@ -5,11 +5,11 @@ import { fetchWithAuth } from '@/lib/fetch-with-auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await Promise.resolve(params);
-    const userId = await Promise.resolve(parseInt(id));
+    const { id } = await context.params;
+    const userId = parseInt(id);
 
     if (isNaN(userId)) {
       return NextResponse.json(
@@ -24,7 +24,7 @@ export async function PUT(
 
     // Get the email and password data from the request
     const { email, currentPassword } = await request.json();
-    
+
     if (!email || !currentPassword) {
       return NextResponse.json(
         {
@@ -44,14 +44,14 @@ export async function PUT(
       message: result.message,
       data: result.data?.profileDetail,
     }, { status: result.statusCode });
-    
+
   } catch (error) {
     console.error("Error updating user email:", error);
     return NextResponse.json(
-      { 
-        statusCode: 500, 
-        message: error instanceof Error ? error.message : "Internal server error", 
-        data: undefined 
+      {
+        statusCode: 500,
+        message: error instanceof Error ? error.message : "Internal server error",
+        data: undefined
       },
       { status: 500 }
     );
@@ -63,9 +63,9 @@ async function updateUserEmail(
   id: string,
   newEmail: string,
   currentPassword: string
-): Promise<BodyResponse<{profileDetail: User}>> {
+): Promise<BodyResponse<{ profileDetail: User }>> {
   // Use fetchWithAuth to handle token extraction and API call
-  const result = await fetchWithAuth<BodyResponse<{profileDetail: User}>>({
+  const result = await fetchWithAuth<BodyResponse<{ profileDetail: User }>>({
     request,
     url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/changeEmail/${id}`,
     method: "PUT",
@@ -77,7 +77,7 @@ async function updateUserEmail(
       'Content-Type': 'application/json'
     }
   });
-  
+
   if (result.statusCode === 200) {
     return result;
   } else {

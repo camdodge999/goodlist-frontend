@@ -18,7 +18,7 @@ import { VerificationFormSchema } from "@/validators/verify.schema";
 export default function VerifyPageClient() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { currentUser, fetchUserProfile, getVerificationStatus, isLoading: userLoading, userStores } = useUser();
+  const { fetchUserProfile, getVerificationStatus, isLoading: userLoading, userStores } = useUser();
   const { addStore } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [saveFormData, setSaveFormData] = useState<VerificationFormSchema | null>(null);
@@ -107,7 +107,7 @@ export default function VerifyPageClient() {
 
       // Create a new store with the verification data
       // We use any type since we're sending FormData instead of a regular Store object
-      const storeResult = await addStore(submitFormData as any);
+      const storeResult = await addStore(submitFormData as unknown as FormData);
 
       if (storeResult) {
         // Clear saved form data on success

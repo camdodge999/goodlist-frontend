@@ -6,11 +6,11 @@ import { fetchWithAuth } from '@/lib/fetch-with-auth';
 // GET handler for /api/user/profile/[id]
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await Promise.resolve(context.params);
-    const userId = await Promise.resolve(parseInt(id));
+    const { id } = await context.params;
+    const userId = parseInt(id);
 
     if (isNaN(userId)) {
       return NextResponse.json(
@@ -52,11 +52,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await Promise.resolve(params);
-    const userId = await Promise.resolve(parseInt(id));
+    const { id } = await context.params;
+    const userId = parseInt(id);
 
     if (isNaN(userId)) {
       return NextResponse.json(
@@ -126,7 +126,7 @@ async function fetchProfileById(
 async function updateUserProfile(
   request: NextRequest,
   id: string,
-  updateData: any
+  updateData: FormData | object
 ): Promise<BodyResponse<{profileDetail: User}>> {
 
   console.log(updateData);

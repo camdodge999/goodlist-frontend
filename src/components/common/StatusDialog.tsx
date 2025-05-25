@@ -33,9 +33,9 @@ export default function StatusDialog({
   onButtonClick,
 }: StatusDialogProps) {
   const isHandlingClick = useRef(false);
-  
+
   if (!type) return null;
-  
+
   const isSuccess = type === 'success';
   const dialogTitle = title || (isSuccess ? "สำเร็จ" : "เกิดข้อผิดพลาด");
   const iconColor = isSuccess ? "text-green-500" : "text-red-500";
@@ -44,9 +44,9 @@ export default function StatusDialog({
   const handleButtonClick = () => {
     if (isHandlingClick.current) return;
     isHandlingClick.current = true;
-    
+
     setIsOpen(false);
-    
+
     // Use setTimeout to ensure the dialog closing animation completes
     // before executing the callback to prevent UI glitches
     if (onButtonClick) {
@@ -60,7 +60,7 @@ export default function StatusDialog({
       }, 100);
     }
   };
-  
+
   // Handle dialog close from outside (like clicking backdrop)
   const handleOpenChange = (open: boolean) => {
     if (isHandlingClick.current) return;
@@ -68,7 +68,7 @@ export default function StatusDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange} >
       <DialogContent className="sm:max-w-xl p-8">
         <DialogHeader className="space-y-6">
           <div className={`flex justify-center mb-6 ${iconColor}`}>

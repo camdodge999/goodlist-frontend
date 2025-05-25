@@ -6,11 +6,11 @@ import { fetchWithAuth } from '@/lib/fetch-with-auth';
 // GET handler for /api/stores/[id]
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await Promise.resolve(context.params);
-    const storeId = await Promise.resolve(parseInt(id));
+    const { id } = await context.params; 
+    const storeId = parseInt(id);
 
     if (isNaN(storeId)) {
       return NextResponse.json(
@@ -53,11 +53,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<BodyResponse<Store>>> {
   try {
-    const { id } = await Promise.resolve(context.params);
-    const storeId = await Promise.resolve(parseInt(id));
+    const { id } = await context.params;  
+    const storeId = parseInt(id);
 
     if (isNaN(storeId)) {
       return NextResponse.json(
@@ -76,7 +76,7 @@ export async function PUT(
     if (result.statusCode === 200) {
       return NextResponse.json({
         statusCode: 200,
-        data: result.data,
+        data: result?.data?.storeDetail,
         message: "Store updated successfully",
       }, { status: 200 });
     } else {
@@ -98,31 +98,6 @@ export async function PUT(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const storeId = parseInt(params.id);
-  
-}
-
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const storeId = parseInt(params.id);
-  
-}
-
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const storeId = parseInt(params.id);
-  
-}
 
 async function fetchStoreById(
   request: NextRequest,

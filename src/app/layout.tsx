@@ -72,8 +72,8 @@ export default async function RootLayout({
     <html lang="th" className={`${prompt.className} antialiased`}>
       <body>
         <NextAuthProvider session={session as unknown as Session}>
-          <AppProviders>
-            <NavBar />
+          <AppProviders session={session as unknown as Session}>
+            <NavBar session={session as unknown as Session} />
             <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
             <ToastProvider />
           </AppProviders>

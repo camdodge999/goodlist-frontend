@@ -62,21 +62,26 @@ const ReportDetailDialog: React.FC<ReportDetailDialogProps> = ({
   let statusText = "";
 
   switch (report.status) {
-    case "valid":
+    case "pending":
+      statusColor = "text-yellow-600";
+      statusIcon = faExclamationTriangle;
+      statusText = "รอดำเนินการ";
+      break;
+    case "reviewed":
       statusColor = "text-green-600";
       statusIcon = faCheckCircle;
       statusText = "ยืนยันแล้ว";
       break;
-    case "invalid":
+    case "rejected":
       statusColor = "text-red-600";
       statusIcon = faTimesCircle;
-      statusText = "ไม่ถูกต้อง";
+      statusText = "ปฏิเสธ";
       break;
-    case "reviewed":
+    case "invalid":
       statusColor = "text-blue-600";
       statusIcon = faFileAlt;
-      statusText = "ตรวจสอบแล้ว";
-      break;
+      statusText = "ไม่ถูกต้อง";
+      break;  
     default:
       statusColor = "text-yellow-600";
       statusIcon = faExclamationTriangle;
@@ -232,7 +237,7 @@ const ReportDetailDialog: React.FC<ReportDetailDialogProps> = ({
               <Button
                 variant="outline"
                 className="border-red-500 text-red-600 hover:bg-red-50"
-                onClick={() => onBanStore(report.storeId)}
+                onClick={() => onBanStore(report.storeId.toString())}
               >
                 แบนร้านค้า
               </Button>

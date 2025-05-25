@@ -329,8 +329,6 @@ export function DropdownFilter<T>({
     setIsFocused(false);
   };
 
-  // Generate a unique ID for ARIA attributes
-  const dropdownId = useRef(`dropdown-filter-${Math.random().toString(36).substring(2, 9)}`);
 
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
@@ -350,7 +348,6 @@ export function DropdownFilter<T>({
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           aria-expanded={isDropdownOpen}
-          aria-controls={dropdownId.current}
           aria-haspopup="listbox"
           aria-autocomplete="list"
           role="combobox"
@@ -389,7 +386,6 @@ export function DropdownFilter<T>({
             className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-gray-200"
           >
             <ul 
-              id={dropdownId.current}
               ref={listRef}
               role="listbox"
               aria-label="Search results"

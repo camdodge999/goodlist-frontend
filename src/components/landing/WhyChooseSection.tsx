@@ -12,7 +12,7 @@ export function WhyChooseSection() {
                 <div className="flex flex-col items-center text-center mb-12">
                     <div className="inline-flex items-center justify-center mb-4 space-x-2">
                         <Shield />
-                        <span className="text-sm font-medium text-gray-600">ปลอดภัย ไว้ใจได้</span>
+                        <span className="text-sm font-medium text-gray-600">ปลอดภัย เชื่อถือได้</span>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                         ทำไมต้องเลือก Goodlist Seller?

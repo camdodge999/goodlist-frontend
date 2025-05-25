@@ -4,6 +4,7 @@ import { Report } from "@/types/report";
 import { Tab } from "@/types/tabs";
 import { Store } from "@/types/stores";
 import { useReport } from "@/contexts/ReportContext";
+import { useStore } from "@/contexts/StoreContext";
 
 interface UseAdminStoresOptions {
   initialStores?: Store[];
@@ -26,11 +27,14 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     error: reportsError
   } = useReport();
 
+  // Use StoreContext for store verification
+  const { verifyStore, error: storeError } = useStore();
+
   // Enhanced fetch function with proper Bearer token authentication
   const fetchAdminStores = useCallback(async (): Promise<Store[]> => {
     if (!session?.user?.token) {
       console.warn('No authentication token available');
-      return adminStores;
+      return [];
     }
     
     try {
@@ -54,7 +58,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
 
       const data = await response.json();
 
-      if (data.statusCode === 200 && data.data) {
+      if (data.statusCode === 201 && data.data) {
         setAdminStores(data.data);
         return data.data;
       } else {
@@ -62,11 +66,11 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       }
     } catch (err) {
       console.error('Error fetching admin stores:', err);
-      return adminStores;
+      return [];
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.token, adminStores]);
+  }, [session?.user?.token]);
 
   // Enhanced update function with proper error handling
   const updateStore = useCallback(async (storeId: number, updates: Partial<Store>): Promise<Store | null> => {
@@ -135,7 +139,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     };
 
     initializeData();
-  }, [session?.user?.token, fetchAdminStores, fetchAllReports]);
+  }, [session?.user?.token]);
 
   // Force refresh when forceUpdate changes
   useEffect(() => {
@@ -145,7 +149,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
         fetchAllReports()
       ]);
     }
-  }, [forceUpdate, fetchAdminStores, fetchAllReports]);
+  }, [forceUpdate]);
 
   // Calculate tabs with report counts
   const tabs: Tab[] = useMemo(() => [
@@ -157,7 +161,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     {
       id: "reported",
       name: "ร้านค้าที่ถูกรายงาน",
-      count: allReports.length,
+      count: adminStores.filter((s) => allReports.some((report) => report.storeId === s.id) && s.isBanned === false).length,
     },
     {
       id: "verified",
@@ -186,7 +190,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
           return store.isVerified === null && !store.isBanned;
         case "reported":
           // Show stores that have reports
-          return allReports.some((report) => report.storeId === store.id);
+          return allReports.some((report) => report.storeId === store.id) && store.isBanned === false;
         case "verified":
           return store.isVerified !== null && !store.isBanned;
         case "additional":
@@ -201,72 +205,95 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
 
   // Get reports for a specific store
   const getStoreReports = useCallback((storeId: number): Report[] => {
-    return allReports.filter((report) => report.storeId === storeId.toString());
+    return allReports.filter((report) => report.storeId === storeId);
   }, [allReports]);
 
   // Handle report status updates using context
-  const handleUpdateReportStatus = useCallback(async (reportId: string, newStatus: "valid" | "invalid") => {
+  const handleUpdateReportStatus = useCallback(async (reportId: string, newStatus: "valid" | "invalid"): Promise<{ success: boolean; message: string }> => {
     try {
-      const success = await contextUpdateReportStatus(reportId, newStatus);
+      // Map "valid" to "reviewed" for the API
+      const apiStatus = newStatus === "valid" ? "reviewed" : "invalid";
+      const success = await contextUpdateReportStatus(reportId, apiStatus as "valid" | "invalid");
       if (success) {
         console.log(`Report ${reportId} status updated to ${newStatus}`);
+        return { success: true, message: `อัปเดตสถานะรายงานสำเร็จ` };
       } else {
         console.error(`Failed to update report ${reportId} status`);
+        return { success: false, message: `ไม่สามารถอัปเดตสถานะรายงานได้ กรุณาลองใหม่อีกครั้ง` };
       }
     } catch (error) {
       console.error("Error updating report status:", error);
+      return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }, [contextUpdateReportStatus]);
 
-  const handleApproveStore = useCallback(async (storeId: number) => {
+  const handleApproveStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
-      await updateStore(storeId, {
-        isVerified: true,
-        updatedAt: new Date().toISOString(),
-      });
-      setForceUpdate(prev => prev + 1);
+      const result = await verifyStore(storeId, true, false);
+      if (result) {
+        setForceUpdate(prev => prev + 1);
+        return { success: true, message: "อนุมัติร้านค้าสำเร็จ" };
+      } else {
+        // Get error from StoreContext if available
+        const contextError = storeError || "ไม่สามารถอนุมัติร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
+        return { success: false, message: contextError };
+      }
     } catch (error) {
       console.error("Error approving store:", error);
+      return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [updateStore]);
+  }, [verifyStore, storeError]);
 
-  const handleRejectStore = useCallback(async (storeId: number) => {
+  const handleRejectStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
-      await updateStore(storeId, {
-        isVerified: false,
-        updatedAt: new Date().toISOString(),
-        rejectionReason: "ไม่ผ่านการตรวจสอบ"
-      });
-      setForceUpdate(prev => prev + 1);
+      const result = await verifyStore(storeId, false, false);
+      if (result) {
+        setForceUpdate(prev => prev + 1);
+        return { success: true, message: "ปฏิเสธร้านค้าสำเร็จ" };
+      } else {
+        // Get error from StoreContext if available
+        const contextError = storeError || "ไม่สามารถปฏิเสธร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
+        return { success: false, message: contextError };
+      }
     } catch (error) {
       console.error("Error rejecting store:", error);
+      return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [updateStore]);
+  }, [verifyStore, storeError]);
 
-  const handleBanStore = useCallback(async (storeId: number) => {
+  const handleBanStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
-      await updateStore(storeId, {
-        isBanned: true,
-        isVerified: false,
-        updatedAt: new Date().toISOString(),
-      });
-      setForceUpdate(prev => prev + 1);
+      const result = await verifyStore(storeId, false, true);
+      if (result) {
+        setForceUpdate(prev => prev + 1);
+        return { success: true, message: "แบนร้านค้าสำเร็จ" };
+      } else {
+        // Get error from StoreContext if available
+        const contextError = storeError || "ไม่สามารถแบนร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
+        return { success: false, message: contextError };
+      }
     } catch (error) {
       console.error("Error banning store:", error);
+      return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [updateStore]);
+  }, [verifyStore, storeError]);
 
-  const handleUnbanStore = useCallback(async (storeId: number) => {
+  const handleUnbanStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
-      await updateStore(storeId, {
-        isBanned: false,
-        updatedAt: new Date().toISOString(),
-      });
-      setForceUpdate(prev => prev + 1);
+      const result = await verifyStore(storeId, true, false);
+      if (result) {
+        setForceUpdate(prev => prev + 1);
+        return { success: true, message: "ยกเลิกแบนร้านค้าสำเร็จ" };
+      } else {
+        // Get error from StoreContext if available
+        const contextError = storeError || "ไม่สามารถยกเลิกแบนร้านค้าได้ กรุณาลองใหม่อีกครั้ง";
+        return { success: false, message: contextError };
+      }
     } catch (error) {
       console.error("Error unbanning store:", error);
+      return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
-  }, [updateStore]);
+  }, [verifyStore, storeError]);
 
   // Refresh function for manual data refresh
   const refreshStores = useCallback(async () => {
@@ -276,7 +303,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       fetchAllReports()
     ]);
     return stores;
-  }, [fetchAdminStores, fetchAllReports]);
+  }, []);
 
   return {
     tabs,
@@ -293,6 +320,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     reports: allReports,
     refreshStores,
     adminStores,
-    reportsError
+    reportsError,
+    storeError
   };
 }; 

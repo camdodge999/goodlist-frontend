@@ -38,7 +38,7 @@ export function HeroSection({ session }: HeroSectionProps) {
             <div className="relative">
               <div className="absolute inset-0 blur-3xl bg-blue-500/20 animate-pulse" />
               <h1 className="relative text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up">
-                รวมร้านค้าออนไลน์ที่คุณไว้ใจได้
+                รวมร้านค้าออนไลน์ที่คุณเชื่อถือได้
               </h1>
               <h2 className="relative mt-4 text-2xl font-semibold tracking-tight text-gray-100 sm:text-3xl lg:text-4xl animate-fade-in-up animation-delay-100">
                 Trusted Online Stores in One Place

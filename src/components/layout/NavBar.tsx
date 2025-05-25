@@ -6,19 +6,26 @@ import NavItems from "./NavItems";
 import UserMenu from "./UserMenu";
 import useNavigation from "@/hooks/useNavigation";
 import { useUser } from "@/contexts/UserContext";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Session } from "next-auth";
 
-export default function NavBar() {
+export default function NavBar({ session }: { session: Session | null }) {
   const router = useRouter();
   const { navItems } = useNavigation();
   const { currentUser, isLoading, signOut } = useUser();
-  const isAuthenticated = !!currentUser;
+  
+  // Use server session to determine initial authentication state
+  const hasServerSession = !!session?.user;
+  const hasClientUser = !!currentUser;
+  
+  // Determine authentication state - prefer client state when available, fallback to server state
+  const isAuthenticated = hasClientUser || (hasServerSession && isLoading);
 
   // Function to reset user state
   const resetUserState = useCallback(async () => {
     router.push("/logout"); 
-  }, [signOut]);
+  }, [router]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 bg-white backdrop-blur-lg border-b border-gray-100">
@@ -41,7 +48,8 @@ export default function NavBar() {
         <NavItems items={navItems} />
 
         {/* Right section - user menu */}
-        {isLoading ? (
+        {isLoading && hasServerSession ? (
+          // Show loading state only when we have server session but client is still loading
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-6">
             <div className="w-5 h-5 bg-gray-200 rounded-full animate-pulse" />
           </div>

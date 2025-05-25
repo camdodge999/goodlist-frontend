@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
+import { Session } from "next-auth";
 import { User } from "@/types/users";
 import { Store } from "@/types/stores";
 
@@ -31,6 +32,7 @@ interface UserContextProps {
 interface UserProviderProps {
   children: ReactNode;
   initialUser?: User | null;
+  initialSession?: Session | null;
 }
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);
@@ -38,10 +40,10 @@ const UserContext = createContext<UserContextProps | undefined>(undefined);
 // Create a promise cache to prevent duplicate requests
 const requestCache: Record<string, Promise<any>> = {};
 
-export function UserProvider({ children, initialUser = null }: UserProviderProps) {
+export function UserProvider({ children, initialUser = null, initialSession = null }: UserProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [userStores, setUserStores] = useState<Store[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!initialSession?.user && !initialUser);
   const [storesLoading, setStoresLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFetchingProfile, setIsFetchingProfile] = useState(false);
@@ -130,13 +132,14 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
     return fetchPromise;
   }, [session]);
 
-  // Fetch current user when session changes
+  // Fetch current user when session changes or on initial load with server session
   useEffect(() => {
-    if (session?.user?.id && !currentUser && !isFetchingProfile) {
-      fetchUserProfile(session.user.id);
+    const activeSession = session || initialSession;
+    if (activeSession?.user?.id && !currentUser && !isFetchingProfile) {
+      fetchUserProfile(activeSession.user.id);
     }
   // Use stable reference check for fetchUserProfile
-  }, [session, currentUser, isFetchingProfile, fetchUserProfile]);
+  }, [session, initialSession, currentUser, isFetchingProfile, fetchUserProfile]);
 
   const updateUser = async (userId: string, updates: Partial<User> | FormData) => {
     try {

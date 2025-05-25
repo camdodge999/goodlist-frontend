@@ -91,7 +91,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
           evidenceUrl: newReport.evidenceUrl,
           createdAt: newReport.createdAt,
           status: newReport.status === 'pending' ? 'pending' : 
-                 newReport.status === 'valid' ? 'resolved' : 'dismissed'
+                 newReport.status === 'valid' ? 'resolved' : 'dismissed'  
         };
         
         setUserReports(prev => [storeReport, ...prev]);
@@ -267,12 +267,6 @@ export function ReportProvider({ children }: ReportProviderProps) {
       const data = await response.json();
 
       if (data.statusCode === 200) {
-        // Update local state
-        setAllReports(prevReports => 
-          prevReports.map(report => 
-            report.id === reportId ? { ...report, status: newStatus } : report
-          )
-        );
         return true;
       } else {
         throw new Error(data.message || 'Failed to update report status');

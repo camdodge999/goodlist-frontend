@@ -111,7 +111,7 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
       setPreviewImage({
         isOpen: true,
         url: documentUrl,
-        name: doc.name || 'เอกสาร'
+        name: doc.name || 'เอกสารร้านค้า'
       });
     }
   };

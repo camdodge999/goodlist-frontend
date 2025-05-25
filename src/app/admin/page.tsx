@@ -3,6 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Store } from "@/types/stores";
+import { Metadata } from "next";
+import { metadataPages } from "@/consts/metadata";
+
+export const metadata: Metadata = {
+  title: metadataPages.admin.title,
+  description: metadataPages.admin.description,
+};
 
 async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
   try {

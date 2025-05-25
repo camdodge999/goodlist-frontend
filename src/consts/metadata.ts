@@ -1,6 +1,6 @@
 export const metadataPages = {
     main:{
-        title: 'ร้านค้าออนไลน์ที่คุณไว้ใจได้ | Goodlistseller', 
+        title: 'ร้านค้าออนไลน์ที่คุณเชื่อถือได้ | Goodlistseller', 
         description: 'แพลตฟอร์มที่ช่วยให้คุณค้นหาร้านค้าออนไลน์ที่เชื่อถือได้ในประเทศไทย',
         keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
         author: "Goodlist Seller",
@@ -17,7 +17,7 @@ export const metadataPages = {
     },
     stores:{
         title: 'ร้านค้าที่ผ่านการตรวจสอบ | Goodlistseller',  
-        description: 'ค้นหาร้านค้าออนไลน์ที่ผ่านการตรวจสอบและไว้ใจได้',
+        description: 'ค้นหาร้านค้าออนไลน์ที่ผ่านการตรวจสอบและเชื่อถือได้',
         keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
         author: "Goodlist Seller",
         robots: "index, follow",    

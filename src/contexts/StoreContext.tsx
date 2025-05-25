@@ -20,6 +20,7 @@ interface StoreContextProps {
   refreshStores: () => Promise<Store[]>;
   fetchStores: (force?: boolean) => Promise<Store[]>;
   fetchAdminStores: () => Promise<Store[]>;
+  verifyStore: (storeId: number, isVerified: boolean, isBanned?: boolean) => Promise<Store | null>;
   getFeaturedStores: (limit?: number) => Store[];
   getStoreById: (storeId: number | string) => Promise<Store | null>;
 }
@@ -62,7 +63,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
         {
@@ -79,19 +80,19 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 200 && data.data) {
         // Update both local state and global cache
         setStores(data.data);
         globalStoresCache = data.data;
-        
+
         const now = Date.now();
         setLastFetched(now);
         globalLastFetched = now;
-        
+
         // Reset fetch failure flag on success
         setFetchFailed(false);
-        
+
         return data.data;
       } else {
         throw new Error(data.message || 'Failed to fetch stores');
@@ -99,10 +100,10 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     } catch (err) {
       console.error('Error fetching stores:', err);
       setError(err instanceof Error ? err.message : String(err));
-      
+
       // Set fetch failed flag to prevent immediate retries
       setFetchFailed(true);
-      
+
       return stores; // Return existing stores on error
     } finally {
       setIsLoading(false);
@@ -111,7 +112,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
 
   const fetchAdminStores = useCallback(async () => {
     if (!session?.user?.token) return adminStores;
-    
+
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
@@ -165,14 +166,14 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Ensure storeId is properly converted to string for the URL
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
         {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${session?.user?.token}`,  
+            'Authorization': `Bearer ${session?.user?.token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(updates),
@@ -184,16 +185,16 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 200 && data.data) {
         // Update both local state and global cache
         const updatedStores = stores.map((store) =>
           store.id === storeId ? { ...store, ...data.data.storeDetail } : store
         );
-        
+
         setStores(updatedStores);
         globalStoresCache = updatedStores;
-        
+
         return data.data;
       } else {
         throw new Error(data.message || 'Failed to update store');
@@ -207,18 +208,74 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     }
   }, [session?.user?.token, stores]);
 
+  const verifyStore = useCallback(async (storeId: number, isVerified: boolean, isBanned?: boolean) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/verify`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session?.user?.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: storeId,
+            isVerified: isVerified,
+            isBanned: isBanned,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error verifying store: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+
+      if (data.statusCode === 200 && data.data) {
+        // Update both local state and global cache
+        const updatedStores = stores.map((store) =>
+          store.id === storeId ? { ...store, ...data.data } : store
+        );
+        const updatedAdminStores = adminStores.map((store) =>
+          store.id === storeId ? { ...store, ...data.data } : store
+        );
+
+        setStores(updatedStores);
+        setAdminStores(updatedAdminStores);
+        globalStoresCache = updatedStores;
+
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to verify store');
+      }
+    } catch (err) {
+      console.error('Error verifying store:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session?.user?.token, stores, adminStores]);
+
+
   const deleteStore = useCallback(async (storeId: number) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Ensure storeId is properly converted to string for the URL
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${session?.user?.token}`,  
+            'Authorization': `Bearer ${session?.user?.token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -229,14 +286,14 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 200) {
         // Update both local state and global cache
         const filteredStores = stores.filter((store) => store.id !== storeId);
-        
+
         setStores(filteredStores);
         globalStoresCache = filteredStores;
-        
+
         return true;
       } else {
         throw new Error(data.message || 'Failed to delete store');
@@ -254,7 +311,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_URL || ''}/api/stores`,
         {
@@ -271,14 +328,14 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 201 && data.data) {
         // Update both local state and global cache
         const updatedStores = [...stores, data.data];
-        
+
         setStores(updatedStores);
         globalStoresCache = updatedStores;
-        
+
         return data.data;
       } else {
         throw new Error(data.message || 'Failed to add store');
@@ -320,16 +377,16 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
   const getStoreById = useCallback(async (storeId: number | string): Promise<Store | null> => {
     try {
       // First check if we have it in our local state
-      const role = session?.user?.role; 
+      const role = session?.user?.role;
       const localStore = role === "admin" ? adminStores.find(store => store.id === Number(storeId)) : stores.find(store => store.id === Number(storeId));
       if (localStore) {
         return localStore;
       }
-      
+
       // If not in local state, fetch from API
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_URL || ''}/api/stores/${storeId.toString()}`,
         {
@@ -346,7 +403,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 200 && data.data) {
         return data.data;
       } else {
@@ -374,6 +431,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         refreshStores,
         fetchStores,
         fetchAdminStores,
+        verifyStore,
         getFeaturedStores,
         getStoreById,
       }}

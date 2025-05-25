@@ -4,7 +4,7 @@ export type Report = {
     reason: string;
     evidenceUrl: string;
     createdAt: string;
-    status: "pending" | "reviewed" | "invalid" | "valid";
+    status: "pending" | "reviewed" | "rejected" | "invalid";
     store?: {
       storeName: string;
     };

@@ -37,7 +37,6 @@ interface StoreItemProps {
 
 export default function StoreItem({
   store,
-  activeTab,
   reports = [],
   onViewStore,
   onViewReport,
@@ -53,7 +52,7 @@ export default function StoreItem({
   const isAdditionalStore = store.userId > 0 && store.isVerified === null && !store.isBanned;
   
   // Filter reports for this store
-  const storeReports = reports.filter(report => report.storeId === store.id.toString());
+  const storeReports = reports.filter(report => report.storeId === store.id);
   const hasReports = storeReports.length > 0;
 
   const toggleExpanded = (e: React.MouseEvent) => {
@@ -250,10 +249,15 @@ export default function StoreItem({
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                               รอดำเนินการ
                             </span>
-                          ) : report.status === "valid" ? (
+                          ) : report.status === "reviewed" ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 mr-1" />
                               ยืนยันแล้ว
+                            </span>
+                          ) : report.status === "rejected" ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <FontAwesomeIcon icon={faTimesCircle} className="w-3 h-3 mr-1" />
+                              ปฏิเสธ
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -282,14 +286,6 @@ export default function StoreItem({
                       
                       {report.status === "pending" && onUpdateReportStatus && (
                         <>
-                          <Button
-                            size="sm"
-                            onClick={(e) => handleReportStatusUpdate(e, report.id, "valid")}
-                            className="bg-green-600 text-white hover:bg-green-700 border-green-600"
-                          >
-                            <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-1" />
-                            <span className="hidden sm:inline">ยืนยัน</span>
-                          </Button>
                           <Button
                             size="sm"
                             onClick={(e) => handleReportStatusUpdate(e, report.id, "invalid")}

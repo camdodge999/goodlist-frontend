@@ -17,6 +17,7 @@ import StoreFilter, { VerificationFilter } from "@/components/admin/StoreFilter"
 import { useReport } from "@/contexts/ReportContext";
 import useShowDialog from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
+import { Button } from "@/components/ui/button";
 
 interface SelectedReport {
   store: Store;
@@ -268,10 +269,39 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
 
   if (isLoading || reportsLoading) {
     return (
-      <div className="admin-page-loading flex justify-center items-center h-screen">
-        <div className="loading-spinner animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        <div className="ml-4 text-gray-600">
-          กำลังโหลดข้อมูลร้านค้า
+      <div className="py-8">
+        <div className="admin-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="admin-header sm:flex sm:items-center">
+            <div className="admin-header-content sm:flex-auto">
+              <h1 className="admin-title text-2xl font-semibold text-gray-900">
+                จัดการร้านค้า
+              </h1>
+              <p className="admin-description mt-2 text-sm text-gray-700">
+                จัดการสถานะและตรวจสอบร้านค้าทั้งหมด
+              </p>
+              {reportsError && (
+                <div className="mt-2 text-sm text-red-600">
+                  เกิดข้อผิดพลาดในการโหลดรายงาน: {reportsError}
+                </div>
+              )}
+            </div>
+            <div className="admin-header-actions mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  await refreshStores();
+                }}
+              >
+                รีเฟรชข้อมูล
+              </Button>
+            </div>
+          </div>
+          <div className="admin-page-loading flex justify-center items-center min-h-[calc(100vh-210px)]">
+            <div className="loading-spinner animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="ml-4 text-gray-600">
+              กำลังโหลดข้อมูลร้านค้า
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -322,15 +352,14 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
               )}
             </div>
             <div className="admin-header-actions mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-              <button
-                type="button"
+              <Button
+                variant="primary"
                 onClick={async () => {
                   await refreshStores();
                 }}
-                className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto"
               >
-                รีเฟรชข้อมูล 
-              </button>
+                รีเฟรชข้อมูล
+              </Button>
             </div>
           </div>
 

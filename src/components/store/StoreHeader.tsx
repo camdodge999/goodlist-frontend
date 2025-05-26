@@ -1,10 +1,9 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser } from '@fortawesome/free-regular-svg-icons';
 import VerificationBadge from "@/components/ui/VerificationBadge";
-import Image from "next/image";
+import AuthenticatedImage from "@/components/ui/AuthenticatedImage";
 import { Store } from "@/types/stores";
 import defaultLogo from "@images/logo-placeholder.png";
-import { getAuthenticatedImageUrl } from "@/lib/utils";
 
 interface StoreHeaderProps {
   store: Store;
@@ -16,17 +15,13 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="relative w-24 h-24 rounded-xl overflow-hidden shadow-sm">
-            <Image
-              src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.srcset = defaultLogo.src;
-              }}
+            <AuthenticatedImage
+              src={store.imageStore}
               alt={store.storeName}
-              aria-describedby='store-image'
               fill
               className="object-cover"
               sizes="(max-width: 96px) 100vw, 96px"
+              fallbackSrc={defaultLogo.src}
             />
           </div>
           <div>

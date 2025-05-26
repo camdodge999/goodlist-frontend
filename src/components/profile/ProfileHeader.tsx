@@ -5,7 +5,7 @@ import { User } from '@/types/users';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getAuthenticatedImageUrl } from '@/lib/utils';
+import { useAuthenticatedImage } from '@/hooks/useAuthenticatedImage';
 
 interface ProfileHeaderProps {
   user: User;
@@ -13,6 +13,8 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onLogout }) => {
+  const { authenticatedUrl: imageUrl } = useAuthenticatedImage(user.logo_url);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -25,7 +27,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onLogout }) => {
           <div className="flex items-center space-x-4">
             <Avatar className="h-24 w-24 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
               <AvatarImage
-                src={getAuthenticatedImageUrl(user.logo_url) || undefined}
+                src={imageUrl || undefined}
                 alt={user.displayName || "User"}
                 className="transition-opacity duration-300"
               />

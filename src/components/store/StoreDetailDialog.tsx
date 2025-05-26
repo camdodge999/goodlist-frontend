@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Download, Eye } from 'lucide-react';    
 import { Store } from '@/types/stores';
-import { getAuthenticatedImageUrl } from '@/lib/utils';
+import { fetchAuthenticatedImageBlob } from '@/lib/utils';
+import AuthenticatedImage from '@/components/ui/AuthenticatedImage';
 import defaultImage from '@images/logo.webp';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import { Button } from '../ui/button';
@@ -84,8 +84,8 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
   }
 
   // Handle document view or download
-  const handleDocumentAction = (doc: Partial<StoreDocument>) => {
-    const documentUrl = getAuthenticatedImageUrl(doc.path || doc.url);
+  const handleDocumentAction = async (doc: Partial<StoreDocument>) => {
+    const documentUrl = await fetchAuthenticatedImageBlob(doc.path || doc.url, session?.user?.token);
 
     if (!documentUrl) return;
 
@@ -125,6 +125,8 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
     });
   };
 
+
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -137,15 +139,12 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
           <div className="p-0">
             {/* Store Header Image */}
             <div className="relative w-full h-64 border-b border-gray-200">
-              <Image
+              <AuthenticatedImage
                 fill
-                src={getAuthenticatedImageUrl(store.imageStore) || defaultImage.src}
+                src={store.imageStore}
                 alt={`รูปภาพร้าน ${store.storeName}`}
                 className="object-contain"
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.srcset = defaultImage.src;
-                }}
+                fallbackSrc={defaultImage.src}
               />
             </div>
 

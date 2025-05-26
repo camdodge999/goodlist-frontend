@@ -72,7 +72,7 @@ export default function ReportsModal({
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                       รอดำเนินการ
                     </span>
-                  ) : report.status === "valid" ? (
+                  ) : report.status === "reviewed" ? ( 
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 mr-1" />
                       ยืนยันแล้ว
@@ -94,7 +94,7 @@ export default function ReportsModal({
                   <h4 className="text-sm font-medium text-gray-700">หลักฐาน:</h4>
                   <div className="mt-2">
                     <a
-                      href={report.evidenceUrls}
+                      href={report.evidenceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

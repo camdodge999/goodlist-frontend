@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from "next/link";
-import Image from "next/image";
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle,
@@ -20,7 +20,7 @@ import { Store } from "@/types/stores";
 import { ContactInfo } from "@/types/stores";
 import { isValidJSON } from "@/utils/valid-json";
 import defaultLogo from "@images/logo.webp";
-import { getAuthenticatedImageUrl } from '@/lib/utils';
+import AuthenticatedImage from "@/components/ui/AuthenticatedImage";
 import { useStore } from "@/contexts/StoreContext";
 
 // Section header component
@@ -57,16 +57,13 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
       <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-t-4 p-0 border-t-blue-500 bg-white">
         {/* Image Container */}
         <div className="relative h-56 w-full border-b border-gray-200">
-          <Image
-            src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
-            onError={(e) => {
-              const target = e.currentTarget as HTMLImageElement;
-              target.srcset = defaultLogo.src;
-            }}
+          <AuthenticatedImage
+            src={store.imageStore}
             alt={store.storeName}
             fill
             className="object-contain transition-transform duration-500 group-hover:scale-110"
             priority={index < 2}
+            fallbackSrc={defaultLogo.src}
           />
           {/* Verification Badge */}
           {store.isVerified && (

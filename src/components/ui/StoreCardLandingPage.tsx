@@ -11,8 +11,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "./button";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
-import { getAuthenticatedImageUrl } from "@/lib/utils";
-import Image from "next/image";
+import AuthenticatedImage from "@/components/ui/AuthenticatedImage";
 import defaultLogo from "@images/logo-placeholder.png";
 import ContactInfoCard from "@/components/store/ContactInfoCard";
 
@@ -43,17 +42,14 @@ export default function StoreCardLandingPage({ store, index }: StoreCardLandingP
         <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-t-4 border-t-blue-500 bg-white">
           {/* Image Container */}
           <div className="relative h-56 overflow-hidden">
-            <Image
-              src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.srcset = defaultLogo.src;
-              }}
+            <AuthenticatedImage
+              src={store.imageStore}
               alt={store.storeName}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-110"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               priority={index < 2}
+              fallbackSrc={defaultLogo.src}
             />
             {/* Verification Badge */}
             {store.isVerified && (

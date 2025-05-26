@@ -131,7 +131,7 @@ export default function ProfileSettings({
       <ProfileForm
         initialData={formData}
         isEditing={isEditing}
-        canChangeEmail={canChangeEmail}
+        canChangeEmail={canChangeEmail} 
         lastEmailChange={lastEmailChange}
         emailError={emailError}
         onInputChange={onInputChange}

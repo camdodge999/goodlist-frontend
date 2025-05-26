@@ -6,11 +6,11 @@ import { fetchWithAuth } from '@/lib/fetch-with-auth';
 // GET handler for /api/user/store/[id]
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await Promise.resolve(context.params);
-    const userId = await Promise.resolve(parseInt(id));
+    const { id } = await context.params;
+    const userId = parseInt(id);
 
     if (isNaN(userId)) {
       return NextResponse.json(

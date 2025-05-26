@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/types/users";
-import { getAuthenticatedImageUrl } from "@/lib/utils";
+import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 
 interface UserMenuProps {
   user?: User;
@@ -34,6 +34,8 @@ export default function UserMenu({
   isMobile = false, 
   resetUserState 
 }: UserMenuProps) {
+  const { authenticatedUrl: imageUrl } = useAuthenticatedImage(user?.logo_url);
+
   // Mobile version
   if (isMobile) {
     return (
@@ -97,7 +99,7 @@ export default function UserMenu({
             >
               <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
                 <AvatarImage
-                  src={getAuthenticatedImageUrl(user.logo_url) || undefined}
+                  src={imageUrl || undefined}
                   alt={user.displayName || "User"}
                   className="transition-opacity duration-300"
                 />
@@ -116,7 +118,7 @@ export default function UserMenu({
             <DropdownMenuLabel className="font-normal p-3 flex items-center gap-3">
               <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
                 <AvatarImage
-                  src={getAuthenticatedImageUrl(user.logo_url) || undefined}  
+                  src={imageUrl || undefined}  
                   alt={user.displayName || "User"}
                   className="transition-opacity duration-300"
                 />

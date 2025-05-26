@@ -62,7 +62,6 @@ export default function SignupForm() {
     const newOtpValues = [...otpValues];
     newOtpValues[index] = value;
     setOtpValues(newOtpValues);
-    setOtp(newOtpValues.join(""));
   };
 
   const validateForm = (): boolean => {

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Report } from "@/types/report";
+import Link from 'next/link';
 
 interface ReportCardProps {
   report: Report;
@@ -29,20 +30,20 @@ export default function ReportCard({ report }: ReportCardProps) {
           </div>
           <Badge
             variant={
-              report.status === "valid"
+              report.status === "reviewed"
                 ? "outline"
-                : report.status === "invalid"
+                : report.status === "rejected"
                 ? "destructive"
                 : "default"
             }
             className={
-              report.status === "valid" ? "bg-green-100 text-green-800 hover:bg-green-200 border-green-200" : ""
+              report.status === "reviewed" ? "bg-green-100 text-green-800 hover:bg-green-200 border-green-200" : ""
             }
           >
-            {report.status === "valid" && (
+            {report.status === "reviewed" && (
               <FontAwesomeIcon icon={faCheckCircle} className="mr-1 h-3 w-3" />
             )}
-            {report.status === "invalid" && (
+            {report.status === "rejected" && (
               <FontAwesomeIcon icon={faTimesCircle} className="mr-1 h-3 w-3" />
             )}
             {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
@@ -55,23 +56,18 @@ export default function ReportCard({ report }: ReportCardProps) {
             <p className="font-medium">Reason:</p>
             <p>{report.reason}</p>
           </div>
-          {report.evidenceUrls && (
+          {report.evidenceUrl && (
             <div>
               <p className="font-medium">Submitted Evidence:</p>
               <div className="flex gap-2 mt-2">
-                {JSON.parse(report.evidenceUrls).map(
-                  (url: string, index: number) => (
-                    <a
-                      key={index}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline"
-                    >
-                      View Evidence {index + 1}
-                    </a>
-                  )
-                )}
+                <Link
+                  href={report.evidenceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  View Evidence
+                </Link>
               </div>
             </div>
           )}

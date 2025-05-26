@@ -2,10 +2,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStore, faCreditCard, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { faFacebook, faLine } from '@fortawesome/free-brands-svg-icons';  
 import Link from "next/link";
-import Image from "next/image";
 import type { Store, ContactInfo } from "@/types/stores";
 import { isValidJSON } from "@/utils/valid-json";
-import { getAuthenticatedImageUrl } from '@/lib/utils';
+import AuthenticatedImage from '@/components/ui/AuthenticatedImage';
 import defaultLogo from "@images/logo-placeholder.png";
 
 interface StoreCardProps {
@@ -44,16 +43,13 @@ export default function StoreCard({ store }: StoreCardProps) {
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
         {/* Store Image */}
         <div className="relative h-48 w-full border-b border-gray-200">
-          <Image
-            src={getAuthenticatedImageUrl(store.imageStore) || defaultLogo.src}
-            onError={(e) => {
-              const target = e.currentTarget as HTMLImageElement;
-              target.srcset = defaultLogo.src;
-            }}
+          <AuthenticatedImage
+            src={store.imageStore}
             alt={store.storeName}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            fallbackSrc={defaultLogo.src}
           />
         </div>
 

@@ -9,7 +9,7 @@ import { FormLabel } from "@/components/ui/form-label";
 import dayjs from "dayjs";
 import 'dayjs/locale/th';
 import buddhistEra from 'dayjs/plugin/buddhistEra';
-import { getAuthenticatedImageUrl } from "@/lib/utils";
+import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 dayjs.extend(buddhistEra);
 dayjs.locale('th');
 
@@ -39,6 +39,8 @@ export default function ProfileForm({
     await onSaveProfile();
   };
 
+  const { authenticatedUrl: imageUrl } = useAuthenticatedImage(initialData.logo_url);
+
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-6">
       <motion.div
@@ -56,7 +58,7 @@ export default function ProfileForm({
                   <div className="relative group">
                     <Avatar className="h-24 w-24">
                       <AvatarImage
-                        src={getAuthenticatedImageUrl(initialData.logo_url) || undefined}
+                        src={imageUrl || undefined}
                         alt={initialData.name || "User"}
                         className="transition-opacity duration-300"
                       />

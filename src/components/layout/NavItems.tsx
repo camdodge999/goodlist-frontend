@@ -20,7 +20,7 @@ export default function NavItems({ items, isMobile = false }: NavItemsProps) {
     if (href === '/') {
       return pathname === '/';
     }
-    return pathname.startsWith(href);
+    return pathname?.startsWith(href) ?? false;
   };
 
   // Different styling for mobile vs desktop

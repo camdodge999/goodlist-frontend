@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Download, Eye } from 'lucide-react';    
 import { Report } from '@/types/report';
-import { getAuthenticatedImageUrl } from '@/lib/utils';
+import { fetchAuthenticatedImageBlob } from '@/lib/utils';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import { Button } from '../ui/button';
 import dayjs from 'dayjs';
@@ -87,8 +87,8 @@ const ReportDetailDialog: React.FC<ReportDetailDialogProps> = ({
   }
 
   // Handle evidence view or download
-  const handleEvidenceAction = () => {
-    const evidenceUrl = getAuthenticatedImageUrl(report.evidenceUrl);
+  const handleEvidenceAction = async () => {
+    const evidenceUrl = await fetchAuthenticatedImageBlob(report.evidenceUrl, session?.user?.token);
 
     if (!evidenceUrl) return;
 
@@ -127,6 +127,7 @@ const ReportDetailDialog: React.FC<ReportDetailDialogProps> = ({
         <DialogContent className="max-w-2xl p-0 overflow-y-auto max-h-[90vh]">
           <DialogHeader className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
             <DialogTitle className="text-xl font-medium">รายละเอียดรายงาน</DialogTitle>
+            <DialogDescription className="hidden">รายละเอียดรายงาน</DialogDescription>
           </DialogHeader>
 
           <div className="p-6">

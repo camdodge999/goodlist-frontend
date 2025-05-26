@@ -1,4 +1,4 @@
-import Image from "next/image";
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle, 
@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Store } from "@/types/stores";
-import { formatDate, getAuthenticatedImageUrl } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import AuthenticatedImage from "@/components/ui/AuthenticatedImage";
 import defaultLogo from "@images/logo.webp";
 
 
@@ -49,18 +50,12 @@ export default function StoreDetailsModal({
         <div className="space-y-6 my-4">
           <div className="flex items-start gap-4">
             <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-              <Image
-                src={
-                  getAuthenticatedImageUrl(store.imageStore) ||
-                  "/images/logo.webp"
-                }
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.srcset = defaultLogo.src;
-                }}
+              <AuthenticatedImage
+                src={store.imageStore}
                 alt={store.storeName || "ไม่มีชื่อร้าน"}
                 fill
                 className="object-cover"
+                fallbackSrc={defaultLogo.src}
               />
             </div>
             <div className="flex-1">

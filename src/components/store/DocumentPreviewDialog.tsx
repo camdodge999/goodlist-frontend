@@ -23,12 +23,12 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
           <DialogTitle className="hidden">
             <span className="text-lg font-semibold mb-4">{documentName || 'เอกสาร'}</span>
           </DialogTitle>
-          <DialogDescription className="hidden"></DialogDescription>
+          <DialogDescription className="hidden">{documentName}</DialogDescription>
         </DialogHeader>
         <div className="relative p-4">
           <div className="relative w-full h-[70vh]">
             <Image
-              src={imageUrl}
+              src={imageUrl || defaultImage.src}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.src = defaultImage.src;

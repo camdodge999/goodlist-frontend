@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle, 
@@ -11,9 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Store } from "@/types/stores";
 import { Report } from "@/types/report";
-import defaultLogo from "@images/logo.webp";
 import { isValidJSON } from "@/utils/valid-json";
-import { getAuthenticatedImageUrl } from "@/lib/utils";
+import StoreItemImage from "@/components/admin/StoreItemImage";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import dayjs from 'dayjs';
@@ -74,82 +72,77 @@ export default function StoreItem({
   return (
     <div className="border-b border-gray-200">
       {/* Store Header */}
-      <div className="px-4 py-4 sm:px-6 cursor-pointer hover:bg-gray-50" onClick={() => onViewStore(store)}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center flex-1">
-            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-              <Image 
-                src={getAuthenticatedImageUrl(store.imageStore) || "/images/logo.webp"}
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.srcset = defaultLogo.src;
-                }}
-                alt={store.storeName}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="ml-4 flex-1">
-              <div className="flex items-center gap-2">
+      <div className="px-3 py-3 sm:px-6 sm:py-4 cursor-pointer hover:bg-gray-50" onClick={() => onViewStore(store)}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+          <div className="flex items-center flex-1 min-w-0">
+            <StoreItemImage 
+              imageStore={store.imageStore}
+              storeName={store.storeName}
+            />
+            <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                 <button
                   onClick={() => onViewStore(store)}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                  className="text-sm sm:text-base font-medium text-blue-600 hover:text-blue-800 text-left truncate"
                 >
                   {store.storeName}
                 </button>
                 {hasReports && (
-                  <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
+                  <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200 self-start sm:self-auto">
                     {storeReports.length} รายงาน
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500 mt-1 truncate">
                 {typeof store.contactInfo === 'string' && isValidJSON(store.contactInfo)
                   ? JSON.parse(store.contactInfo).line 
                   : typeof store.contactInfo !== 'string' ? store.contactInfo?.line : ''}
               </p>
-              <div className="flex flex-wrap gap-1 mt-1">
+              <div className="flex flex-wrap gap-1 mt-2">
                 {isAdditionalStore && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  <span className="inline-flex items-center px-2 py-1 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                     คำขอเพิ่มร้านค้า
                   </span>
                 )}
                 {store.isVerified === true && (
                   <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
                     <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 mr-1" />
-                    ผ่านการตรวจสอบ
+                    <span className="hidden xs:inline">ผ่านการตรวจสอบ</span>
+                    <span className="xs:hidden">ผ่าน</span>
                   </Badge>
                 )}
                 {store.isVerified === false && !store.isBanned && (
                   <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
                     <FontAwesomeIcon icon={faTimesCircle} className="w-3 h-3 mr-1" />
-                    ไม่ผ่านการตรวจสอบ
+                    <span className="hidden xs:inline">ไม่ผ่านการตรวจสอบ</span>
+                    <span className="xs:hidden">ไม่ผ่าน</span>
                   </Badge>
                 )}
                 {store.isBanned && (
                   <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-200">
                     <FontAwesomeIcon icon={faHammer} className="w-3 h-3 mr-1" />
-                    ถูกแบน
+                    <span className="hidden xs:inline">ถูกแบน</span>
+                    <span className="xs:hidden">แบน</span>
                   </Badge>
                 )}
               </div>
             </div>
           </div>
           
-          <div className="ml-2 flex-shrink-0 flex items-center space-x-2">
+          <div className="flex items-center justify-end sm:justify-start gap-1 sm:gap-2 sm:ml-2 sm:flex-shrink-0">
             {/* Expand/Collapse button for reports */}
             {hasReports && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={toggleExpanded}
-                className="bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-200"
+                className="bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-200 px-2 sm:px-3"
               >
                 <FontAwesomeIcon 
                   icon={isExpanded ? faChevronUp : faChevronDown} 
-                  className="w-4 h-4 mr-1" 
+                  className="w-4 h-4 sm:mr-1" 
                 />
-                <span className="hidden sm:inline">
+                <span className="hidden sm:inline ml-1">
                   {isExpanded ? 'ซ่อน' : 'ดู'}รายงาน
                 </span>
               </Button>
@@ -157,17 +150,17 @@ export default function StoreItem({
             
             {/* Store action buttons */}
             {store.isVerified === null && !store.isBanned && (
-              <>
+              <div className="flex gap-1 sm:gap-2">
                 <Button
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onApproveStore(store.id);
                   }}
-                  className="bg-green-600 text-white hover:bg-green-700 border-green-600"
+                  className="bg-green-600 text-white hover:bg-green-700 border-green-600 px-2 sm:px-3"
                 >
-                  <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">อนุมัติ</span>  
+                  <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline ml-1">อนุมัติ</span>  
                 </Button>
                 <Button
                   size="sm"
@@ -175,10 +168,10 @@ export default function StoreItem({
                     e.stopPropagation();
                     onRejectStore(store.id);
                   }}
-                  className="bg-red-600 text-white hover:bg-red-700 border-red-600"   
+                  className="bg-red-600 text-white hover:bg-red-700 border-red-600 px-2 sm:px-3"   
                 >
-                  <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">ปฏิเสธ</span>
+                  <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline ml-1">ปฏิเสธ</span>
                 </Button>
                 <Button
                   size="sm"
@@ -186,12 +179,12 @@ export default function StoreItem({
                     e.stopPropagation();
                     onBanStore(store.id);
                   }}
-                  className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600"
+                  className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600 px-2 sm:px-3"
                 >
-                  <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">แบน</span>
+                  <FontAwesomeIcon icon={faHammer} className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline ml-1">แบน</span>
                 </Button>
-              </>
+              </div>
             )}
             {store.isVerified === true && !store.isBanned && (
               <Button
@@ -200,10 +193,10 @@ export default function StoreItem({
                   e.stopPropagation();
                   onBanStore(store.id);
                 }}
-                className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600"
+                className="bg-slate-600 text-white hover:bg-slate-700 border-slate-600 px-2 sm:px-3"
                 >
-                  <FontAwesomeIcon icon={faHammer} className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">แบน</span>
+                  <FontAwesomeIcon icon={faHammer} className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline ml-1">แบน</span>
                 </Button>
             )}
             {store.isBanned && (
@@ -213,10 +206,10 @@ export default function StoreItem({
                   e.stopPropagation();
                   onUnbanStore(store.id);
                 }}
-                className="bg-green-600 text-white hover:bg-green-700 border-green-600"
+                className="bg-green-600 text-white hover:bg-green-700 border-green-600 px-2 sm:px-3"
               >
-                <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">ยกเลิกแบน</span>
+                <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline ml-1">ยกเลิกแบน</span>
               </Button>
             )}
           </div>
@@ -226,20 +219,20 @@ export default function StoreItem({
       {/* Reports Subheader (Expandable) */}
       {hasReports && isExpanded && (
         <div className="bg-gray-50 border-t border-gray-200">
-          <div className="px-4 py-3 sm:px-6">
+          <div className="px-3 py-3 sm:px-6 sm:py-4">
             <h4 className="text-sm font-medium text-gray-700 mb-3">
               รายงานทั้งหมด ({storeReports.length})
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-3">
               {storeReports.map((report) => (
                 <div 
                   key={report.id} 
-                  className="bg-white p-3 rounded-md border border-gray-200 hover:border-gray-300 cursor-pointer"
+                  className="bg-white p-3 sm:p-4 rounded-md border border-gray-200 hover:border-gray-300 cursor-pointer"
                   onClick={(e) => handleReportClick(e, report)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-2">
                         <span className="text-xs font-medium text-gray-600">
                           รายงาน #{report.id}
                         </span>
@@ -266,34 +259,32 @@ export default function StoreItem({
                           )}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-700 mb-1">{report.reason}</p>
+                      <p className="text-sm text-gray-700 mb-1 line-clamp-2 sm:line-clamp-none">{report.reason}</p>
                       <p className="text-xs text-gray-500">
                         {dayjs(report.createdAt).format('DD MMM BBBB เวลา HH:mm น.')}
                       </p>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-end gap-1 sm:gap-2 sm:ml-4">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={(e) => handleReportClick(e, report)}
-                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+                        className="bg-blue-50 text-blue-600 hover:text-blue-800 hover:bg-blue-100 border-blue-200 px-2 sm:px-3"
                       >
-                        <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 mr-1" />
-                        <span className="hidden sm:inline">ดูรายละเอียด</span>
+                        <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 sm:mr-1" />
+                        <span className="hidden sm:inline ml-1">ดูรายละเอียด</span>
                       </Button>
                       
                       {report.status === "pending" && onUpdateReportStatus && (
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={(e) => handleReportStatusUpdate(e, report.id, "invalid")}
-                            className="bg-red-600 text-white hover:bg-red-700 border-red-600"
-                          >
-                            <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-1" />
-                            <span className="hidden sm:inline">ปฏิเสธ</span>
-                          </Button>
-                        </>
+                        <Button
+                          size="sm"
+                          onClick={(e) => handleReportStatusUpdate(e, report.id, "invalid")}
+                          className="bg-red-600 text-white hover:bg-red-700 border-red-600 px-2 sm:px-3"
+                        >
+                          <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 sm:mr-1" />
+                          <span className="hidden sm:inline ml-1">ปฏิเสธ</span>
+                        </Button>
                       )}
                     </div>
                   </div>

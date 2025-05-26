@@ -7,7 +7,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   try {
     const body = await request.json();
     // Validate request body
-    if (!body.email || !body.otpCode || !body.otpToken) {
+    if (!body.email || !body.otpCode) {
       return NextResponse.json(
         { 
           statusCode: 400,

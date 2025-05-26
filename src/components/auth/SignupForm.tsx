@@ -30,9 +30,8 @@ export default function SignupForm() {
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [showOtpModal, setShowOtpModal] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpValue, setOtpValue] = useState<string>("");
   const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
-  const [otpSent, setOtpSent] = useState<boolean>(false);
   const [otpToken, setOtpToken] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [passwordValidation, setPasswordValidation] = useState({
@@ -58,10 +57,12 @@ export default function SignupForm() {
     displayErrorDialog,
   } = useShowDialog();
 
-  const handleOtpChange = (index: number, value: string): void => {
-    const newOtpValues = [...otpValues];
-    newOtpValues[index] = value;
-    setOtpValues(newOtpValues);
+  const handleOtpChange = (value: string): void => {
+    setOtpValue(value);
+    // Clear error when user starts typing
+    if (error) {
+      setError("");
+    }
   };
 
   const validateForm = (): boolean => {
@@ -127,13 +128,13 @@ export default function SignupForm() {
 
   const validateOtp = (): boolean => {
     try {
-      console.log(otpValues.join(""));
-      otpSchema.parse(otpValues.join(""));
+      console.log(otpValue);
+      otpSchema.parse(otpValue);
 
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
-        displayErrorDialog(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
+        setError(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
       }
       return false;
     }
@@ -253,15 +254,11 @@ export default function SignupForm() {
         setRefNumber(data.refNumber);
         setOtpToken(data.otpToken);
         
-        // Show success dialog first, then open OTP modal
-        displaySuccessDialog({
-          message: "ส่งข้อมูลการสมัครสมาชิกสำเร็จ! กรุณายืนยัน OTP",
-          title: "ส่งข้อมูลสำเร็จ",
-          buttonText: "ยืนยัน OTP",
-          onButtonClick: () => {
-            setShowOtpModal(true);
-          }
-        });
+        // Show OTP modal directly after successful registration
+        setShowOtpModal(true);
+        
+        // Start cooldown timer since OTP was just sent
+        startCooldownTimer();
       } else {
         const errorData = await response.json();
         displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
@@ -291,7 +288,7 @@ export default function SignupForm() {
         },
         body: JSON.stringify({
           email: email,
-          otpCode: otpValues.join(""),
+          otpCode: otpValue,
           otpToken: otpToken,
         }),
       });
@@ -310,7 +307,7 @@ export default function SignupForm() {
           message: "สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบอัตโนมัติ",
           title: "สมัครสมาชิกสำเร็จ",
           buttonText: "ไปที่หน้าโปรไฟล์",
-          onButtonClick: () => router.push("/")
+          onButtonClick: () => router.push("/profile")
         });
         
         try {
@@ -332,11 +329,11 @@ export default function SignupForm() {
         }
       } else {
         const errorData = await response.json();
-        displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
+        setError(errorData.message || "รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       }
     } catch {
       // Ignore the error variable name but handle the error
-      displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsVerifying(false);
     }
@@ -376,6 +373,9 @@ export default function SignupForm() {
   const handleSendOtp = async (): Promise<void> => {
     setIsSendingOtp(true);
     setError("");
+    
+    // Start the cooldown timer immediately when sending OTP
+    startCooldownTimer();
 
     try {
       const response = await fetch(`api/user/register`, {
@@ -390,16 +390,17 @@ export default function SignupForm() {
         }),
       }); 
 
-      const { data } = await response.json();
-      setRefNumber(data.refNumber);
-      setOtpToken(data.otpToken); 
-      setOtpSent(true);
-      
-      // Start the cooldown timer after successfully sending OTP
-      startCooldownTimer();
+      if (response.ok) {
+        const { data } = await response.json();
+        setRefNumber(data.refNumber);
+        setOtpToken(data.otpToken); 
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+      }
     } catch {
-      // Ignore the error variable name but handle the error
-      displayErrorDialog("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+      // Show error in modal instead of dialog
+      setError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSendingOtp(false);
     }
@@ -407,9 +408,8 @@ export default function SignupForm() {
 
   const handleCloseOtpModal = (): void => {
     setShowOtpModal(false);
-    setOtpValues(["", "", "", "", "", ""]);
+    setOtpValue("");
     setError("");
-    setOtpSent(false);
     
     // Clear any existing cooldown timer when closing modal
     if (cooldownTimer) {
@@ -457,11 +457,10 @@ export default function SignupForm() {
         <OtpModal
           email={email}
           refNumber={refNumber} 
-          otpValues={otpValues}
+          otpValue={otpValue}
           error={error}
           isVerifying={isVerifying}
           isSendingOtp={isSendingOtp}
-          otpSent={otpSent}
           onOtpChange={handleOtpChange}
           onVerify={handleVerifyOtp}
           onClose={handleCloseOtpModal}

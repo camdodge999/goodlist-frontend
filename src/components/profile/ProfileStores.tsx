@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faUser } from '@fortawesome/free-solid-svg-icons';
 import { Store } from '@/types/stores';
 import StoreDetailDialog from '@/components/store/StoreDetailDialog';
 import StoreItem from '@/components/profile/StoreItem';
+import Link from 'next/link';
 
 interface ProfileStoresProps {
   stores: Store[];
@@ -61,9 +62,16 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
       <ul role="list" className="divide-y divide-gray-200">
         {stores.length === 0 ? (
           <li className="px-4 py-8 text-center">
-            <FontAwesomeIcon icon={faStore} className="h-12 w-12 text-gray-300 mx-auto" />
-            <span className="mt-2 text-sm font-medium text-gray-900">ไม่มีร้านค้า</span>
-            <span  className="mt-1 text-sm text-gray-500">คุณยังไม่มีร้านค้า</span>
+            <FontAwesomeIcon icon={faStore} className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">ไม่มีร้านค้า</h3>
+            <p className="text-sm text-gray-500 mb-3">ยืนยันตัวตนเพื่อเริ่มสร้างร้านค้าของคุณ</p>
+            <Link
+              href="/verify"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <FontAwesomeIcon icon={faUser} className="mr-2" />
+              ยืนยันตัวตน
+            </Link>
           </li>
         ) : (
           stores.map((store) => (
@@ -77,11 +85,11 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
       </ul>
 
       {/* Store Detail Dialog */}
-      <StoreDetailDialog 
-        store={selectedStore} 
-        isOpen={showStoreDetails} 
+      <StoreDetailDialog
+        store={selectedStore}
+        isOpen={showStoreDetails}
         onClose={handleCloseStoreDetails}
-        hideAdminActions={true} 
+        hideAdminActions={true}
       />
     </div>
   );

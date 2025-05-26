@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { 
-  InputOTP, 
-  InputOTPGroup, 
-  InputOTPSlot 
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot
 } from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -12,14 +12,13 @@ import Spinner from "@/components/ui/Spinner";
 
 interface OtpModalProps {
   email: string;
-  otpValues: string[];
+  otpValue: string;
   error: string;
   isVerifying: boolean;
   isSendingOtp: boolean;
-  otpSent: boolean;
   refNumber: string;
   cooldownSeconds: number;
-  onOtpChange: (index: number, value: string) => void;
+  onOtpChange: (value: string) => void;
   onVerify: () => Promise<void>;
   onClose: () => void;
   onSendOtp: () => Promise<void>;
@@ -27,11 +26,10 @@ interface OtpModalProps {
 
 export default function OtpModal({
   email,
-  otpValues,
+  otpValue,
   error,
   isVerifying,
   isSendingOtp,
-  otpSent,
   refNumber,
   cooldownSeconds,
   onOtpChange,
@@ -39,15 +37,26 @@ export default function OtpModal({
   onClose,
   onSendOtp,
 }: OtpModalProps): React.ReactElement {
-  const otpValue = otpValues.join("");
-  
+
   // Format seconds to mm:ss
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
-  
+
+  // Handle OTP value changes (including paste)
+  const handleOtpChange = (value: string) => {
+    // Only allow numbers - filter out non-numeric characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Limit to 6 digits maximum
+    const limitedValue = numericValue.slice(0, 6);
+    
+    // Call the parent's onChange handler with the processed value
+    onOtpChange(limitedValue);
+  };
+
   return (
     <div className="fixed inset-0 z-[200] overflow-y-auto bg-opacity-50 flex backdrop-blur-sm items-center justify-center p-4">
       <motion.div
@@ -72,30 +81,21 @@ export default function OtpModal({
 
         <div className="space-y-6">
           <p className="text-sm text-gray-600">
-            โปรดกรอกรหัสยืนยัน (OTP) ที่ส่งไปยัง {email}
+            โปรดกรอกรหัสยืนยัน (OTP) ที่ส่งไปยัง <span className="font-bold">{email}</span><br />
+            หากยังไม่ได้รับรหัส โปรดตรวจสอบในโฟลเดอร์อีเมลขยะ
+            หรือกดปุ่มส่งรหัสยืนยันอีกครั้งภายใน 3 นาที
           </p>
 
           <div className="flex justify-center">
-            <InputOTP 
+            <InputOTP
               maxLength={6}
               value={otpValue}
-              onChange={(value) => {
-                // Convert the new value to array of characters
-                const newOtpValues = value.split('');
-                
-                // Pad array with empty strings if it's shorter than 6
-                while (newOtpValues.length < 6) {
-                  newOtpValues.push('');
-                }
-                
-                // Call the original change handler for each position that changed
-                for (let i = 0; i < 6; i++) {
-                  if (otpValues[i] !== newOtpValues[i]) {
-                    onOtpChange(i, newOtpValues[i] || '');
-                  }
-                }
-              }}
+              onChange={handleOtpChange}
               containerClassName="gap-2 justify-center"
+              pattern="[0-9]*"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pasteTransformer={(pastedText) => pastedText.replace(/[^0-9]/g, '').slice(0, 6)}
             >
               <InputOTPGroup>
                 {Array.from({ length: 6 }).map((_, index) => (
@@ -120,7 +120,7 @@ export default function OtpModal({
           <div className="flex flex-col space-y-3">
             <Button
               onClick={onVerify}
-              disabled={isVerifying || otpSent || otpValue.length !== 6}
+              disabled={isVerifying || otpValue.length !== 6}
               variant="primary"
               className="w-full cursor-pointer flex justify-center items-center gap-2"
             >
@@ -138,8 +138,8 @@ export default function OtpModal({
               {isSendingOtp
                 ? "กำลังส่ง..."
                 : cooldownSeconds > 0
-                ? `รอ ${formatTime(cooldownSeconds)} เพื่อส่งใหม่`
-                : "ส่งรหัสยืนยัน"}
+                  ? `รอ ${formatTime(cooldownSeconds)} เพื่อส่งใหม่`
+                  : "ส่งรหัส OTP อีกครั้ง"}
             </Button>
           </div>
 

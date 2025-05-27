@@ -24,7 +24,7 @@ interface ProfileClientProps {
 
 // ProfileClient component handles user profile management
 export default function ProfileClient({ user }: ProfileClientProps) {
-  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut } = useUser();
+  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut, verifyUserPassword } = useUser();
   const [activeTab, setActiveTab] = useState("stores");
   const [isEditing, setIsEditing] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -38,6 +38,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [lastEmailChange, setLastEmailChange] = useState<Date | null>(null);
   const [canChangeEmail, setCanChangeEmail] = useState(true);
   const [tempEmail, setTempEmail] = useState("");
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [cooldownTimer, setCooldownTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Add password OTP modal states
   const [showPasswordOtpModal, setShowPasswordOtpModal] = useState(false);
@@ -152,6 +154,15 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       setTempEmail(displayUser.email || "");
     }
   }, [displayUser]);
+
+  // Cleanup timer when component unmounts
+  useEffect(() => {
+    return () => {
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer);
+      }
+    };
+  }, [cooldownTimer]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -422,17 +433,36 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     try {
       // Here you would typically make an API call to verify the OTP and complete password change
       // For now, we'll simulate the API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Reset password fields and close modal
-      setPasswordData({
-        oldPassword: "",
-        newPassword: "",
-        confirmPassword: "",
+      const response = await verifyUserPassword({
+        email: displayUser.email!,
+        otpCode: passwordOtpValue,
+        userId: displayUser.id!,
+        oldPassword: passwordData.oldPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
+        displayName: displayUser.displayName!,
       });
-      setShowPasswordOtpModal(false);
-      setIsEditing(false);
-      displaySuccessDialog("เปลี่ยนรหัสผ่านสำเร็จ");
+
+      if (response.statusCode === 200) {
+        // Close OTP modal
+        setShowPasswordOtpModal(false);
+        // Clear any existing cooldown timer when closing modal
+        if (cooldownTimer) {
+          clearInterval(cooldownTimer);
+          setCooldownTimer(null);
+        }
+
+        // Reset password fields and close modal
+        setPasswordData({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setIsEditing(false);
+        displaySuccessDialog("เปลี่ยนรหัสผ่านสำเร็จ");
+      } else {
+        displayErrorDialog(response.message);
+      }
 
       // Reset OTP states
       setPasswordOtpValue("");
@@ -449,6 +479,13 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     setPasswordOtpValue("");
     setPasswordOtpError("");
     setPasswordOtpData(null);
+
+    // Clear any existing cooldown timer when closing modal
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+      setCooldownTimer(null);
+      setCooldownSeconds(0);
+    }
   };
 
   const handlePasswordChangeSuccess = (responseData: { data: UserResponse }) => {
@@ -460,6 +497,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         displayName: responseData.data.displayName,
       });
       setShowPasswordOtpModal(true);
+      // Start cooldown timer since OTP was just sent
+      startCooldownTimer();
     } else {
       // If no OTP required, show success message
       displaySuccessDialog("เปลี่ยนรหัสผ่านสำเร็จ");
@@ -469,6 +508,37 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
   const handlePasswordChangeError = (error: string) => {
     displayErrorDialog(error);
+  };
+
+  const startCooldownTimer = () => {
+    // Set initial cooldown time (3 minutes = 180 seconds)
+    setCooldownSeconds(180);
+
+    // Clear any existing timer
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+    }
+
+    // Start a new timer that decrements the cooldown every second
+    const timer = setInterval(() => {
+      setCooldownSeconds(prevSeconds => {
+        if (prevSeconds <= 1) {
+          // When timer reaches 0, clear the interval and allow resending
+          clearInterval(timer);
+          setCooldownTimer(null);
+          return 0;
+        }
+        return prevSeconds - 1;
+      });
+    }, 1000);
+
+    // Store the timer ID so we can clear it later if needed
+    setCooldownTimer(timer);
+
+    // Cleanup function to clear the timer when component unmounts
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   };
 
   return (
@@ -489,7 +559,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         message={successMessage}
       />
 
-      {showOtpModal && (
+      {/* {showOtpModal && (
         <ProfileOtpModal
           email={tempEmail}
           otpValues={otpValues}
@@ -503,7 +573,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           onClose={handleCloseOtpModal}
           onSendOtp={handleSendOtp}
         />
-      )}
+      )} */}
 
       {/* Password OTP Modal */}
       {showPasswordOtpModal && passwordOtpData && (
@@ -514,11 +584,11 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           isVerifying={isVerifyingPasswordOtp}
           isSendingOtp={false}
           refNumber={passwordOtpData.refNumber || ""}
-          cooldownSeconds={0}
+          cooldownSeconds={cooldownSeconds}
           onOtpChange={handlePasswordOtpChange}
           onVerify={handleVerifyPasswordOtp}
           onClose={handleClosePasswordOtpModal}
-          onSendOtp={async () => {}} // No resend for password OTP
+          onSendOtp={async () => { }} // No resend for password OTP
         />
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

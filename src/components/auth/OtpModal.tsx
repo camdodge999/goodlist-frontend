@@ -83,7 +83,7 @@ export default function OtpModal({
           <p className="text-sm text-gray-600">
             โปรดกรอกรหัสยืนยัน (OTP) ที่ส่งไปยัง <span className="font-bold">{email}</span><br />
             หากยังไม่ได้รับรหัส โปรดตรวจสอบในโฟลเดอร์อีเมลขยะ
-            หรือกดปุ่มส่งรหัสยืนยันอีกครั้งภายใน 3 นาที
+            หรือกดปุ่ม &quot;ส่งรหัส OTP&quot; อีกครั้ง
           </p>
 
           <div className="flex justify-center">
@@ -145,7 +145,7 @@ export default function OtpModal({
 
           <p className="text-xs text-gray-500 text-center">
             หากไม่ได้รับรหัส โปรดตรวจสอบในโฟลเดอร์อีเมลขยะ
-            หรือกดปุ่มส่งรหัสยืนยันอีกครั้ง
+            หรือกดปุ่ม &quot;ส่งรหัส OTP&quot; อีกครั้ง
             {cooldownSeconds > 0 && ` (รอ ${formatTime(cooldownSeconds)})`}
           </p>
         </div>

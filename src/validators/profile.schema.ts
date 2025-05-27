@@ -13,13 +13,13 @@ export type ProfileFormSchema = z.infer<typeof profileFormSchema>;
 
 // Password Form Schema
 export const passwordFormSchema = z.object({
-  oldPassword: z.string().min(1, "Current password is required"),
+  oldPassword: z.string().min(1, "กรุณากรอกรหัสผ่านเดิม"),
   newPassword: z
     .string()
-    .min(6, "New password must be at least 6 characters long"),
-  confirmPassword: z.string().min(1, "Please confirm your new password"),
+    .min(8, "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร"),
+  confirmPassword: z.string().min(1, "กรุณายืนยันรหัสผ่านใหม่"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
+  message: "รหัสผ่านไม่ตรงกัน",
   path: ["confirmPassword"],
 });
 

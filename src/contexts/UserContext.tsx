@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
+import { useSession, signOut as nextAuthSignOut, signOut } from "next-auth/react";
 import { Session } from "next-auth";
 import { User } from "@/types/users";
 import { Store } from "@/types/stores";
@@ -14,13 +14,19 @@ declare global {
   }
 }
 
-interface ChangeUserPasswordProps {
-  userId: string,
-  oldPassword: string,
-  newPassword: string,
-  confirmPassword: string,
-  email: string,
-  displayName: string
+
+interface BaseUserPasswordProps {
+  userId: string;
+  email: string;
+  oldPassword: string;  
+  newPassword: string;
+  confirmPassword: string;
+  displayName: string;
+}
+
+interface VerifyUserPasswordProps extends BaseUserPasswordProps {
+  otpCode: string;
+  otpToken?: string;
 }
 
 
@@ -29,12 +35,13 @@ interface UserContextProps {
   userStores: Store[];
   updateUser: (userId: string, updates: Partial<User> | FormData) => Promise<User | null>;
   changeUserEmail: (userId: string, newEmail: string, currentPassword: string) => Promise<User | null>;
-  changeUserPassword: (props: ChangeUserPasswordProps) => Promise<any>;
+  changeUserPassword: (props: BaseUserPasswordProps) => Promise<any>;
   isLoading: boolean;
   storesLoading: boolean;
   error: string | null;
   refreshUser: () => Promise<User | null>;
   fetchUserProfile: (userId: string, forceRefresh?: boolean) => Promise<User | null>;
+  verifyUserPassword: (props: VerifyUserPasswordProps) => Promise<any>;
   verifyUser: (userId: string, verificationData: FormData | object) => Promise<boolean>;
   getVerificationStatus: () => "not_started" | "pending" | "verified" | "banned";
   signOut: () => Promise<void>;
@@ -391,14 +398,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     confirmPassword,
     email,
     displayName
-  }: {
-    userId: string,
-    oldPassword: string,
-    newPassword: string,
-    confirmPassword: string,
-    email: string,
-    displayName: string
-  }): Promise<any> => {
+  }: BaseUserPasswordProps): Promise<any> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -446,6 +446,45 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     }
   };
 
+  const verifyUserPassword = async ({
+    userId,
+    email,
+    otpCode,
+    otpToken,
+    oldPassword,
+    newPassword,
+    confirmPassword,
+    displayName
+  }: VerifyUserPasswordProps): Promise<any> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/user/password/verify/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.user?.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, email, otpCode, otpToken, oldPassword, newPassword, confirmPassword, displayName }),
+      }); 
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || `Error verifying password: ${response.statusText}`);
+      }
+
+      return responseData;
+    } catch (err) {
+      console.error('Error verifying password:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      throw err; // Re-throw the error so it can be caught by the calling component
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = async () => {
     // Reset user context data
     setCurrentUser(null);
@@ -463,6 +502,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         updateUser,
         changeUserEmail,
         changeUserPassword,
+        verifyUserPassword,
         isLoading,
         storesLoading,
         error,

@@ -9,13 +9,14 @@ import { useUser } from "@/contexts/UserContext";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileStores from "@/components/profile/ProfileStores";
 import ProfileSettings from "@/components/profile/ProfileSettings";
-import OtpModal from "@/components/profile/OtpModal";
+import OtpModal from "@/components/auth/OtpModal";
+import ProfileOtpModal from "@/components/profile/OtpModal";
 import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
 
 // Types
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
-import { User } from "@/types/users";
+import { User, UserResponse } from "@/types/users";
 
 interface ProfileClientProps {
   user: User;
@@ -29,7 +30,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
+  const [otpValues, setOtpValues] = useState([""]);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +38,13 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [lastEmailChange, setLastEmailChange] = useState<Date | null>(null);
   const [canChangeEmail, setCanChangeEmail] = useState(true);
   const [tempEmail, setTempEmail] = useState("");
+
+  // Add password OTP modal states
+  const [showPasswordOtpModal, setShowPasswordOtpModal] = useState(false);
+  const [passwordOtpData, setPasswordOtpData] = useState<Partial<UserResponse> | null>(null);
+  const [passwordOtpValue, setPasswordOtpValue] = useState("");
+  const [passwordOtpError, setPasswordOtpError] = useState("");
+  const [isVerifyingPasswordOtp, setIsVerifyingPasswordOtp] = useState(false);
 
   // Add the useShowDialog hook
   const {
@@ -76,7 +84,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   });
 
   const [passwordError, setPasswordError] = useState("");
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -366,27 +373,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   };
 
   const handleChangePassword = async () => {
-    setIsChangingPassword(true);
-    setPasswordError("");
-
-    try {
-      // Here you would typically make an API call to verify and change password
-      // For now, we'll just simulate the API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Reset password fields
-      setPasswordData({
-        oldPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setIsChangingPassword(false);
-      setIsEditing(false);
-    } catch {
-      // Handle error without variable
-      setPasswordError("รหัสผ่านเดิมไม่ถูกต้อง");
-      setIsChangingPassword(false);
-    }
+    // This function is now handled by PasswordForm component
+    // It will call the new password change flow with OTP
   };
 
   const handleEditToggle = () => {
@@ -413,6 +401,76 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     await signOut();
   };
 
+  // Password OTP handlers - simplified like SignupForm
+  const handlePasswordOtpChange = (value: string): void => {
+    setPasswordOtpValue(value);
+    // Clear error when user starts typing
+    if (passwordOtpError) {
+      setPasswordOtpError("");
+    }
+  };
+
+  const handleVerifyPasswordOtp = async () => {
+    if (passwordOtpValue.length !== 6) {
+      setPasswordOtpError("กรุณากรอก OTP ให้ครบ 6 หลัก");
+      return;
+    }
+
+    setIsVerifyingPasswordOtp(true);
+    setPasswordOtpError("");
+
+    try {
+      // Here you would typically make an API call to verify the OTP and complete password change
+      // For now, we'll simulate the API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Reset password fields and close modal
+      setPasswordData({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setShowPasswordOtpModal(false);
+      setIsEditing(false);
+      displaySuccessDialog("เปลี่ยนรหัสผ่านสำเร็จ");
+
+      // Reset OTP states
+      setPasswordOtpValue("");
+      setPasswordOtpData(null);
+    } catch {
+      setPasswordOtpError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsVerifyingPasswordOtp(false);
+    }
+  };
+
+  const handleClosePasswordOtpModal = () => {
+    setShowPasswordOtpModal(false);
+    setPasswordOtpValue("");
+    setPasswordOtpError("");
+    setPasswordOtpData(null);
+  };
+
+  const handlePasswordChangeSuccess = (responseData: { data: UserResponse }) => {
+    // Check if response contains UserResponse with otpToken
+    if (responseData?.data) {
+      setPasswordOtpData({
+        email: responseData.data.email,
+        refNumber: responseData.data.refNumber,
+        displayName: responseData.data.displayName,
+      });
+      setShowPasswordOtpModal(true);
+    } else {
+      // If no OTP required, show success message
+      displaySuccessDialog("เปลี่ยนรหัสผ่านสำเร็จ");
+      setIsEditing(false);
+    }
+  };
+
+  const handlePasswordChangeError = (error: string) => {
+    displayErrorDialog(error);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       {/* Error Dialog */}
@@ -432,7 +490,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       />
 
       {showOtpModal && (
-        <OtpModal
+        <ProfileOtpModal
           email={tempEmail}
           otpValues={otpValues}
           error={error}
@@ -444,6 +502,23 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           onVerify={handleVerifyOtp}
           onClose={handleCloseOtpModal}
           onSendOtp={handleSendOtp}
+        />
+      )}
+
+      {/* Password OTP Modal */}
+      {showPasswordOtpModal && passwordOtpData && (
+        <OtpModal
+          email={passwordOtpData.email || ""}
+          otpValue={passwordOtpValue}
+          error={passwordOtpError}
+          isVerifying={isVerifyingPasswordOtp}
+          isSendingOtp={false}
+          refNumber={passwordOtpData.refNumber || ""}
+          cooldownSeconds={0}
+          onOtpChange={handlePasswordOtpChange}
+          onVerify={handleVerifyPasswordOtp}
+          onClose={handleClosePasswordOtpModal}
+          onSendOtp={async () => {}} // No resend for password OTP
         />
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -481,11 +556,12 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                 lastEmailChange={lastEmailChange}
                 emailError={emailError}
                 passwordError={passwordError}
-                isChangingPassword={isChangingPassword}
                 onInputChange={handleInputChange}
                 onPasswordChange={handlePasswordChange}
                 onImageChange={handleImageChange}
                 onChangePassword={handleChangePassword}
+                onPasswordChangeSuccess={handlePasswordChangeSuccess}
+                onPasswordChangeError={handlePasswordChangeError}
                 onSaveProfile={handleSaveProfile}
                 onEditToggle={handleEditToggle}
                 fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}

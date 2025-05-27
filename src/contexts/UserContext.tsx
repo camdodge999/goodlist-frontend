@@ -14,12 +14,22 @@ declare global {
   }
 }
 
+interface ChangeUserPasswordProps {
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+  email: string,
+  displayName: string
+}
+
+
 interface UserContextProps {
   currentUser: User | null;
   userStores: Store[];
   updateUser: (userId: string, updates: Partial<User> | FormData) => Promise<User | null>;
   changeUserEmail: (userId: string, newEmail: string, currentPassword: string) => Promise<User | null>;
-  changeUserPassword: (userId: string, oldPassword: string, newPassword: string, confirmPassword: string) => Promise<User | null>;
+  changeUserPassword: (props: ChangeUserPasswordProps) => Promise<any>;
   isLoading: boolean;
   storesLoading: boolean;
   error: string | null;
@@ -58,32 +68,32 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
   // Fetch user profile from API with cache support
   const fetchUserProfile = useCallback(async (userId: string, forceRefresh = false): Promise<User | null> => {
     const cacheKey = `user_${userId}`;
-    
+
     // If we already have the user and force refresh is not set, 
     // and we fetched less than CACHE_TIME ago, return the cached user
     if (
-      !forceRefresh && 
-      currentUser?.id === userId && 
-      lastFetchTime.current[cacheKey] && 
+      !forceRefresh &&
+      currentUser?.id === userId &&
+      lastFetchTime.current[cacheKey] &&
       Date.now() - lastFetchTime.current[cacheKey] < CACHE_TIME
     ) {
       return currentUser;
     }
-    
+
     // If there's already a request in progress for this user, return that promise
     if (!forceRefresh && cacheKey in requestCache) {
       return requestCache[cacheKey];
     }
-    
+
     // Set loading state only if we're actually going to fetch
     setIsLoading(true);
-    
+
     // Create the fetch promise
     const fetchPromise = (async () => {
       try {
         setIsFetchingProfile(true);
         setError(null);
-        
+
         // Use the original API path
         const response = await fetch(`/api/user/profile/${userId}`, {
           method: 'GET',
@@ -99,18 +109,18 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         }
 
         const data = await response.json();
-        
+
         if (data.statusCode === 200 && data.data) {
           // Update user data
           setCurrentUser(data.data);
           lastFetchTime.current[cacheKey] = Date.now();
-          
+
           // After setting user data, fetch the user's stores separately
           // Only fetch stores if we're not in an infinite loop situation
           if (!window.__fetchingStores) {
             fetchUserStores(userId);
           }
-          
+
           return data.data;
         } else {
           throw new Error(data.message || 'Failed to fetch user profile');
@@ -126,10 +136,10 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         delete requestCache[cacheKey];
       }
     })();
-    
+
     // Store the promise in the cache
     requestCache[cacheKey] = fetchPromise;
-    
+
     return fetchPromise;
   }, [session]);
 
@@ -139,7 +149,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     if (activeSession?.user?.id && !currentUser && !isFetchingProfile) {
       fetchUserProfile(activeSession.user.id);
     }
-  // Use stable reference check for fetchUserProfile
+    // Use stable reference check for fetchUserProfile
   }, [session, initialSession, currentUser, isFetchingProfile, fetchUserProfile]);
 
   const updateUser = async (userId: string, updates: Partial<User> | FormData) => {
@@ -148,20 +158,20 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       setError(null);
 
       console.log(updates);
-      
+
       // Check if updates is FormData or a regular object
       const isFormData = updates instanceof FormData;
-      
+
       // Configure headers based on content type
       const headers: Record<string, string> = {
         'Authorization': `Bearer ${session?.user?.token}`,
       };
-      
+
       // Only add Content-Type for JSON, browser will set it with boundary for FormData
       if (!isFormData) {
         headers['Content-Type'] = 'application/json';
       }
-      
+
       // Use the API route which handles auth token extraction from the session
       const response = await fetch(`/api/user/profile/${userId}`, {
         method: 'PUT',
@@ -174,17 +184,17 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 200 && data.data) {
         // Update the current user in state
-        setCurrentUser(prevUser => 
+        setCurrentUser(prevUser =>
           prevUser && prevUser.id === userId ? { ...prevUser, ...data.data } : prevUser
         );
-        
+
         // Update the last fetch time so we don't refetch immediately
         const cacheKey = `user_${userId}`;
         lastFetchTime.current[cacheKey] = Date.now();
-        
+
         return data.data;
       } else {
         throw new Error(data.message || 'Failed to update user');
@@ -202,10 +212,10 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Create API endpoint for verification if it doesn't exist
       const apiUrl = `/api/user/verify/${userId}`;
-      
+
       // For FormData, don't set Content-Type header - browser will set it with boundary
       const options: RequestInit = {
         method: 'POST',
@@ -214,14 +224,14 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         },
         body: verificationData as unknown as BodyInit,
       };
-      
+
       // Only set Content-Type for JSON data
       if (!(verificationData instanceof FormData)) {
         if (options.headers) {
           (options.headers as Record<string, string>)['Content-Type'] = 'application/json';
         }
       }
-      
+
       const response = await fetch(apiUrl, options);
 
       if (!response.ok) {
@@ -229,15 +239,15 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 200) {
         // Update user role to pending without a full refetch
-        setCurrentUser(prev => prev ? {...prev, role: "pending"} : null);
-        
+        setCurrentUser(prev => prev ? { ...prev, role: "pending" } : null);
+
         // Update the last fetch time
         const cacheKey = `user_${userId}`;
         lastFetchTime.current[cacheKey] = Date.now();
-        
+
         return true;
       } else {
         throw new Error(data.message || 'Failed to verify user');
@@ -253,7 +263,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
 
   const refreshUser = async () => {
     if (!session?.user?.id) return null;
-    
+
     try {
       // Force refresh by passing true
       const updatedUser = await fetchUserProfile(session.user.id, true);
@@ -287,10 +297,10 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       // Use a global flag to prevent infinite loop
       if (window.__fetchingStores) return;
       window.__fetchingStores = true;
-      
+
       // Set stores loading state to true
       setStoresLoading(true);
-      
+
       const response = await fetch(`/api/user/store/${userId}`, {
         method: 'GET',
         headers: {
@@ -306,7 +316,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       }
 
       const data = await response.json();
-      
+
       if (data.statusCode === 200 && data.data?.stores) {
         setUserStores(data.data.stores);
       }
@@ -325,13 +335,13 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Create data with email and password
       const data = {
         email: newEmail,
         currentPassword
       };
-      
+
       // Use a specific API endpoint for email change that requires password verification
       const response = await fetch(`/api/user/email/${userId}`, {
         method: 'PUT',
@@ -347,20 +357,20 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       }
 
       const responseData = await response.json();
-      
+
       if (responseData.statusCode === 200 && responseData.data) {
         // Update the current user in state
-        setCurrentUser(prevUser => 
+        setCurrentUser(prevUser =>
           prevUser && prevUser.id === userId ? { ...prevUser, ...responseData.data } : prevUser
         );
-        
+
         // Update the last fetch time so we don't refetch immediately
         const cacheKey = `user_${userId}`;
         lastFetchTime.current[cacheKey] = Date.now();
-        
+
         // Update last email change time in localStorage
         localStorage.setItem("lastEmailChange", new Date().toISOString());
-        
+
         return responseData.data;
       } else {
         throw new Error(responseData.message || 'Failed to update email');
@@ -374,18 +384,34 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     }
   };
 
-  const changeUserPassword = async (userId: string, oldPassword: string, newPassword: string, confirmPassword: string): Promise<User | null> => {
+  const changeUserPassword = async ({
+    userId,
+    oldPassword,
+    newPassword,
+    confirmPassword,
+    email,
+    displayName
+  }: {
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+    email: string,
+    displayName: string
+  }): Promise<any> => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Create data with passwords
       const data = {
         oldPassword,
         newPassword,
-        confirmPassword
+        confirmPassword,
+        email,
+        displayName
       };
-      
+
       // Use a specific API endpoint for password change
       const response = await fetch(`/api/user/password/${userId}`, {
         method: 'PUT',
@@ -396,30 +422,25 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         body: JSON.stringify(data),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        throw new Error(`Error updating password: ${response.statusText}`);
+        throw new Error(responseData.message || `Error updating password: ${response.statusText}`);
       }
 
-      const responseData = await response.json();
-      
-      if (responseData.statusCode === 200 && responseData.data) {
-        // Update the current user in state
-        setCurrentUser(prevUser => 
-          prevUser && prevUser.id === userId ? { ...prevUser, ...responseData.data } : prevUser
-        );
-        
+      if (responseData.statusCode === 200) {
         // Update the last fetch time so we don't refetch immediately
         const cacheKey = `user_${userId}`;
         lastFetchTime.current[cacheKey] = Date.now();
-        
-        return responseData.data;
+
+        return responseData;
       } else {
         throw new Error(responseData.message || 'Failed to update password');
       }
     } catch (err) {
       console.error('Error updating password:', err);
       setError(err instanceof Error ? err.message : String(err));
-      return null;
+      throw err; // Re-throw the error so it can be caught by the calling component
     } finally {
       setIsLoading(false);
     }
@@ -429,9 +450,9 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     // Reset user context data
     setCurrentUser(null);
     setUserStores([]);
-      
+
     // Call NextAuth signOut
-    await nextAuthSignOut({redirect: false});
+    await nextAuthSignOut({ redirect: false });
   };
 
   return (

@@ -67,7 +67,7 @@ async function updateUserEmail(
   // Use fetchWithAuth to handle token extraction and API call
   const result = await fetchWithAuth<BodyResponse<{ profileDetail: User }>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/changeEmail/${id}`,
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/edit-email/${id}`,
     method: "PUT",
     body: {
       email: newEmail,

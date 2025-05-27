@@ -4,7 +4,7 @@ import PasswordForm from "./PasswordForm";
 import EmailForm from "./EmailForm";
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
 import { User as AuthUser } from "@/types/auth";
-import { User as AppUser } from "@/types/users";
+import { User as AppUser, UserResponse } from "@/types/users";
 import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
 import { useUser } from "@/contexts/UserContext";
@@ -22,13 +22,15 @@ interface ProfileSettingsProps {
   lastEmailChange: Date | null;
   emailError: string;
   passwordError: string;
-  isChangingPassword: boolean;
+  isChangingPassword?: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChangePassword: () => Promise<void>;
   onSaveProfile: () => Promise<void>;
   onEditToggle: () => void;
+  onPasswordChangeSuccess?: (responseData: { data: UserResponse }) => void;
+  onPasswordChangeError?: (error: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
 }
 
@@ -49,6 +51,8 @@ export default function ProfileSettings({
   onChangePassword,
   onSaveProfile,
   onEditToggle,
+  onPasswordChangeSuccess,
+  onPasswordChangeError,
   fileInputRef
 }: ProfileSettingsProps) {
   // Use the user context for email change
@@ -153,10 +157,14 @@ export default function ProfileSettings({
       {/* Password Form */}
       <PasswordForm
         isEditing={isEditing}
+        email={user?.email || ""}
+        displayName={(user as AppUser)?.displayName || ""}
         passwordError={passwordError}
-        isChangingPassword={isChangingPassword}
+        isChangingPassword={isChangingPassword || false}
         onPasswordChange={onPasswordChange}
         onChangePassword={handleChangePassword}
+        onPasswordChangeSuccess={onPasswordChangeSuccess} 
+        onPasswordChangeError={onPasswordChangeError}
         initialData={passwordData}
         userId={user.id}
       />

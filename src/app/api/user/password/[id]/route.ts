@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BodyResponse } from '@/types/response';
-import { User } from '@/types/users';
+import { UserResponse } from '@/types/users';
 import { fetchWithAuth } from '@/lib/fetch-with-auth';
 import { passwordFormSchema } from '@/validators/profile.schema';
+
 
 // PUT handler for /api/user/password/[id]
 export async function PUT(
@@ -26,7 +27,7 @@ export async function PUT(
 
     // Get the password data from the request
     const body = await request.json();
-    const { oldPassword, newPassword, confirmPassword } = body;
+    const { oldPassword, newPassword, confirmPassword, email, displayName } = body;
 
     // Validate the request body using Zod
     const validationResult = passwordFormSchema.safeParse({
@@ -47,12 +48,12 @@ export async function PUT(
     }
 
     // Forward the password change request to the backend API
-    const result = await updateUserPassword(request, userId.toString(), oldPassword, newPassword);
+    const result = await updateUserPassword(request, { id: userId.toString(), oldPassword, newPassword, email, displayName });
 
     return NextResponse.json({
       statusCode: result.statusCode,
       message: result.message,
-      data: result.data?.profileDetail,
+      data: result.data,
     }, { status: result.statusCode });
 
   } catch (error) {
@@ -70,18 +71,30 @@ export async function PUT(
 
 async function updateUserPassword(
   request: NextRequest,
-  id: string,
-  oldPassword: string,
-  newPassword: string
-): Promise<BodyResponse<{ profileDetail: User }>> {
+  {
+    id,
+    oldPassword,
+    newPassword,
+    email,
+    displayName
+  }: {
+    id: string,
+    oldPassword: string,
+    newPassword: string,
+    email: string,  
+    displayName: string
+  }
+): Promise<BodyResponse<UserResponse>> {
   // Use fetchWithAuth to handle token extraction and API call
-  const result = await fetchWithAuth<BodyResponse<{ profileDetail: User }>>({
+  const result = await fetchWithAuth<BodyResponse<UserResponse>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/editProfile/${id}`,
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/edit-password/${id}`,
     method: "PUT",
     body: {
-      oldPassword: oldPassword,
-      newPassword: newPassword
+      email: email,
+      password: oldPassword,
+      newPassword: newPassword,
+      displayName: displayName
     },
     extendHeaders: {
       'Content-Type': 'application/json'

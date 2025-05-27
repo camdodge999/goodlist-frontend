@@ -6,13 +6,18 @@ import { FormLabel } from "../ui/form-label";
 import { useUser } from "@/contexts/UserContext";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-
+import Spinner from "../ui/Spinner";
+import { UserResponse } from "@/types/users";
 interface PasswordFormProps {
   isEditing: boolean;
+  email: string;
+  displayName: string;
   passwordError: string;
   isChangingPassword: boolean;
   onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChangePassword: () => Promise<void>;
+  onPasswordChangeSuccess?: (responseData: { data: UserResponse }) => void;
+  onPasswordChangeError?: (error: string) => void;
   initialData: PasswordFormSchema;
   userId: string;
 }
@@ -20,9 +25,13 @@ interface PasswordFormProps {
 export default function PasswordForm({
   isEditing,
   passwordError,
-  isChangingPassword,
+  isChangingPassword, 
+  email,
+  displayName,
   onPasswordChange,
   onChangePassword,
+  onPasswordChangeSuccess,
+  onPasswordChangeError,
   initialData,
   userId
 }: PasswordFormProps) {
@@ -34,7 +43,8 @@ export default function PasswordForm({
     hasMinLength: false,
     hasUppercase: false,
     hasLowercase: false,
-    hasNumber: false
+    hasNumber: false,
+    samePassword: false
   });
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
 
@@ -51,7 +61,8 @@ export default function PasswordForm({
         hasMinLength: value.length >= 8,
         hasUppercase: /[A-Z]/.test(value),
         hasLowercase: /[a-z]/.test(value),
-        hasNumber: /[0-9]/.test(value)
+        hasNumber: /[0-9]/.test(value),
+        samePassword: value === formData.confirmPassword
       });
     }
     
@@ -73,7 +84,8 @@ export default function PasswordForm({
       passwordValidation.hasMinLength &&
       passwordValidation.hasUppercase &&
       passwordValidation.hasLowercase &&
-      passwordValidation.hasNumber;
+      passwordValidation.hasNumber &&
+      !passwordValidation.samePassword;
 
     // If new password requirements are not met, show specific error
     if (formData.newPassword && !allPasswordRequirementsMet) {
@@ -87,6 +99,8 @@ export default function PasswordForm({
         errors.newPassword = "รหัสผ่านต้องมีตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว";
       } else if (!passwordValidation.hasNumber) {
         errors.newPassword = "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว";
+      } else if (passwordValidation.samePassword) {
+        errors.newPassword = "รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านเดิม";
       }
 
       setValidationErrors(errors);
@@ -126,12 +140,14 @@ export default function PasswordForm({
     setIsSubmitting(true);
     
     try {
-      const result = await changeUserPassword(
+      const result = await changeUserPassword({
         userId,
-        formData.oldPassword,
-        formData.newPassword,
-        formData.confirmPassword
-      );
+        oldPassword: formData.oldPassword,
+        newPassword: formData.newPassword,  
+        confirmPassword: formData.confirmPassword,
+        email: email,
+        displayName: displayName
+      });
       
       if (result) {
         // Reset form on success
@@ -140,12 +156,29 @@ export default function PasswordForm({
           newPassword: "",
           confirmPassword: "",
         });
+
+        setPasswordValidation({
+          hasMinLength: false,
+          hasUppercase: false,
+          hasLowercase: false,
+          hasNumber: false,
+          samePassword: false
+        });
         
-        // Call the parent success handler
-        await onChangePassword();
+        // Call the new success handler if provided, otherwise call the old one
+        if (onPasswordChangeSuccess) {
+          onPasswordChangeSuccess(result);
+        } else {
+          await onChangePassword();
+        }
       }
     } catch (error) {
       console.error("Error changing password:", error);
+      
+      // Call the new error handler if provided
+      if (onPasswordChangeError) {
+        onPasswordChangeError(error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -246,6 +279,13 @@ export default function PasswordForm({
                     />
                     <span>ตัวเลขอย่างน้อย 1 ตัว</span>
                   </li>
+                  <li className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={!passwordValidation.samePassword ? faCheck : faTimes}
+                      className={`mr-2 ${!passwordValidation.samePassword ? "text-green-500" : "text-red-500"}`}
+                    />
+                    <span>รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านเดิม</span>
+                  </li>
                 </ul>
               </div>
             )}
@@ -281,8 +321,10 @@ export default function PasswordForm({
           <Button
             type="submit"
             variant="primary"
+            className="flex items-center gap-2"
             disabled={isChangingPassword || isSubmitting}
           >
+            {isSubmitting && <Spinner />}
             {(isChangingPassword || isSubmitting) ? "กำลังเปลี่ยนรหัสผ่าน..." : "เปลี่ยนรหัสผ่าน"}
           </Button>
         </div>

@@ -7,11 +7,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   try {
     const body = await request.json();
     // Validate request body
-    if (!body.email || !body.otpCode) {
+    if (!body.email || !body.otpCode || !body.userId || !body.oldPassword || !body.newPassword || !body.confirmPassword || !body.displayName) {
       return NextResponse.json(
         { 
           statusCode: 400,
-          message: "Email, OTP code and OTP token are required", 
+          message: "Email, OTP code, user id, old password, new password, confirm password and display name are required", 
           data: undefined
         },
         { status: 400 }
@@ -26,19 +26,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       body: body,
     });
 
-    console.log(result);
 
     if(result.statusCode === 200){
       return NextResponse.json({  
         statusCode: 201,
-        message: "User created successfully",
+        message: "Password verified successfully",
         data: result?.data 
       }, { status: 201 });
     } else {
       return NextResponse.json(
         { 
           statusCode: 400,
-          message: result.message || "Failed to create user", 
+          message: result.message || "Failed to verify password", 
           data: undefined   
         },
         { status: 400 }
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     }
 
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Error verifying password:", error);
     return NextResponse.json(
       { 
         statusCode: 500,

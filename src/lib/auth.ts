@@ -194,6 +194,9 @@ export const authOptions: NextAuthOptions = {
             session.user.role = tokenDecoded.role as UserRole;
           }
         }
+
+        session.expires = new Date(token?.exp as number * 1000).toISOString();
+
       } catch (error) {
         console.error("Error processing session:", error);
       }

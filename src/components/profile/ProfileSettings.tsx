@@ -154,6 +154,7 @@ export default function ProfileSettings({
         onChangeEmail={handleChangeEmail}
       />
 
+
       {/* Password Form */}
       <PasswordForm
         isEditing={isEditing}

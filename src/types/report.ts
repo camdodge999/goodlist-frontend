@@ -1,10 +1,10 @@
 export type Report = {
     id: string;
-    storeId: string;
+    storeId: number;
     reason: string;
-    evidenceUrls: string;
+    evidenceUrl: string;
     createdAt: string;
-    status: "pending" | "valid" | "invalid";
+    status: "pending" | "reviewed" | "rejected" | "invalid";
     store?: {
       storeName: string;
     };

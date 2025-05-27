@@ -3,8 +3,29 @@ import { z } from "zod";
 // Email validation schema
 export const emailSchema = z
   .string()
-  .min(1, { message: "กรุณากรอกอีเมล" })
-  .email({ message: "รูปแบบอีเมลไม่ถูกต้อง" });
+  .refine(
+    (val) => {
+      const validEmail = val.trim().length > 0 && val !== "";
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      
+      return validEmail && emailRegex.test(val.trim());
+    },
+    (val) => ({ 
+      message: val.trim().length === 0 
+        ? "กรุณากรอกอีเมล" 
+        : "รูปแบบอีเมลไม่ถูกต้อง" 
+    })
+  )
+
+// Display name validation schema
+export const displayNameSchema = z
+  .string()
+  .min(1, { message: "กรุณากรอกชื่อผู้ใช้งาน" })
+  .max(50, { message: "ชื่อผู้ใช้งานต้องไม่เกิน 50 ตัวอักษร" })
+  .refine(
+    (val) => /^[a-zA-Z0-9ก-๙\s]+$/.test(val),
+    { message: "ชื่อผู้ใช้งานต้องประกอบด้วยตัวอักษรภาษาไทย ภาษาอังกฤษ ตัวเลข และช่องว่างเท่านั้น" }
+  );
 
 // Password validation schema
 export const passwordSchema = z
@@ -15,15 +36,23 @@ export const passwordSchema = z
   .regex(/[a-z]/, { message: "รหัสผ่านต้องมีตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว" })
   .regex(/[0-9]/, { message: "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว" });
 
-// Login schema
+/**
+ * Login form validation schema
+ */
 export const loginSchema = z.object({
-  email: emailSchema,
+  email: z.string().email({ message: "รูปแบบอีเมลไม่ถูกต้อง" }),
   password: z.string().min(1, { message: "กรุณากรอกรหัสผ่าน" }),
 });
+
+/**
+ * Type for login form values
+ */
+export type LoginFormValues = z.infer<typeof loginSchema>;
 
 // Registration schema
 export const registrationSchema = z
   .object({
+    displayName: displayNameSchema,
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, { message: "กรุณายืนยันรหัสผ่าน" }),
@@ -41,6 +70,20 @@ export const otpSchema = z
   .string()
   .length(6, { message: "กรุณากรอก OTP ให้ครบ 6 หลัก" });
 
-// Types inferred from the schemas
-export type LoginFormValues = z.infer<typeof loginSchema>;
-export type RegistrationFormValues = z.infer<typeof registrationSchema>;
+/**
+ * Profile form validation schema
+ */
+export const profileSchema = z.object({
+  displayName: z.string().min(2, { message: "ชื่อผู้ใช้งานต้องมีความยาวอย่างน้อย 2 ตัวอักษร" }),
+  email: z.string().email({ message: "รูปแบบอีเมลไม่ถูกต้อง" }).optional(),
+  phoneNumber: z
+    .string()
+    .regex(/^[0-9]{10}$/, { message: "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง" })
+    .optional(),
+  bio: z.string().max(500, { message: "รายละเอียดต้องมีความยาวไม่เกิน 500 ตัวอักษร" }).optional(),
+});
+
+/**
+ * Type for profile form values
+ */
+export type ProfileFormValues = z.infer<typeof profileSchema>;

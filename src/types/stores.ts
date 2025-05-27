@@ -5,18 +5,35 @@ export interface ContactInfo {
   address?: string;
 };
 
+export interface StoreDocument {
+  id?: number;
+  name: string;
+  url: string;
+  path?: string;
+  type?: string;
+}
 export interface Store {
   id: number;
   userId: number;
+  email: string;
   storeName: string;
+  displayName?: string;
+  phoneNumber?: string;
   bankAccount: string;
-  contactInfo: ContactInfo;
+  contactInfo: ContactInfo | string;
   description: string;
-  isVerified: boolean;
+  isVerified: boolean | null;
   isBanned: boolean;
   createdAt: string;
   updatedAt: string;
-  imageUrl: string;
+  imageStore: string;
+  certIncrop: string;
+  imageIdCard: string;
+  imageUrl?: string;
+  taxId?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  documents?: StoreDocument[];
 } 
 
 // Define types
@@ -60,13 +77,18 @@ export interface StoreReport {
   reason: ReportReason;
   details: string;
   evidenceUrl: string;
-  evidenceFilename: string;
   createdAt: string;
-  status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+  status: 'pending' | 'reviewing' | 'reviewed' | 'rejected';
 }
 
 // Auth type
 export interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
+}
+
+// Store with joined reports data
+export interface StoreWithReports extends Store {
+  reports?: import('./report').Report[];
+  reportCount?: number;
 }

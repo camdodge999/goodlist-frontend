@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from "next/server";
+import { BodyResponse } from "@/types/response";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { UserResponse } from "@/types/users";
+
+export async function POST(request: NextRequest): Promise<NextResponse<BodyResponse<UserResponse>>> {
+  try {
+    const body = await request.json();
+    // Validate request body
+    if (!body.email || !body.otpCode) {
+      return NextResponse.json(
+        { 
+          statusCode: 400,
+          message: "Email, OTP code and OTP token are required", 
+          data: undefined
+        },
+        { status: 400 }
+      );
+    }
+
+    // Send request to backend
+    const result = await fetchWithAuth<BodyResponse<UserResponse>>({
+      request,
+      url: `${process.env.NEXTAUTH_BACKEND_URL}/api/auth/register/verify`,
+      method: 'POST',
+      body: body,
+    });
+
+    console.log(result);
+
+    if(result.statusCode === 200){
+      return NextResponse.json({  
+        statusCode: 201,
+        message: "User created successfully",
+        data: result?.data 
+      }, { status: 201 });
+    } else {
+      return NextResponse.json(
+        { 
+          statusCode: 400,
+          message: result.message || "Failed to create user", 
+          data: undefined   
+        },
+        { status: 400 }
+      );
+    }
+
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return NextResponse.json(
+      { 
+        statusCode: 500,
+        message: "Internal server error", 
+        data: undefined 
+      },
+      { status: 500 }
+    );
+  }
+}
+

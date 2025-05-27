@@ -1,67 +1,112 @@
 "use client";
 
-import { useState, type KeyboardEvent, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import OtpModal from "./OtpModal";
+import TermsModal from "./TermsModal";
 import { registrationSchema, otpSchema } from "@/validators/user.schema";
 import { ZodError } from "zod";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import Spinner from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/button";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faTimes, faEye, faEyeSlash, faUser, faEnvelope, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
+import useShowDialog from "@/hooks/useShowDialog";  
+import StatusDialog from "@/components/common/StatusDialog";
+import { signIn } from "next-auth/react";
+import { FormLabel } from "../ui/form-label";
 
 export default function SignupForm() {
-  const { register } = useAuth();
   const router = useRouter();
+  const [displayName, setDisplayName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showTerms, setShowTerms] = useState<boolean>(false);
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [showOtpModal, setShowOtpModal] = useState<boolean>(false);
-  const [otp, setOtp] = useState<string>("");
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpValue, setOtpValue] = useState<string>("");
   const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
-  const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [otpToken, setOtpToken] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false
+  });
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [refNumber, setRefNumber] = useState<string>("");
+  const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
+  const [cooldownTimer, setCooldownTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // Use the dialog hook
+  const {
+    showSuccessDialog,
+    setShowSuccessDialog,
+    showErrorDialog,
+    setShowErrorDialog,
+    successMessage,
+    errorMessage,
+    displaySuccessDialog,
+    displayErrorDialog,
+  } = useShowDialog();
 
-  const handleOtpChange = (index: number, value: string): void => {
-    if (value.length > 1) {
-      // Handle paste
-      const pastedValues = value.split("").slice(0, 6);
-      const newOtpValues = [...otpValues];
-      pastedValues.forEach((val, i) => {
-        if (i < 6) {
-          newOtpValues[i] = val;
-        }
-      });
-      setOtpValues(newOtpValues);
-      setOtp(newOtpValues.join(""));
-      return;
-    }
-
-    const newOtpValues = [...otpValues];
-    newOtpValues[index] = value;
-    setOtpValues(newOtpValues);
-    setOtp(newOtpValues.join(""));
-  };
-
-  const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
-      // This functionality is now handled by the shadcn ui component
+  const handleOtpChange = (value: string): void => {
+    setOtpValue(value);
+    // Clear error when user starts typing
+    if (error) {
+      setError("");
     }
   };
 
   const validateForm = (): boolean => {
     try {
+      // Check if all password requirements are met
+      const allPasswordRequirementsMet =
+        passwordValidation.hasMinLength &&
+        passwordValidation.hasUppercase &&
+        passwordValidation.hasLowercase &&
+        passwordValidation.hasNumber;
+
+      // Proceed with schema validation
       registrationSchema.parse({
+        displayName,
         email,
         password,
         confirmPassword,
         acceptedTerms,
       });
+      
+      // If password requirements are not met, don't proceed with form validation
+      if (password && !allPasswordRequirementsMet) {
+        const errors: Record<string, string> = {};
+
+        if (!passwordValidation.hasMinLength) {
+          errors.password = "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร";
+        } else if (!passwordValidation.hasUppercase) {
+          errors.password = "รหัสผ่านต้องมีตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว";
+        } else if (!passwordValidation.hasLowercase) {
+          errors.password = "รหัสผ่านต้องมีตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว";
+        } else if (!passwordValidation.hasNumber) {
+          errors.password = "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว";
+        }
+
+        setFieldErrors(errors);
+        return false;
+      }
+
+      // Check if passwords match
+      if (password && confirmPassword && password !== confirmPassword) {
+        setFieldErrors({ confirmPassword: "รหัสผ่านไม่ตรงกัน" });
+        return false;
+      }
+
       setFieldErrors({});
       return true;
     } catch (err) {
@@ -74,7 +119,7 @@ export default function SignupForm() {
         });
         setFieldErrors(errors);
         if (errors.acceptedTerms) {
-          setError(errors.acceptedTerms);
+          displayErrorDialog(errors.acceptedTerms);
         }
       }
       return false;
@@ -83,7 +128,9 @@ export default function SignupForm() {
 
   const validateOtp = (): boolean => {
     try {
-      otpSchema.parse(otp);
+      console.log(otpValue);
+      otpSchema.parse(otpValue);
+
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
@@ -93,19 +140,88 @@ export default function SignupForm() {
     }
   };
 
+  const handleDisplayNameChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    // Reset displayName-specific error when typing
+    if (fieldErrors.displayName) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.displayName;
+        return newErrors;
+      });
+    }
+
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+
+    setDisplayName(e.target.value);
+  };
+
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
-    setEmail(value);
+    // Reset email-specific error when typing
+    if (fieldErrors.email) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.email;
+        return newErrors;
+      });
+    }
+
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+
+    setEmail(e.target.value);
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
-    setPassword(value);
+    const newPassword = e.target.value;
+
+    // Reset password-specific error when typing
+    if (fieldErrors.password) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.password;
+        return newErrors;
+      });
+    }
+
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+
+    // Validate password in real-time
+    setPasswordValidation({
+      hasMinLength: newPassword.length >= 8,
+      hasUppercase: /[A-Z]/.test(newPassword),
+      hasLowercase: /[a-z]/.test(newPassword),
+      hasNumber: /[0-9]/.test(newPassword)
+    });
+
+    setPassword(newPassword);
   };
 
   const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
-    setConfirmPassword(value);
+    const newConfirmPassword = e.target.value;
+
+    // Reset confirm password-specific error when typing
+    if (fieldErrors.confirmPassword) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.confirmPassword;
+        return newErrors;
+      });
+    }
+
+    // Reset general error
+    if (error) {
+      setError("");
+    }
+
+    setConfirmPassword(newConfirmPassword);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -116,7 +232,43 @@ export default function SignupForm() {
       return;
     }
 
-    setShowOtpModal(true);
+    // Start loading state for the submit button
+    setIsSendingOtp(true);
+
+    try{
+       // Call your authentication service
+       const response = await fetch(`api/user/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          displayName,
+          email,
+          password
+        }),
+      });
+
+      if(response.ok){  
+        const { data } = await response.json();
+        setRefNumber(data.refNumber);
+        setOtpToken(data.otpToken);
+        
+        // Show OTP modal directly after successful registration
+        setShowOtpModal(true);
+        
+        // Start cooldown timer since OTP was just sent
+        startCooldownTimer();
+      } else {
+        const errorData = await response.json();
+        displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
+      }
+    } catch (error) {
+      console.error("Error registering user:", error);
+      displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleVerifyOtp = async (): Promise<void> => {
@@ -124,22 +276,62 @@ export default function SignupForm() {
       return;
     }
 
-    if (otp !== "000000") {
-      setError("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
-      return;
-    }
-
     setIsVerifying(true);
     setError("");
 
     try {
-      const success = await register(email, password);
-      if (success) {
-        router.push("/profile");
+      // Call your authentication service
+      const response = await fetch(`/api/user/register/verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          otpCode: otpValue,
+          otpToken: otpToken,
+        }),
+      });
+
+      if (response.ok) {
+        // Close OTP modal
+        setShowOtpModal(false);
+        // Clear any existing cooldown timer when closing modal
+        if (cooldownTimer) {
+          clearInterval(cooldownTimer);
+          setCooldownTimer(null);
+        }
+        
+        // Show success dialog
+        displaySuccessDialog({
+          message: "สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบอัตโนมัติ",
+          title: "สมัครสมาชิกสำเร็จ",
+          buttonText: "ไปที่หน้าโปรไฟล์",
+          onButtonClick: () => router.push("/profile")
+        });
+        
+        try {
+          // Automatically log in the user with the credentials they just registered with
+          const result = await signIn("credentials", {
+            email: email,
+            password: password,
+            redirect: false,
+            callbackUrl: "/",
+          });
+          
+          if (result?.error) {
+            console.error("Auto login error:", result.error);
+            // Still redirect to home page even if auto-login fails
+            // User can manually log in
+          }
+        } catch (loginError) {
+          console.error("Error during auto login:", loginError);
+        }
       } else {
-        setError("อีเมลนี้มีผู้ใช้งานแล้ว");
+        const errorData = await response.json();
+        setError(errorData.message || "รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       }
-    } catch (_) {
+    } catch {
       // Ignore the error variable name but handle the error
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
@@ -147,16 +339,67 @@ export default function SignupForm() {
     }
   };
 
+  const startCooldownTimer = () => {
+    // Set initial cooldown time (3 minutes = 180 seconds)
+    setCooldownSeconds(180);
+    
+    // Clear any existing timer
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+    }
+    
+    // Start a new timer that decrements the cooldown every second
+    const timer = setInterval(() => {
+      setCooldownSeconds(prevSeconds => {
+        if (prevSeconds <= 1) {
+          // When timer reaches 0, clear the interval and allow resending
+          clearInterval(timer);
+          setCooldownTimer(null);
+          return 0;
+        }
+        return prevSeconds - 1;
+      });
+    }, 1000);
+    
+    // Store the timer ID so we can clear it later if needed
+    setCooldownTimer(timer);
+    
+    // Cleanup function to clear the timer when component unmounts
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  };
+
   const handleSendOtp = async (): Promise<void> => {
     setIsSendingOtp(true);
     setError("");
+    
+    // Start the cooldown timer immediately when sending OTP
+    startCooldownTimer();
 
     try {
-      // Simulate API call to send OTP
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setOtpSent(true);
-    } catch (_) {
-      // Ignore the error variable name but handle the error
+      const response = await fetch(`api/user/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          displayName,
+          email,
+          password
+        }),
+      }); 
+
+      if (response.ok) {
+        const { data } = await response.json();
+        setRefNumber(data.refNumber);
+        setOtpToken(data.otpToken); 
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+      }
+    } catch {
+      // Show error in modal instead of dialog
       setError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSendingOtp(false);
@@ -165,109 +408,81 @@ export default function SignupForm() {
 
   const handleCloseOtpModal = (): void => {
     setShowOtpModal(false);
-    setOtp("");
-    setOtpValues(["", "", "", "", "", ""]);
+    setOtpValue("");
     setError("");
-    setOtpSent(false);
+    
+    // Clear any existing cooldown timer when closing modal
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+      setCooldownTimer(null);
+      setCooldownSeconds(0);
+    }
   };
 
-  const TermsModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8">
-        <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h2 className="text-2xl font-bold text-gray-800">
-            ข้อกำหนดและเงื่อนไขการใช้งาน
-          </h2>
-          <button
-            onClick={() => setShowTerms(false)}
-            aria-label="ปิด"
-            className="text-gray-500 hover:text-gray-700 text-xl"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="prose max-w-none text-gray-700 space-y-6">
-          {/* Terms content - truncated for brevity */}
-          <div className="text-center mb-8">
-            <h3 className="text-xl font-semibold text-gray-900">
-              เว็บไซต์: Goodlistseller.com
-            </h3>
-          </div>
-          
-          {/* Terms sections - truncated */}
-          <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-              การใช้งานเว็บไซต์
-            </h3>
-            <p className="leading-relaxed">
-              ตลอดเว็บไซต์นี้ คำว่า &quot;ผู้ใช้บริการ&quot; หมายถึงบุคคลใด ๆ
-              ที่เข้าถึงเว็บไซต์นี้ไม่ว่าด้วยวิธีใดก็ตาม
-              การใช้เว็บไซต์นี้ต้องเป็นไปตามข้อกำหนดและเงื่อนไขการใช้งานนี้
-              ซึ่งผู้ใช้บริการควรอ่านอย่างละเอียด
-              การใช้เว็บไซต์หรือเข้าเยี่ยมชมหน้าใด ๆ
-              ถือว่าท่านยอมรับเงื่อนไขทั้งหมดแล้ว
-            </p>
-          </section>
-
-          <div className="mt-8 pt-6 border-t">
-            <p className="text-sm text-gray-600 mb-4">
-              การกดยอมรับหมายถึงผู้ใช้บริการยินยอมตามนโยบาย พ.ร.บ.
-              คุ้มครองข้อมูลส่วนบุคคล โดยมีรายละเอียดในลิงค์นี้
-            </p>
-            <button
-              onClick={() => {
-                setAcceptedTerms(true);
-                setShowTerms(false);
-              }}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
-            >
-              ยอมรับข้อกำหนดและเงื่อนไข
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Cleanup timer when component unmounts
+  useEffect(() => {
+    return () => {
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer);
+      }
+    };
+  }, [cooldownTimer]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      {showTerms && <TermsModal />}
+    <>
+      <StatusDialog
+        isOpen={showSuccessDialog}
+        setIsOpen={setShowSuccessDialog}
+        type="success"
+        title="สมัครสมาชิกสำเร็จ"
+        message={successMessage}
+        buttonText="ไปที่หน้าโปรไฟล์"
+        onButtonClick={() => router.push("/")}
+      />
+
+      <StatusDialog
+        isOpen={showErrorDialog}
+        setIsOpen={setShowErrorDialog}
+        type="error"
+        message={errorMessage}
+      />
+
+      <TermsModal
+        showTerms={showTerms}
+        setShowTerms={setShowTerms}
+        setAcceptedTerms={setAcceptedTerms}
+      />
+
       {showOtpModal && (
         <OtpModal
           email={email}
-          otpValues={otpValues}
+          refNumber={refNumber} 
+          otpValue={otpValue}
           error={error}
           isVerifying={isVerifying}
           isSendingOtp={isSendingOtp}
-          otpSent={otpSent}
           onOtpChange={handleOtpChange}
-          onKeyDown={handleKeyDown}
           onVerify={handleVerifyOtp}
           onClose={handleCloseOtpModal}
           onSendOtp={handleSendOtp}
+          cooldownSeconds={cooldownSeconds}
         />
       )}
-      
-      {/* Rest of the form content */}
+
+      {/* Form content */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl"
+        transition={{ duration: 0.25 }}
+        className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl z-50"
       >
         <div>
-          <motion.h2
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+          <h2
             className="mt-6 text-center text-3xl font-extrabold text-gray-900"
           >
             สมัครสมาชิก
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+          </h2>
+          <p
             className="mt-2 text-center text-sm text-gray-600"
           >
             หรือ{" "}
@@ -277,161 +492,187 @@ export default function SignupForm() {
             >
               เข้าสู่ระบบ
             </Link>
-          </motion.p>
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <label htmlFor="email" className="sr-only">
+            <div>
+              <FormLabel htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">  
+                ชื่อผู้ใช้งาน
+              </FormLabel>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
+                </div>
+                <Input
+                  id="displayName"
+                  name="displayName"
+                  placeholder="กรอกชื่อผู้ใช้งานของคุณ"
+                  value={displayName}
+                  onChange={handleDisplayNameChange}
+                  className={`pl-10 ${fieldErrors.displayName ? "ring-2 ring-red-500" : ""}`}
+                />
+              </div>
+              {fieldErrors.displayName && (
+                <p className="mt-1 text-sm text-red-500">{fieldErrors.displayName}</p>
+              )}
+            </div>
+
+            <div>
+              <FormLabel htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 อีเมล
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                  fieldErrors.email ? "ring-2 ring-red-500" : ""
-                }`}
-                placeholder="อีเมล"
-                value={email}
-                onChange={handleEmailChange}
-              />
+              </FormLabel>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
+                </div>
+                <Input
+                  id="email"
+                  name="email"
+                  placeholder="กรอกอีเมลของคุณ"
+                  value={email}
+                  onChange={handleEmailChange}
+                  className={`pl-10 ${fieldErrors.email ? "ring-2 ring-red-500" : ""}`}
+                />
+              </div>
               {fieldErrors.email && (
                 <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <label htmlFor="password" className="sr-only">
+            <div>
+              <FormLabel htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 รหัสผ่าน
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                  fieldErrors.password ? "ring-2 ring-red-500" : ""
-                }`}
-                placeholder="รหัสผ่าน"
-                value={password}
-                onChange={handlePasswordChange}
-              />
-              {fieldErrors.password && (
-                <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>
-              )}
-            </motion.div>
+              </FormLabel>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faLock} className="w-5 h-5" />
+                </div>
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="กรอกรหัสผ่านของคุณ"
+                  value={password}
+                  onChange={handlePasswordChange}
+                  className={`pl-10 ${fieldErrors.password ? "ring-2 ring-red-500" : ""}`}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
+                </button>
+              </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <label htmlFor="confirmPassword" className="sr-only">
+              {/* Password requirements */}
+              {(
+                <div className="mt-2 mb-4 p-3 bg-gray-50 rounded-md border text-sm space-y-2">
+                  <h4 className="font-medium text-gray-700">รหัสผ่านต้องประกอบด้วย :</h4>
+                  <ul className="space-y-1">
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasMinLength ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasMinLength ? "text-green-500" : "text-red-500"
+                          }`}
+                      />
+                      <span>อย่างน้อย 8 ตัวอักษร</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasUppercase ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasUppercase ? "text-green-500" : "text-red-500"
+                          }`}
+                      />
+                      <span>ตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasLowercase ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasLowercase ? "text-green-500" : "text-red-500"
+                          }`}
+                      />
+                      <span>ตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasNumber ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasNumber ? "text-green-500" : "text-red-500"
+                          }`}
+                      />
+                      <span>ตัวเลขอย่างน้อย 1 ตัว</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <FormLabel htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                 ยืนยันรหัสผ่าน
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className={`appearance-none relative block w-full px-3 py-2.5 border-0 bg-white/50 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm ${
-                  fieldErrors.confirmPassword ? "ring-2 ring-red-500" : ""
-                }`}
-                placeholder="ยืนยันรหัสผ่าน"
-                value={confirmPassword}
-                onChange={handleConfirmPasswordChange}
-              />
+              </FormLabel>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <FontAwesomeIcon icon={faLockOpen} className="w-5 h-5" />
+                </div>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="กรอกรหัสผ่านอีกครั้ง"
+                  value={confirmPassword}
+                  onChange={handleConfirmPasswordChange}
+                  className={`pl-10 ${fieldErrors.confirmPassword ? "ring-2 ring-red-500" : ""}`}
+                />
+              </div>
               {fieldErrors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-500">
                   {fieldErrors.confirmPassword}
                 </p>
               )}
-            </motion.div>
+            </div>
 
-            <div className="flex items-center">
-              <input
+            <div className="flex items-center space-x-2 cursor-pointer">
+              <Checkbox
                 id="terms"
-                name="terms"
-                type="checkbox"
                 checked={acceptedTerms}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setAcceptedTerms(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="cursor-pointer"
+                onCheckedChange={(checked: boolean | "indeterminate") => setAcceptedTerms(checked === true)}
               />
-              <label
+              <FormLabel
                 htmlFor="terms"
-                className="ml-2 block text-sm text-gray-900"
+                className="text-sm text-gray-900 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                ฉันยอมรับ{" "}
-                <button
+                <span className="cursor-pointer">ฉันยอมรับ</span>
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => setShowTerms(true)}
-                  className="text-blue-600 hover:text-blue-500 underline"
+                  className="h-auto p-0 text-blue-600 hover:text-blue-500 underline cursor-pointer"
                 >
                   ข้อกำหนดและเงื่อนไขการใช้งาน
-                </button>
-              </label>
+                </Button>
+              </FormLabel>
             </div>
           </div>
 
-          {error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-red-500 text-sm text-center"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <button
+          <div>
+            <Button
               type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2.5 px-4 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              disabled={!acceptedTerms || isSendingOtp}
+              className="w-full cursor-pointer flex items-center justify-center gap-2"
             >
-              {isLoading ? (
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </span>
+              {isSendingOtp ? (
+                <Spinner />
               ) : null}
-              {isLoading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
-            </button>
-          </motion.div>
+              {isSendingOtp ? "กำลังส่งข้อมูล..." : "สมัครสมาชิก"} 
+            </Button>
+          </div>
         </form>
       </motion.div>
-    </div>
+    </>
   );
 } 

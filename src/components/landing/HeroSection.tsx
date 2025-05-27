@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from "next/link";
-import Image from "next/image";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faStore, 
@@ -9,7 +8,6 @@ import {
 import ContentWidth from "@/components/layout/ContentWidth";
 import { Button } from "@/components/ui/button";
 import { Session } from "next-auth";
-import heroBg from "@images/hero-bg.jpg";
 
 interface HeroSectionProps {
   session: Session | null;
@@ -21,13 +19,6 @@ export function HeroSection({ session }: HeroSectionProps) {
       <div className="relative isolate min-h-screen overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 -z-10">
-          <Image
-            src={heroBg}
-            alt="Background"
-            fill
-            className="object-cover animate-subtle-zoom"
-            priority
-          />
           {/* Animated gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/95 via-blue-700/90 to-blue-800/95 animate-gradient" />
 
@@ -47,7 +38,7 @@ export function HeroSection({ session }: HeroSectionProps) {
             <div className="relative">
               <div className="absolute inset-0 blur-3xl bg-blue-500/20 animate-pulse" />
               <h1 className="relative text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up">
-                รวมร้านค้าออนไลน์ที่คุณไว้ใจได้
+                รวมร้านค้าออนไลน์ที่คุณเชื่อถือได้
               </h1>
               <h2 className="relative mt-4 text-2xl font-semibold tracking-tight text-gray-100 sm:text-3xl lg:text-4xl animate-fade-in-up animation-delay-100">
                 Trusted Online Stores in One Place
@@ -67,18 +58,18 @@ export function HeroSection({ session }: HeroSectionProps) {
               >
                 <Link href={session ? "/verify" : "/signup"}>
                   <FontAwesomeIcon icon={faStore} className="w-5 h-5 mr-2" />
-                  สมัครเป็นร้านค้า
+                  <span>สมัครเป็นร้านค้า</span>
                 </Link>
               </Button>
               <Button
                 asChild
                 size="lg"
                 variant="outline"
-                className="bg-transparent text-white border-white hover:bg-white/10"
+                className="bg-transparent text-white border-white hover:bg-white/10 hover:text-white"
               >
                 <Link href="/stores">
                   <FontAwesomeIcon icon={faSearch} className="w-5 h-5 mr-2" />
-                  ดูร้านค้าที่เชื่อถือได้
+                  <span>ดูร้านค้าที่เชื่อถือได้</span>
                 </Link>
               </Button>
             </div>

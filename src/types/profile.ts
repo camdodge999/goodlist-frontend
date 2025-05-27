@@ -1,5 +1,3 @@
-import { Store } from "./stores";
-
 export interface ProfileFormData {
   name: string;
   email: string;

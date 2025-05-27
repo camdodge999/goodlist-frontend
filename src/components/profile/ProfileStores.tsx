@@ -1,99 +1,96 @@
-import React from 'react';
-import Image from 'next/image';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore } from '@fortawesome/free-solid-svg-icons';
-import { motion } from 'framer-motion';
+import { faStore, faUser } from '@fortawesome/free-solid-svg-icons';
 import { Store } from '@/types/stores';
+import StoreDetailDialog from '@/components/store/StoreDetailDialog';
+import StoreItem from '@/components/profile/StoreItem';
+import Link from 'next/link';
 
 interface ProfileStoresProps {
   stores: Store[];
+  isLoading?: boolean;
 }
 
-interface StoreWithContactInfo extends Store {
-  contact_info: string; // JSON string that will be parsed
-}
+const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false }) => {
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [showStoreDetails, setShowStoreDetails] = useState(false);
 
-const ProfileStores: React.FC<ProfileStoresProps> = ({ stores }) => {
+  const handleOpenStoreDetails = (store: Store) => {
+    setSelectedStore(store);
+    setShowStoreDetails(true);
+  };
+
+  const handleCloseStoreDetails = () => {
+    setShowStoreDetails(false);
+  };
+
+  // Skeleton loading component
+  const StoreSkeleton = () => (
+    <div className="px-4 py-4 sm:px-6 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="h-16 w-16 rounded-lg bg-gray-200 flex-shrink-0"></div>
+          <div className="ml-4">
+            <div className="h-6 w-48 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 w-32 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+        <div className="ml-2 flex-shrink-0">
+          <div className="h-5 w-20 bg-gray-200 rounded-full px-2.5 py-0.5"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Display skeletons when loading
+  if (isLoading) {
+    return (
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <ul role="list" className="divide-y divide-gray-200">
+          {[...Array(3)].map((_, index) => (
+            <li key={`skeleton-${index}`}>
+              <StoreSkeleton />
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
       <ul role="list" className="divide-y divide-gray-200">
         {stores.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <FontAwesomeIcon icon={faStore} className="h-12 w-12 text-gray-300 mx-auto" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">ไม่มีร้านค้า</h3>
-            <p className="mt-1 text-sm text-gray-500">คุณยังไม่มีร้านค้า</p>
-          </div>
+          <li className="px-4 py-8 text-center">
+            <FontAwesomeIcon icon={faStore} className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">ไม่มีร้านค้า</h3>
+            <p className="text-sm text-gray-500 mb-3">ยืนยันตัวตนเพื่อเริ่มสร้างร้านค้าของคุณ</p>
+            <Link
+              href="/verify"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <FontAwesomeIcon icon={faUser} className="mr-2" />
+              ยืนยันตัวตน
+            </Link>
+          </li>
         ) : (
-          stores.map((store) => {
-            // Parse contact info
-            let contactInfo = {
-              line: "",
-              facebook: "",
-              phone: "",
-              address: "",
-            };
-            
-            try {
-              if (typeof (store as StoreWithContactInfo).contact_info === 'string') {
-                contactInfo = JSON.parse((store as StoreWithContactInfo).contact_info);
-              } else if (store.contactInfo) {
-                contactInfo = store.contactInfo;
-              }
-            } catch (error) {
-              console.error("Error parsing contact info:", error);
-            }
-            
-            return (
-              <motion.li
-                key={store.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors duration-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="relative h-16 w-16 rounded-lg overflow-hidden flex-shrink-0">
-                        <Image
-                          src={
-                            store.imageUrl ||
-                            "/images/stores/default-store.jpg"
-                          }
-                          alt={`รูปภาพร้าน ${store.storeName}`}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {store.storeName}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          {contactInfo.line}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="ml-2 flex-shrink-0">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          store.isVerified
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {store.isVerified
-                          ? "ผ่านการตรวจสอบ"
-                          : "รอการตรวจสอบ"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </motion.li>
-            );
-          })
+          stores.map((store) => (
+            <StoreItem
+              key={store.id}
+              store={store}
+              onOpenStoreDetails={handleOpenStoreDetails}
+            />
+          ))
         )}
       </ul>
+
+      {/* Store Detail Dialog */}
+      <StoreDetailDialog
+        store={selectedStore}
+        isOpen={showStoreDetails}
+        onClose={handleCloseStoreDetails}
+        hideAdminActions={true}
+      />
     </div>
   );
 };

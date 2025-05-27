@@ -1,9 +1,14 @@
-import NavBar from "@/components/layout/NavBar";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { StoreProvider } from "@/contexts/StoreContext";
-import "./globals.css";
 import React from "react";
 import localFont from "next/font/local";
+import type { Metadata } from "next";
+import "./globals.css";
+import NavBar from "@/components/layout/NavBar";
+import { NextAuthProvider } from "@/providers/NextAuthProvider";
+import { ToastProvider } from "@/providers/ToastProvider";
+import { AppProviders } from "@/providers/AppProviders";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { Session } from "next-auth";
 
 const prompt = localFont({
   src: [
@@ -34,17 +39,16 @@ const prompt = localFont({
   fallback: ["system-ui", "sans-serif"],
 });
 
-
-export const metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL("https://goodlist.com"),
   title: "Goodlist Seller",
   description: "Platform for verified online stores",
-  openGraph:{
+  openGraph: {
     title: "Goodlist Seller",
     description: "Platform for verified online stores",
     images: [
       {
-        url: "/images/logo.png",
+        url: "/images/logo.webp",
         width: 800,
         height: 600,
         alt: "Goodlist Seller Logo",
@@ -52,22 +56,28 @@ export const metadata = {
     ],
   },
   icons: {
-    icon: [{ url: "/images/logo.png", type: "image/png" }],
-    shortcut: "/images/logo.png",
-    apple: "/images/logo.png",
+    icon: [{ url: "/images/logo.webp", type: "image/png" }],
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Pre-fetch the session on the server for better initial loading experience
+  const session = await getServerSession(authOptions);
+
   return (
-    <html lang="th">
-      <body className={`${prompt.className} antialiased`}>
-        <AuthProvider>
-          <StoreProvider>
-            <NavBar />
-            <main className="min-h-screen pt-20">{children}</main>
-          </StoreProvider>
-        </AuthProvider>
+    <html lang="th" className={`${prompt.className} antialiased`}>
+      <body>
+        <NextAuthProvider session={session as unknown as Session}>
+          <AppProviders session={session as unknown as Session}>
+            <NavBar session={session as unknown as Session} />
+            <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
+            <ToastProvider />
+          </AppProviders>
+        </NextAuthProvider>
       </body>
     </html>
   );

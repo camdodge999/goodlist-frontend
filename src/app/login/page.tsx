@@ -1,15 +1,19 @@
-import LoginForm from "@/components/auth/LoginForm";
-import { JSX } from "react";
+import { Metadata } from "next";
+import LoginClientPage from "./client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { metadataPages } from "@/consts/metadata";
 
-export const metadata = {
-  title: "เข้าสู่ระบบ | Goodlistseller",
-  description: "เข้าสู่ระบบเพื่อใช้งาน Goodlistseller ค้นหาร้านค้าออนไลน์ที่น่าเชื่อถือ",
+export const metadata: Metadata = {
+  title: metadataPages.login.title,
+  description: metadataPages.login.description,
 };
 
-export default function LoginPage(): JSX.Element {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <LoginForm />
-    </div>
-  );
+export default async function LoginPage() {
+  const session = await getServerSession(authOptions);
+  if (session) {
+    redirect("/");
+  }
+  return <LoginClientPage />;
 } 

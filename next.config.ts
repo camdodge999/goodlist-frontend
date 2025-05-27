@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
   // },
   reactStrictMode: true,
   images: {
+    minimumCacheTTL: 2678400, // 31 days
     remotePatterns: [
       {
         protocol: "http",
@@ -30,8 +31,13 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "api.uacj.chaninkrew.com",
+        hostname: "api.goodlist.chaninkrew.com",
         port: "3000",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
         pathname: "/**",
       },
     ], // Add 'localhost' to the list of allowed domains

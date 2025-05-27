@@ -1,0 +1,67 @@
+export const metadataPages = {
+    main:{
+        title: 'ร้านค้าออนไลน์ที่คุณเชื่อถือได้ | Goodlistseller', 
+        description: 'แพลตฟอร์มที่ช่วยให้คุณค้นหาร้านค้าออนไลน์ที่เชื่อถือได้ในประเทศไทย',
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+        viewport: "width=device-width, initial-scale=1",
+    },
+    report:{
+        title: "รายงานร้านค้า | Goodlistseller",
+        description: "รายงานร้านค้าที่มีความสงสัย",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+        viewport: "width=device-width, initial-scale=1",
+    },
+    stores:{
+        title: 'ร้านค้าที่ผ่านการตรวจสอบ | Goodlistseller',  
+        description: 'ค้นหาร้านค้าออนไลน์ที่ผ่านการตรวจสอบและเชื่อถือได้',
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",    
+    },
+    admin:{
+        title: "ระบบจัดการร้านค้า | Goodlistseller",
+        description: "ระบบจัดการร้านค้า",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    verify:{
+        title: "ยืนยันตัวตนของคุณ | Goodlistseller",
+        description: "ยืนยันตัวตนของคุณเพื่อใช้งานระบบ",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    login:{
+        title: "เข้าสู่ระบบ | Goodlistseller",
+        description: "เข้าสู่ระบบเพื่อใช้งาน Goodlistseller ค้นหาร้านค้าออนไลน์ที่น่าเชื่อถือและแชร์ประสบการณ์การซื้อสินค้า",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    signup:{
+        title: "สมัครสมาชิก | Goodlistseller",
+        description: "สมัครสมาชิกเพื่อใช้งาน Goodlistseller ค้นหาร้านค้าออนไลน์ที่น่าเชื่อถือและแชร์ประสบการณ์การซื้อสินค้า",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    "reset-password":{
+        title: "รีเซ็ตรหัสผ่าน | Goodlistseller",
+        description: "รีเซ็ตรหัสผ่านเพื่อใช้งาน Goodlistseller ค้นหาร้านค้าออนไลน์ที่น่าเชื่อถือและแชร์ประสบการณ์การซื้อสินค้า",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    contact:{  
+        title: 'ติดต่อเรา | Goodlistseller',
+        description: 'ติดต่อทีมงาน Goodlistseller - แพลตฟอร์มร้านค้าออนไลน์ที่น่าเชื่อถือในประเทศไทย',
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    }
+}

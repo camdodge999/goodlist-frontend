@@ -1,35 +1,62 @@
 "use client";
 
-import { useState } from "react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback } from "react";
 import { useStore } from "@/contexts/StoreContext";
-import StoreCard from "@/components/ui/StoreCard";
 import type { Store } from "@/types/stores";
+import StoreError from "@/components/stores/StoreError";
+import StoreLoadingSkeleton from "@/components/stores/StoreLoadingSkeleton";
+import StoreHeader from "@/components/stores/StoreHeader";
+import StoreGrid from "@/components/stores/StoreGrid";
+import StorePagination from "@/components/stores/StorePagination";
 
 export default function StoresPage() {
-  const { stores, isLoading } = useStore() as { 
-    stores: Store[]; 
-    isLoading: boolean 
-  };
-  
+  const { stores, isLoading, error, fetchStores } = useStore();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const storesPerPage = 6;
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Initial data loading
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        await fetchStores();
+      } catch (err) {
+        console.error("Error loading stores:", err);
+      }
+    };
+
+    loadStores();
+  }, [fetchStores]);
+
+  // Handler for manual refresh
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchStores(true); // Force refresh
+    } catch (err) {
+      console.error("Error refreshing stores:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchStores]);
 
   // Filter stores based on search query and verification status
-  const filteredStores = stores.filter((store) => {
-    const matchesSearch =
-      store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      store.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const isVerified = store.isVerified;
-    return matchesSearch && isVerified;
-  });
+  const filteredStores = Array.isArray(stores)
+    ? stores.filter((store: Store) => {
+      const matchesSearch =
+        store.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (store.description && store.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const isVerified = store.isVerified;
+      return matchesSearch && isVerified;
+    })
+    : [];
+
+  // Reset to first page when search query changes or stores are refreshed
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, stores]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredStores.length / storesPerPage);
@@ -43,97 +70,68 @@ export default function StoresPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (isLoading) {
+  // Show loading skeleton only on initial load, not during refreshes
+  if (isLoading && !refreshing && filteredStores.length === 0) {
     return (
-      <div className="py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-20 w-full" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      <div className="stores-page-loading py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <StoreHeader
+          title="ร้านค้าที่ผ่านการตรวจสอบ"
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          isLoading={isLoading}
+          isRefreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
+        <div className="loading-skeleton-container mt-4">
+          <StoreLoadingSkeleton />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6 mb-8">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">
-              ร้านค้าที่ผ่านการตรวจสอบ
-            </h1>
-          </div>
+    <div className="stores-page py-8">
+      <div className="stores-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <StoreHeader
+          title="ร้านค้าที่ผ่านการตรวจสอบ"
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          isLoading={isLoading}
+          isRefreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
 
-          {/* Search Bar */}
-          <div className="relative">
-            <FontAwesomeIcon 
-              icon={faMagnifyingGlass} 
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" 
+        {error && (
+          <div className="error-container mt-4">
+            <StoreError
+              message={error}
+              onRetry={handleRefresh}
             />
-            <Input
-              type="text"
-              placeholder="ค้นหาร้านค้า..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1); // Reset to first page on search
-              }}
-              className="pl-10 w-full"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {currentStores.map((store) => (
-            <StoreCard key={store.id} store={store} />
-          ))}
-        </div>
-
-        {filteredStores.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">ไม่พบร้านค้าตามเงื่อนไขที่เลือก</p>
           </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-8">
-            <Button
-              variant="outline"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              ก่อนหน้า
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                onClick={() => handlePageChange(page)}
-                className="min-w-[40px]"
-              >
-                {page}
-              </Button>
-            ))}
-            <Button
-              variant="outline"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              ถัดไป
-            </Button>
+        {refreshing ? (
+          <div className="refreshing-skeleton-container mt-4">
+            <StoreLoadingSkeleton />
           </div>
+        ) : (
+          <>
+            {filteredStores.length === 0 && !error ? (
+              <div className="no-stores-message text-center py-12">
+                <p className="empty-state-text text-gray-500">ไม่พบร้านค้าที่ตรงกับการค้นหา</p>
+              </div>
+            ) : (
+              <>
+                <StoreGrid stores={currentStores} error={error} />
+
+                <StorePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -26,7 +26,7 @@ interface BaseUserPasswordProps {
 
 interface VerifyUserPasswordProps extends BaseUserPasswordProps {
   otpCode: string;
-  otpToken: string;
+  otpToken?: string;
 }
 
 

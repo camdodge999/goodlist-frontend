@@ -18,12 +18,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       );
     }
 
+
+    const bodyData = {
+      displayName: body.displayName,
+      email: body.email,
+      otpCode: body.otpCode,
+      userId: body.userId,
+      password: body.oldPassword,
+      newPassword: body.newPassword,
+      confirmPassword: body.confirmPassword,
+    }
+
     // Send request to backend
     const result = await fetchWithAuth<BodyResponse<UserResponse>>({
       request,
-      url: `${process.env.NEXTAUTH_BACKEND_URL}/api/auth/profile/verify-password`,
+      url: `${process.env.NEXTAUTH_BACKEND_URL}/api/profile/verify-password`,
       method: 'POST',
-      body: body,
+      body: bodyData,
     });
 
 

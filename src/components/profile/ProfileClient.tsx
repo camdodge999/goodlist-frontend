@@ -436,7 +436,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       const response = await verifyUserPassword({
         email: displayUser.email!,
         otpCode: passwordOtpValue,
-        otpToken: passwordOtpData?.otpToken!,
+        userId: displayUser.id!,
         oldPassword: passwordData.oldPassword,
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword,

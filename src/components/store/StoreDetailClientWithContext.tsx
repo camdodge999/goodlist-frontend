@@ -32,7 +32,7 @@ export default function StoreDetailClientWithContext() {
 
   useEffect(() => {
     async function fetchStoreData() {
-      if (params.id) {
+      if (params?.id) {
         // Ensure params.id is treated as a single string
         const id = Array.isArray(params.id) ? params.id[0] : params.id;
         const storeData = await getStoreById(id);
@@ -43,7 +43,7 @@ export default function StoreDetailClientWithContext() {
     }
 
     fetchStoreData();
-  }, [params.id, getStoreById]);
+  }, [params?.id, getStoreById]);
 
   if (isLoading) {
     return (<StoreDetailClientSkeleton />)

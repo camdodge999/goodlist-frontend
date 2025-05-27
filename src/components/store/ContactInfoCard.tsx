@@ -91,7 +91,7 @@ export default function ContactInfoCard({ contactInfo, userEmail }: ContactInfoC
             เบอร์โทรศัพท์
           </dt>
           <dd className="mt-1 text-sm text-gray-900">
-            {contactData?.phoneNumber || "ไม่มีข้อมูล"}
+            {(contactData as unknown as ContactInfo)?.phone || "ไม่มีข้อมูล"}
           </dd>
         </div>
 

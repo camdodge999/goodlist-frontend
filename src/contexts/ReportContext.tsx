@@ -90,8 +90,8 @@ export function ReportProvider({ children }: ReportProviderProps) {
           details: newReport.reason,
           evidenceUrl: newReport.evidenceUrl,
           createdAt: newReport.createdAt,
-          status: newReport.status === 'review' ? 'reviewing' : 
-                 newReport.status === 'valid' ? 'valid' : 'invalid'   
+          status: newReport.status === 'pending' ? 'pending' : 
+                 newReport.status === 'reviewed' ? 'reviewed' : 'rejected'   
         };
         
         setUserReports(prev => [storeReport, ...prev]);

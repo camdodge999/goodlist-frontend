@@ -78,7 +78,7 @@ export interface StoreReport {
   details: string;
   evidenceUrl: string;
   createdAt: string;
-  status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+  status: 'pending' | 'reviewing' | 'reviewed' | 'rejected';
 }
 
 // Auth type

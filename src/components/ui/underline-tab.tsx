@@ -53,10 +53,10 @@ export default function UnderlineTab({ tabs, activeTab, onTabChange }: Underline
       <div className="md:hidden relative" ref={menuRef}>
         {/* Hamburger Button */}
         <button
+          type="button"
+          id="mobile-menu-button"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200"
-          aria-expanded={isMenuOpen}
-          aria-label="Toggle navigation menu"
         >
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">

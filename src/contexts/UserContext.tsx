@@ -19,6 +19,7 @@ interface UserContextProps {
   userStores: Store[];
   updateUser: (userId: string, updates: Partial<User> | FormData) => Promise<User | null>;
   changeUserEmail: (userId: string, newEmail: string, currentPassword: string) => Promise<User | null>;
+  changeUserPassword: (userId: string, oldPassword: string, newPassword: string, confirmPassword: string) => Promise<User | null>;
   isLoading: boolean;
   storesLoading: boolean;
   error: string | null;
@@ -373,6 +374,57 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     }
   };
 
+  const changeUserPassword = async (userId: string, oldPassword: string, newPassword: string, confirmPassword: string): Promise<User | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Create data with passwords
+      const data = {
+        oldPassword,
+        newPassword,
+        confirmPassword
+      };
+      
+      // Use a specific API endpoint for password change
+      const response = await fetch(`/api/user/password/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session?.user?.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error updating password: ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      
+      if (responseData.statusCode === 200 && responseData.data) {
+        // Update the current user in state
+        setCurrentUser(prevUser => 
+          prevUser && prevUser.id === userId ? { ...prevUser, ...responseData.data } : prevUser
+        );
+        
+        // Update the last fetch time so we don't refetch immediately
+        const cacheKey = `user_${userId}`;
+        lastFetchTime.current[cacheKey] = Date.now();
+        
+        return responseData.data;
+      } else {
+        throw new Error(responseData.message || 'Failed to update password');
+      }
+    } catch (err) {
+      console.error('Error updating password:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = async () => {
     // Reset user context data
     setCurrentUser(null);
@@ -389,6 +441,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         userStores,
         updateUser,
         changeUserEmail,
+        changeUserPassword,
         isLoading,
         storesLoading,
         error,

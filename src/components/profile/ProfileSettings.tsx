@@ -86,7 +86,7 @@ export default function ProfileSettings({
     }
   };
 
-  const handleChangeEmail = async (newEmail: string, currentPassword: string) => {
+  const handleChangeEmail = async (newEmail: string, currentPassword: string): Promise<boolean> => {
     try {
       if (!user?.id) {
         throw new Error("ไม่พบข้อมูลผู้ใช้");
@@ -131,9 +131,6 @@ export default function ProfileSettings({
       <ProfileForm
         initialData={formData}
         isEditing={isEditing}
-        canChangeEmail={canChangeEmail} 
-        lastEmailChange={lastEmailChange}
-        emailError={emailError}
         onInputChange={onInputChange}
         onImageChange={onImageChange}
         onSaveProfile={handleSaveProfile}
@@ -161,6 +158,7 @@ export default function ProfileSettings({
         onPasswordChange={onPasswordChange}
         onChangePassword={handleChangePassword}
         initialData={passwordData}
+        userId={user.id}
       />
     </div>
   );

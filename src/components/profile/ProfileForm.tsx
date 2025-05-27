@@ -104,6 +104,7 @@ export default function ProfileForm({
                     accept="image/*"
                     ref={fileInputRef}
                     onChange={onImageChange}
+                    aria-label="เลือกรูปโปรไฟล์"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 5MB
@@ -202,6 +203,7 @@ export default function ProfileForm({
                 </Button>
                 <Button
                   type="submit"
+                  variant="primary"
                   className="cursor-pointer"
                 >
                   บันทึก

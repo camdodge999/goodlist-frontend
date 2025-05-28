@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ProfileForm from "./ProfileForm";
 import PasswordForm from "./PasswordForm";
 import EmailForm from "./EmailForm";
@@ -69,7 +69,7 @@ export default function ProfileSettings({
   fileInputRef
 }: ProfileSettingsProps) {
   // Use the user context for email change
-  const { changeUserEmail, refreshUser, verifyUserEmail } = useUser();
+  const { changeUserEmail, verifyUserEmail } = useUser();
 
   // Email OTP modal states
   const [showEmailOtpModal, setShowEmailOtpModal] = useState(false);

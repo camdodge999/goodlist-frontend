@@ -23,7 +23,7 @@ import { Store } from "@/types/stores";
 export default function VerifyPageClient() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { fetchUserProfile, getVerificationStatus, isLoading: userLoading, userStores } = useUser();
+  const { fetchUserProfile, isLoading: userLoading, userStores } = useUser();
   const { addStore } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);

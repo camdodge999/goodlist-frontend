@@ -572,29 +572,29 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     setPendingEmailChange(null);
   };
 
-  const handleEmailChangeSuccess = (responseData: { data: UserResponse }, emailData: {email: string, password: string}) => {
-    // Check if response contains UserResponse with otpToken
-    if (responseData?.data) {
-      const userData = responseData.data;
-      setEmailOtpData({
-        email: userData.email,
-        refNumber: userData.refNumber,
-        displayName: userData.displayName,
-      });
-      setPendingEmailChange(emailData);
-      setShowEmailOtpModal(true);
-      // Start email cooldown timer since OTP was just sent
-      startEmailCooldownTimer();
-    } else {
-      // If no OTP required, show success message
-      displaySuccessDialog("อีเมลได้เปลี่ยนเรียบร้อยแล้ว");
-      setIsEditing(false);
-    }
-  };
+  // const handleEmailChangeSuccess = (responseData: { data: UserResponse }, emailData: {email: string, password: string}) => {
+  //   // Check if response contains UserResponse with otpToken
+  //   if (responseData?.data) {
+  //     const userData = responseData.data;
+  //     setEmailOtpData({
+  //       email: userData.email,
+  //       refNumber: userData.refNumber,
+  //       displayName: userData.displayName,
+  //     });
+  //     setPendingEmailChange(emailData);
+  //     setShowEmailOtpModal(true);
+  //     // Start email cooldown timer since OTP was just sent
+  //     startEmailCooldownTimer();
+  //   } else {
+  //     // If no OTP required, show success message
+  //     displaySuccessDialog("อีเมลได้เปลี่ยนเรียบร้อยแล้ว");
+  //     setIsEditing(false);
+  //   }
+  // };
 
-  const handleEmailChangeError = (error: string) => {
-    displayErrorDialog(error);
-  };
+  // const handleEmailChangeError = (error: string) => {
+  //   displayErrorDialog(error);
+  // };
 
   const handleResendEmailOtp = async (): Promise<void> => {
     if (!pendingEmailChange) {

@@ -11,7 +11,7 @@ import { UserResponse } from "@/types/users";
 import Spinner from "@/components/ui/Spinner";
 import { useUser } from "@/contexts/UserContext";
 import { emailChangeSchema, type EmailChangeSchema } from "@/validators/profile.schema";
-
+import { ZodError } from "zod";
 dayjs.extend(buddhistEra);
 dayjs.extend(duration);
 dayjs.locale('th');
@@ -63,9 +63,9 @@ export default function EmailForm({
             return true;
         } catch (error) {
             if (error instanceof Error && 'errors' in error) {
-                const zodError = error as any;
+                const zodError = error as unknown as ZodError;
                 const errors: Partial<EmailChangeSchema> = {};
-                zodError.errors.forEach((err: any) => {
+                zodError.errors.forEach((err) => {
                     if (err.path[0]) {
                         errors[err.path[0] as keyof EmailChangeSchema] = err.message;
                     }

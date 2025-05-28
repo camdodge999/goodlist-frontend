@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, type JSX, ChangeEvent, useEffect, useRef } from "react";
+import { useState, FormEvent, type JSX, ChangeEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";

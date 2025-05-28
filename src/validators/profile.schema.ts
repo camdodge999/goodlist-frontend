@@ -13,7 +13,7 @@ export type ProfileFormSchema = z.infer<typeof profileFormSchema>;
 
 // Password Form Schema
 export const passwordFormSchema = z.object({
-  oldPassword: z.string().min(1, "กรุณากรอกรหัสผ่านเดิม"),
+  oldPassword: z.string().min(1, "กรุณากรอกรหัสผ่านปัจจุบัน"),
   newPassword: z
     .string()
     .min(8, "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร"),
@@ -27,8 +27,11 @@ export type PasswordFormSchema = z.infer<typeof passwordFormSchema>;
 
 // Email Change Schema
 export const emailChangeSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  newEmail: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  currentPassword: z.string().min(1, "กรุณากรอกรหัสผ่านปัจจุบัน"),
 });
+
+export type EmailChangeSchema = z.infer<typeof emailChangeSchema>;
 
 // OTP Validation Schema
 export const otpValidationSchema = z.object({

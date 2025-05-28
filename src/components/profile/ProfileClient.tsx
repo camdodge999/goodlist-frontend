@@ -10,7 +10,6 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileStores from "@/components/profile/ProfileStores";
 import ProfileSettings from "@/components/profile/ProfileSettings";
 import OtpModal from "@/components/auth/OtpModal";
-import ProfileOtpModal from "@/components/profile/OtpModal";
 import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
 
@@ -24,22 +23,18 @@ interface ProfileClientProps {
 
 // ProfileClient component handles user profile management
 export default function ProfileClient({ user }: ProfileClientProps) {
-  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut, verifyUserPassword } = useUser();
+  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut, verifyUserPassword, changeUserPassword, changeUserEmail } = useUser();
   const [activeTab, setActiveTab] = useState("stores");
   const [isEditing, setIsEditing] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [otpValues, setOtpValues] = useState([""]);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [lastEmailChange, setLastEmailChange] = useState<Date | null>(null);
-  const [canChangeEmail, setCanChangeEmail] = useState(true);
-  const [tempEmail, setTempEmail] = useState("");
+  const [lastEmailChange] = useState<Date | null>(null);
+  const [canChangeEmail] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [cooldownTimer, setCooldownTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Add separate email cooldown states
+  const [emailCooldownSeconds, setEmailCooldownSeconds] = useState(0);
+  const [emailCooldownTimer, setEmailCooldownTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Add password OTP modal states
   const [showPasswordOtpModal, setShowPasswordOtpModal] = useState(false);
@@ -47,6 +42,16 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [passwordOtpValue, setPasswordOtpValue] = useState("");
   const [passwordOtpError, setPasswordOtpError] = useState("");
   const [isVerifyingPasswordOtp, setIsVerifyingPasswordOtp] = useState(false);
+  const [isSendingPasswordOtp, setIsSendingPasswordOtp] = useState(false);
+
+  // Add email OTP modal states
+  const [showEmailOtpModal, setShowEmailOtpModal] = useState(false);
+  const [emailOtpData, setEmailOtpData] = useState<Partial<UserResponse> | null>(null);
+  const [emailOtpValue, setEmailOtpValue] = useState("");
+  const [emailOtpError, setEmailOtpError] = useState("");
+  const [isVerifyingEmailOtp, setIsVerifyingEmailOtp] = useState(false);
+  const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
+  const [pendingEmailChange, setPendingEmailChange] = useState<{email: string, password: string} | null>(null);
 
   // Add the useShowDialog hook
   const {
@@ -106,8 +111,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           await fetchUserProfile(user.id, true);
           initialized.current = true;
         }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
+      } catch {
+        console.error("Error fetching user profile:");
       }
     };
 
@@ -122,24 +127,23 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         address: displayUser.address || "",
         logo_url: displayUser.logo_url || "",
       });
-      setTempEmail(displayUser.email || "");
     };
 
     updateFormWithUserData();
 
     // Check last email change date from localStorage
-    const lastChange = localStorage.getItem("lastEmailChange");
-    if (lastChange) {
-      const lastChangeDate = new Date(lastChange);
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    // const lastChange = localStorage.getItem("lastEmailChange");
+    // if (lastChange) {
+    //   const lastChangeDate = new Date(lastChange);
+    //   const oneMonthAgo = new Date();
+    //   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-      if (lastChangeDate > oneMonthAgo) {
-        setCanChangeEmail(false);
-        setLastEmailChange(lastChangeDate);
-      }
-    }
-  }, [user.id, fetchUserProfile, displayUser]);
+    //   if (lastChangeDate > oneMonthAgo) {
+    //     setCanChangeEmail(false);
+    //     setLastEmailChange(lastChangeDate);
+    //   }
+    // }
+  }, [user.id, displayUser]);
 
   // Add a separate effect to update form data when displayUser changes
   useEffect(() => {
@@ -151,7 +155,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         address: displayUser.address || "",
         logo_url: displayUser.logo_url || "",
       });
-      setTempEmail(displayUser.email || "");
     }
   }, [displayUser]);
 
@@ -161,8 +164,11 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       if (cooldownTimer) {
         clearInterval(cooldownTimer);
       }
+      if (emailCooldownTimer) {
+        clearInterval(emailCooldownTimer);
+      }
     };
-  }, [cooldownTimer]);
+  }, [cooldownTimer, emailCooldownTimer]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -182,113 +188,10 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     return true;
   };
 
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      // Handle paste
-      const pastedValues = value.split("").slice(0, 6);
-      const newOtpValues = [...otpValues];
-      pastedValues.forEach((val, i) => {
-        if (i < 6) {
-          newOtpValues[i] = val;
-        }
-      });
-      setOtpValues(newOtpValues);
-      setOtp(newOtpValues.join(""));
-
-      // Focus the last input
-      const lastInputIndex = Math.min(pastedValues.length - 1, 5);
-      if (inputRefs.current[lastInputIndex]) {
-        inputRefs.current[lastInputIndex]?.focus();
-      }
-      return;
-    }
-
-    const newOtpValues = [...otpValues];
-    newOtpValues[index] = value;
-    setOtpValues(newOtpValues);
-    setOtp(newOtpValues.join(""));
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      if (inputRefs.current[index + 1]) {
-        inputRefs.current[index + 1]?.focus();
-      }
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
-      // Move to previous input on backspace
-      if (inputRefs.current[index - 1]) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-      setError("กรุณากรอก OTP ให้ครบ 6 หลัก");
-      return;
-    }
-
-    if (otp !== "000000") {
-      setError("OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
-      return;
-    }
-
-    setIsVerifying(true);
-    setError("");
-
-    try {
-      // Here you would typically make an API call to update the email
-      // For now, we'll just update the local state
-      setFormData((prev) => ({ ...prev, email: tempEmail }));
-      localStorage.setItem("lastEmailChange", new Date().toISOString());
-      setCanChangeEmail(false);
-      setShowOtpModal(false);
-      setIsEditing(false);
-
-      // Reset OTP states
-      setOtp("");
-      setOtpValues(["", "", "", "", "", ""]);
-      setOtpSent(false);
-    } catch {
-      // Handle error without variable
-      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleSendOtp = async () => {
-    setIsSendingOtp(true);
-    setError("");
-
-    try {
-      // Simulate API call to send OTP
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setOtpSent(true);
-    } catch {
-      // Handle error without variable
-      setError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  const handleCloseOtpModal = () => {
-    setShowOtpModal(false);
-    setOtp("");
-    setOtpValues(["", "", "", "", "", ""]);
-    setOtpSent(false);
-    setError("");
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
     if (name === "email") {
-      setTempEmail(value);
       validateEmail(value);
     } else {
       setFormData((prev) => ({
@@ -370,7 +273,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       }
     } catch (err) {
       console.error("Error updating profile:", err);
-      displayErrorDialog("An error occurred while updating your profile");
+      displayErrorDialog("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
@@ -398,7 +301,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         address: displayUser?.address || "",
         logo_url: displayUser?.logo_url || "",
       });
-      setTempEmail(displayUser?.email || "");
       setPreviewImage(null);
       setProfileImage(null);
       setEmailError("");
@@ -418,6 +320,15 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     // Clear error when user starts typing
     if (passwordOtpError) {
       setPasswordOtpError("");
+    }
+  };
+
+  // Email OTP handlers - following the same pattern
+  const handleEmailOtpChange = (value: string): void => {
+    setEmailOtpValue(value);
+    // Clear error when user starts typing
+    if (emailOtpError) {
+      setEmailOtpError("");
     }
   };
 
@@ -443,7 +354,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         displayName: displayUser.displayName!,
       });
 
-      if (response.statusCode === 200) {
+      if (response.statusCode === 201) {
         // Close OTP modal
         setShowPasswordOtpModal(false);
         // Clear any existing cooldown timer when closing modal
@@ -461,7 +372,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         setIsEditing(false);
         displaySuccessDialog("เปลี่ยนรหัสผ่านสำเร็จ");
       } else {
-        displayErrorDialog(response.message);
+        setPasswordOtpError(response.message || "OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       }
 
       // Reset OTP states
@@ -479,13 +390,9 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     setPasswordOtpValue("");
     setPasswordOtpError("");
     setPasswordOtpData(null);
-
-    // Clear any existing cooldown timer when closing modal
-    if (cooldownTimer) {
-      clearInterval(cooldownTimer);
-      setCooldownTimer(null);
-      setCooldownSeconds(0);
-    }
+    
+    // Keep cooldown timer running when closing modal for rate limiting
+    // Don't clear the timer - let it continue running
   };
 
   const handlePasswordChangeSuccess = (responseData: { data: UserResponse }) => {
@@ -508,6 +415,43 @@ export default function ProfileClient({ user }: ProfileClientProps) {
 
   const handlePasswordChangeError = (error: string) => {
     displayErrorDialog(error);
+  };
+
+  const handleResendPasswordOtp = async (): Promise<void> => {
+    if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      displayErrorDialog("กรุณากรอกข้อมูลรหัสผ่านให้ครบถ้วน");
+      return;
+    }
+
+    setIsSendingPasswordOtp(true);
+    setPasswordOtpError("");
+
+    try {
+      const result = await changeUserPassword({
+        userId: displayUser.id,
+        oldPassword: passwordData.oldPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
+        email: displayUser.email || "",
+        displayName: displayUser.displayName || ""
+      });
+
+      if (result && typeof result === 'object' && 'data' in result && result.data) {
+        // Update OTP data with new reference number
+        const responseData = result.data as UserResponse;
+        setPasswordOtpData({
+          email: responseData.email,
+          refNumber: responseData.refNumber,
+          displayName: responseData.displayName,
+        });
+        // Start new cooldown timer
+        startCooldownTimer();
+      }
+    } catch {
+      setPasswordOtpError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSendingPasswordOtp(false);
+    }
   };
 
   const startCooldownTimer = () => {
@@ -539,6 +483,152 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     return () => {
       if (timer) clearInterval(timer);
     };
+  };
+
+  const startEmailCooldownTimer = () => {
+    // Set initial cooldown time (3 minutes = 180 seconds)
+    setEmailCooldownSeconds(180);
+
+    // Clear any existing email timer
+    if (emailCooldownTimer) {
+      clearInterval(emailCooldownTimer);
+    }
+
+    // Start a new timer that decrements the email cooldown every second
+    const timer = setInterval(() => {
+      setEmailCooldownSeconds(prevSeconds => {
+        if (prevSeconds <= 1) {
+          // When timer reaches 0, clear the interval and allow resending
+          clearInterval(timer);
+          setEmailCooldownTimer(null);
+          return 0;
+        }
+        return prevSeconds - 1;
+      });
+    }, 1000);
+
+    // Store the timer ID so we can clear it later if needed
+    setEmailCooldownTimer(timer);
+
+    // Cleanup function to clear the timer when component unmounts
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (emailOtpValue.length !== 6) {
+      setEmailOtpError("กรุณากรอก OTP ให้ครบ 6 หลัก");
+      return;
+    }
+
+    setIsVerifyingEmailOtp(true);
+    setEmailOtpError("");
+
+    try {
+      // Make API call to verify OTP and complete email change
+      const response = await fetch('/api/user/email/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: pendingEmailChange?.email,
+          otpCode: emailOtpValue,
+          password: pendingEmailChange?.password
+        }),
+      });
+
+      if (response.ok) {
+        // Close OTP modal
+        setShowEmailOtpModal(false);
+        
+        // Reset email OTP states
+        setEmailOtpValue("");
+        setEmailOtpData(null);
+        setPendingEmailChange(null);
+        setIsEditing(false);
+        displaySuccessDialog("อีเมลได้เปลี่ยนเรียบร้อยแล้ว");
+        
+        // Refresh user data
+        await refreshUser();
+      } else {
+        const errorData = await response.json();
+        setEmailOtpError(errorData.message || "OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+      }
+    } catch (error) {
+      console.error("Error verifying email OTP:", error);
+      setEmailOtpError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsVerifyingEmailOtp(false);
+    }
+  };
+
+  const handleCloseEmailOtpModal = () => {
+    setShowEmailOtpModal(false);
+    setEmailOtpValue("");
+    setEmailOtpError("");
+    setEmailOtpData(null);
+    setPendingEmailChange(null);
+  };
+
+  // const handleEmailChangeSuccess = (responseData: { data: UserResponse }, emailData: {email: string, password: string}) => {
+  //   // Check if response contains UserResponse with otpToken
+  //   if (responseData?.data) {
+  //     const userData = responseData.data;
+  //     setEmailOtpData({
+  //       email: userData.email,
+  //       refNumber: userData.refNumber,
+  //       displayName: userData.displayName,
+  //     });
+  //     setPendingEmailChange(emailData);
+  //     setShowEmailOtpModal(true);
+  //     // Start email cooldown timer since OTP was just sent
+  //     startEmailCooldownTimer();
+  //   } else {
+  //     // If no OTP required, show success message
+  //     displaySuccessDialog("อีเมลได้เปลี่ยนเรียบร้อยแล้ว");
+  //     setIsEditing(false);
+  //   }
+  // };
+
+  // const handleEmailChangeError = (error: string) => {
+  //   displayErrorDialog(error);
+  // };
+
+  const handleResendEmailOtp = async (): Promise<void> => {
+    if (!pendingEmailChange) {
+      displayErrorDialog("ไม่พบข้อมูลการเปลี่ยนอีเมล");
+      return;
+    }
+
+    setIsSendingEmailOtp(true);
+    setEmailOtpError("");
+
+    try {
+      const result = await changeUserEmail({
+        userId: displayUser.id,
+        email: displayUser.email || "",
+        newEmail: pendingEmailChange.email,
+        password: pendingEmailChange.password
+      });
+
+      if (result && typeof result === 'object' && 'data' in result && result.data) {
+        // Update OTP data with new reference number
+        const responseData = result.data as UserResponse;
+        setEmailOtpData({
+          email: responseData.email,
+          refNumber: responseData.refNumber,
+          displayName: responseData.displayName,
+        });
+        // Start new email cooldown timer
+        startEmailCooldownTimer();
+      }
+    } catch {
+      setEmailOtpError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSendingEmailOtp(false);
+    }
   };
 
   return (
@@ -582,15 +672,33 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           otpValue={passwordOtpValue}
           error={passwordOtpError}
           isVerifying={isVerifyingPasswordOtp}
-          isSendingOtp={false}
+          isSendingOtp={isSendingPasswordOtp}
           refNumber={passwordOtpData.refNumber || ""}
           cooldownSeconds={cooldownSeconds}
           onOtpChange={handlePasswordOtpChange}
           onVerify={handleVerifyPasswordOtp}
           onClose={handleClosePasswordOtpModal}
-          onSendOtp={async () => { }} // No resend for password OTP
+          onSendOtp={handleResendPasswordOtp}
         />
       )}
+
+      {/* Email OTP Modal */}
+      {showEmailOtpModal && emailOtpData && (
+        <OtpModal
+          email={emailOtpData.email || ""}
+          otpValue={emailOtpValue}
+          error={emailOtpError}
+          isVerifying={isVerifyingEmailOtp}
+          isSendingOtp={isSendingEmailOtp}
+          refNumber={emailOtpData.refNumber || ""}
+          cooldownSeconds={emailCooldownSeconds}
+          onOtpChange={handleEmailOtpChange}
+          onVerify={handleVerifyEmailOtp}
+          onClose={handleCloseEmailOtpModal}
+          onSendOtp={handleResendEmailOtp}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header - Use the most up-to-date user data */}
         <ProfileHeader
@@ -626,6 +734,9 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                 lastEmailChange={lastEmailChange}
                 emailError={emailError}
                 passwordError={passwordError}
+                isChangingPassword={false}
+                cooldownSeconds={cooldownSeconds}
+                emailCooldownSeconds={emailCooldownSeconds}
                 onInputChange={handleInputChange}
                 onPasswordChange={handlePasswordChange}
                 onImageChange={handleImageChange}

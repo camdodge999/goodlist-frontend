@@ -7,6 +7,10 @@ import { useUser } from "@/contexts/UserContext";
 import { useStore } from "@/contexts/StoreContext";
 import useShowDialog from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
+import { Button } from "@/components/ui/button";
+import dayjs from "dayjs";  
+import "dayjs/locale/th";
+dayjs.locale("th");
 
 // Components
 import VerificationStatusBox from "@/components/verify/VerificationStatusBox";
@@ -14,13 +18,15 @@ import VerificationForm from "@/components/verify/VerificationForm";
 
 // Types
 import { VerificationFormSchema } from "@/validators/verify.schema";
+import { Store } from "@/types/stores";
 
 export default function VerifyPageClient() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { fetchUserProfile, getVerificationStatus, isLoading: userLoading, userStores } = useUser();
+  const { fetchUserProfile, isLoading: userLoading, userStores } = useUser();
   const { addStore } = useStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [saveFormData, setSaveFormData] = useState<VerificationFormSchema | null>(null);
   const [savedFiles, setSavedFiles] = useState<{
     imageStore: File | null;
@@ -59,7 +65,42 @@ export default function VerifyPageClient() {
       initialFetchComplete.current = true;
       fetchUserProfile(session.user.id);
     }
-  }, [status, session, router, fetchUserProfile]);
+  }, [status, session, router]);
+
+  // Get the oldest store (first store created)
+  const getOldestStore = (): Store | null => {
+    if (userStores.length === 0) return null;
+    
+    // Sort stores by createdAt to get the oldest one
+    const sortedStores = [...userStores].sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    
+    return sortedStores[0];
+  };
+
+  // Get verification status based on the oldest store
+  const getStoreVerificationStatus = (): "not_started" | "pending" | "verified" | "banned" => {
+    const oldestStore = getOldestStore();
+    
+    if (!oldestStore) {
+      return "not_started";
+    }
+    
+    // Check if store is banned
+    if (oldestStore.isBanned) {
+      return "banned";
+    }
+    
+    // Check verification status
+    if (oldestStore.isVerified === true) {
+      return "verified";
+    } else if (oldestStore.isVerified === false) {
+      return "banned"; // Store didn't pass verification
+    } else {
+      return "pending"; // isVerified is null, waiting for verification
+    }
+  };
 
   const handleFormSubmit = async (
     formData: VerificationFormSchema,
@@ -113,6 +154,7 @@ export default function VerifyPageClient() {
         // Clear saved form data on success
         setSaveFormData(null);
         setSavedFiles(null);
+        setShowForm(false);
         
         displaySuccessDialog({
           message: "ส่งเอกสารเรียบร้อยแล้ว กรุณารอการตรวจสอบ",
@@ -131,6 +173,10 @@ export default function VerifyPageClient() {
     }
   };
 
+  const handleAddAnotherStore = () => {
+    setShowForm(true);
+  };
+
   if (userLoading || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -139,7 +185,8 @@ export default function VerifyPageClient() {
     );
   }
 
-  const verificationStatus = getVerificationStatus();
+  const storeVerificationStatus = getStoreVerificationStatus();
+  const oldestStore = getOldestStore();
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -149,17 +196,10 @@ export default function VerifyPageClient() {
             ยืนยันตัวตนร้านค้า
           </h1>
 
-          {/* Debug information - remove in production
-          <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
-            <p>Session user: {session?.user?.id || 'Not authenticated'}</p>
-            <p>Current user: {currentUser ? JSON.stringify(currentUser.id) : 'Not loaded'}</p>
-            <p>Verification status: {verificationStatus}</p>
-          </div> */}
+          <VerificationStatusBox status={storeVerificationStatus} />
 
-          <VerificationStatusBox status={userStores.length > 0 ? "verified" : verificationStatus} />
-
-          {/* Always show form if user hasn't been verified yet */}
-          {verificationStatus === "not_started" && (
+          {/* Show form when no stores exist or when user clicks add another store */}
+          {(storeVerificationStatus === "not_started" || showForm) && (
             <>
               {isLoading && (
                 <div className="mb-4 p-4 bg-blue-50 rounded-lg">
@@ -179,6 +219,73 @@ export default function VerifyPageClient() {
                 isSubmitting={isLoading}
               />
             </>
+          )}
+
+          {/* Show add another store button for verified stores */}
+          {storeVerificationStatus === "verified" && !showForm && (
+            <div className="mt-6">
+              <Button
+                onClick={handleAddAnotherStore}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                เพิ่มร้านค้าใหม่
+              </Button>
+              
+              {oldestStore && (
+                <div className="mt-4 p-4 bg-green-50 rounded-lg">
+                  <h3 className="text-sm font-medium text-green-800 mb-2">
+                    ร้านค้าที่ได้รับการยืนยันแล้ว
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    <strong>{oldestStore.storeName}</strong>
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    ยืนยันเมื่อ: {oldestStore.verifiedAt ? dayjs(oldestStore.verifiedAt).format('DD/MM/YYYY') : 'ไม่ระบุ'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Show information for pending stores */}
+          {storeVerificationStatus === "pending" && !showForm && oldestStore && (
+            <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
+              <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                ร้านค้าที่รอการตรวจสอบ
+              </h3>
+              <p className="text-sm text-yellow-700">
+                <strong>{oldestStore.storeName}</strong>
+              </p>
+              <p className="text-xs text-yellow-600 mt-1">
+                ส่งเอกสารเมื่อ: {dayjs(oldestStore.createdAt).format('DD/MM/YYYY')}
+              </p>
+            </div>
+          )}
+
+          {/* Show information for banned/rejected stores */}
+          {storeVerificationStatus === "banned" && !showForm && oldestStore && (
+            <div className="mt-6 p-4 bg-red-50 rounded-lg">
+              <h3 className="text-sm font-medium text-red-800 mb-2">
+                ร้านค้าที่ไม่ผ่านการตรวจสอบ
+              </h3>
+              <p className="text-sm text-red-700">
+                <strong>{oldestStore.storeName}</strong>
+              </p>
+              {oldestStore.rejectionReason && (
+                <p className="text-xs text-red-600 mt-1">
+                  เหตุผล: {oldestStore.rejectionReason}
+                </p>
+              )}
+              <div className="mt-3">
+                <Button
+                  onClick={handleAddAnotherStore}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                  size="sm"
+                >
+                  ส่งเอกสารใหม่
+                </Button>
+              </div>
+            </div>
           )}
 
           {/* Status Dialogs */}

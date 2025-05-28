@@ -20,7 +20,7 @@ export function useAuthenticatedImage(imageUrl: string | null | undefined) {
       try {
         const response = await fetch(`/api/images/uploads?path=${encodeURIComponent(imageUrl)}`, {
           headers: session?.user?.token ? {
-            'Authorization': `Bearer ${session.user.token}`
+            'Authorization': `Bearer ${session?.user?.token}`
           } : {}
         });
 

@@ -148,7 +148,23 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     {
       id: "pending",
       name: "ร้านค้าที่รอการตรวจสอบ",
-      count: adminStores.filter((s) => s.isVerified === null && !s.isBanned).length,
+      count: adminStores.filter((s) => {
+        // Only count the oldest store for each user in pending verification
+        if (s.isVerified !== null || s.isBanned === true) return false;
+        
+        // Find all stores for this user
+        const userStores = adminStores.filter(store => store.userId === s.userId);
+        
+        // If user has only one store, include it
+        if (userStores.length === 1) return true;
+        
+        // If user has multiple stores, only include the oldest one (lowest id)
+        const oldestStore = userStores.reduce((oldest, current) => 
+          current.id < oldest.id ? current : oldest
+        );
+        
+        return s.id === oldestStore.id;
+      }).length,
     },
     {
       id: "reported",
@@ -164,7 +180,11 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       id: "additional",
       name: "คำขอเพิ่มร้านค้า",
       count: adminStores.filter(
-        (s) => s.userId > 0 && s.isVerified === null && s.isBanned === false
+        (s) => {
+          // Count stores where user has more than one store (additional stores)
+          const userStoreCount = adminStores.filter(store => store.userId === s.userId).length;
+          return userStoreCount > 1 && s.isVerified === null && s.isBanned === false;
+        }
       ).length,
     },
     {
@@ -179,14 +199,30 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
     return adminStores.filter((store) => {
       switch (activeTab) {
         case "pending":
-          return store.isVerified === null && !store.isBanned;
+          // Only show the oldest store for each user in pending verification
+          if (store.isVerified !== null || store.isBanned === true) return false;
+          
+          // Find all stores for this user
+          const userStores = adminStores.filter(s => s.userId === store.userId);
+          
+          // If user has only one store, include it
+          if (userStores.length === 1) return true;
+          
+          // If user has multiple stores, only include the oldest one (lowest id)
+          const oldestStore = userStores.reduce((oldest, current) => 
+            current.id < oldest.id ? current : oldest
+          );
+          
+          return store.id === oldestStore.id;
         case "reported":
-          // Show stores that have reports
+          // Show stores that have reports and are not banned
           return allReports.some((report) => report.storeId === store.id) && store.isBanned === false;
         case "verified":
           return store.isVerified !== null && store.isBanned === false;
         case "additional":
-          return store.userId > 0 && store.isVerified === null && store.isBanned === false;
+          // Show stores where user has more than one store (additional stores)
+          const userStoreCount = adminStores.filter(s => s.userId === store.userId).length;
+          return userStoreCount > 1 && store.isVerified === null && store.isBanned === false;
         case "banned":
           return store.isBanned === true;
         default:

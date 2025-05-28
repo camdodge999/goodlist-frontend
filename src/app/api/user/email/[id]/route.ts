@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BodyResponse } from '@/types/response';
-import { User } from '@/types/users';
+import { UserResponse } from '@/types/users';
 import { fetchWithAuth } from '@/lib/fetch-with-auth';
 
 export async function PUT(
@@ -23,9 +23,9 @@ export async function PUT(
     }
 
     // Get the email and password data from the request
-    const { email, currentPassword } = await request.json();
+    const { email, newEmail, password } = await request.json();
 
-    if (!email || !currentPassword) {
+    if (!email || !password) {
       return NextResponse.json(
         {
           statusCode: 400,
@@ -37,12 +37,18 @@ export async function PUT(
     }
 
     // Forward the email change request to the backend API
-    const result = await updateUserEmail(request, userId.toString(), email, currentPassword);
+    const result = await updateUserEmail({
+      request,
+      id: userId.toString(),
+      email: email, 
+      newEmail: newEmail,
+      password: password
+    });
 
     return NextResponse.json({
       statusCode: result.statusCode,
       message: result.message,
-      data: result.data?.profileDetail,
+      data: result.data,
     }, { status: result.statusCode });
 
   } catch (error) {
@@ -58,20 +64,28 @@ export async function PUT(
   }
 }
 
-async function updateUserEmail(
-  request: NextRequest,
-  id: string,
-  newEmail: string,
-  currentPassword: string
-): Promise<BodyResponse<{ profileDetail: User }>> {
+async function updateUserEmail({
+  request,
+  id,
+  email,
+  newEmail,
+  password
+}: {
+  request: NextRequest;
+  id: string;
+  email: string;
+  newEmail: string;
+  password: string;
+}): Promise<BodyResponse<UserResponse>> {
   // Use fetchWithAuth to handle token extraction and API call
-  const result = await fetchWithAuth<BodyResponse<{ profileDetail: User }>>({
+  const result = await fetchWithAuth<BodyResponse<UserResponse>>({
     request,
     url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/edit-email/${id}`,
     method: "PUT",
     body: {
-      email: newEmail,
-      currentPassword: currentPassword
+      email: email,
+      newEmail: newEmail,
+      password: password
     },
     extendHeaders: {
       'Content-Type': 'application/json'

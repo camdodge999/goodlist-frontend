@@ -47,7 +47,7 @@ const ProfileStores: React.FC<ProfileStoresProps> = ({ stores, isLoading = false
     return (
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         <ul role="list" className="divide-y divide-gray-200">
-          {[...Array(3)].map((_, index) => (
+          {[...Array(5)].map((_, index) => (
             <li key={`skeleton-${index}`}>
               <StoreSkeleton />
             </li>

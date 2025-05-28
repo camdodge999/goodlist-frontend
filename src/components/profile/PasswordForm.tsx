@@ -8,12 +8,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import Spinner from "../ui/Spinner";
 import { UserResponse } from "@/types/users";
+import dayjs from "dayjs";
+import duration from 'dayjs/plugin/duration'
+
+dayjs.extend(duration)
+
 interface PasswordFormProps {
   isEditing: boolean;
   email: string;
   displayName: string;
   passwordError: string;
   isChangingPassword: boolean;
+  cooldownSeconds?: number;
   onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChangePassword: () => Promise<void>;
   onPasswordChangeSuccess?: (responseData: { data: UserResponse }) => void;
@@ -28,6 +34,7 @@ export default function PasswordForm({
   isChangingPassword, 
   email,
   displayName,
+  cooldownSeconds,
   onPasswordChange,
   onChangePassword,
   onPasswordChangeSuccess,
@@ -100,7 +107,7 @@ export default function PasswordForm({
       } else if (!passwordValidation.hasNumber) {
         errors.newPassword = "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว";
       } else if (passwordValidation.samePassword) {
-        errors.newPassword = "รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านเดิม";
+        errors.newPassword = "รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านปัจจุบัน";
       }
 
       setValidationErrors(errors);
@@ -284,7 +291,7 @@ export default function PasswordForm({
                       icon={!passwordValidation.samePassword ? faCheck : faTimes}
                       className={`mr-2 ${!passwordValidation.samePassword ? "text-green-500" : "text-red-500"}`}
                     />
-                    <span>รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านเดิม</span>
+                    <span>รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านปัจจุบัน</span>
                   </li>
                 </ul>
               </div>
@@ -322,10 +329,16 @@ export default function PasswordForm({
             type="submit"
             variant="primary"
             className="flex items-center gap-2"
-            disabled={isChangingPassword || isSubmitting}
+            disabled={isChangingPassword || isSubmitting || (cooldownSeconds || 0) > 0}
           >
-            {isSubmitting && <Spinner />}
-            {(isChangingPassword || isSubmitting) ? "กำลังเปลี่ยนรหัสผ่าน..." : "เปลี่ยนรหัสผ่าน"}
+            {cooldownSeconds && cooldownSeconds > 0 ? (
+              <span>รอเปลี่ยนรหัสผ่าน... ({dayjs.duration(cooldownSeconds, 'seconds').format('mm:ss')})</span>
+            ) : (
+              <>
+                {isSubmitting && <Spinner />}
+                {isChangingPassword || isSubmitting ? "กำลังเปลี่ยนรหัสผ่าน..." : "เปลี่ยนรหัสผ่าน"}
+              </>
+            )}
           </Button>
         </div>
       </form>

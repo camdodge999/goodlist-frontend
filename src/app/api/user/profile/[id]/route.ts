@@ -36,6 +36,16 @@ export async function GET(
       );
     }
 
+    if(profile.statusCode === 401) {
+      console.log("result", profile);
+      return NextResponse.json({
+        statusCode: profile.statusCode,
+        message: profile.message,
+        data: profile.data?.profileDetail,
+      }, { status: profile.statusCode });
+    }
+
+
     return NextResponse.json({
       statusCode: 200,
       data: profile.data?.profileDetail,
@@ -85,12 +95,13 @@ export async function PUT(
     // Forward the update request to the backend API
     const result = await updateUserProfile(request, userId.toString(), body);
 
+    console.log("result", result);
+
     return NextResponse.json({
       statusCode: result.statusCode,
       message: result.message,
-      data: result.data?.profileDetail,
+      data: result.data,
     }, { status: result.statusCode });
-    
   } catch (error) {
     console.error("Error updating user profile:", error);
     return NextResponse.json(
@@ -110,7 +121,7 @@ async function fetchProfileById(
   id: string
 ): Promise<BodyResponse<{profileDetail: User}>> {  
   // Use fetchWithAuth to handle token extraction and API call
-  const result = await fetchWithAuth<BodyResponse<{profileDetail: User}>>({
+  const result = await fetchWithAuth<BodyResponse<{profileDetail: User} >>({
     request,
     url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/profile/${id}`,
     method: "GET"
@@ -118,6 +129,12 @@ async function fetchProfileById(
   
   if (result.statusCode === 200) {
     return result;
+  } else if(result.statusCode === 401) {
+    return {
+      statusCode: 401,
+      message: result.message,
+      data: undefined
+    }
   } else {
     throw new Error(result.message || "Failed to fetch profile");
   }
@@ -128,8 +145,6 @@ async function updateUserProfile(
   id: string,
   updateData: FormData | object
 ): Promise<BodyResponse<{profileDetail: User}>> {
-
-  console.log(updateData);
 
   // Use fetchWithAuth to handle token extraction and API call
   const result = await fetchWithAuth<BodyResponse<{profileDetail: User}>>({

@@ -1,5 +1,3 @@
-import { UserProvider } from "@/contexts/UserContext";
-import { StoreProvider } from "@/contexts/StoreContext";
 import { metadataPages } from "@/consts/metadata";
 import VerifyPageClient from "./VerifyPageClient";
 
@@ -12,10 +10,6 @@ export const metadata = {
 // Server component that wraps the client component with providers
 export default function VerifyPage() {
   return (
-    <StoreProvider>
-      <UserProvider>
-        <VerifyPageClient />
-      </UserProvider>
-    </StoreProvider>
+    <VerifyPageClient />
   );
 } 

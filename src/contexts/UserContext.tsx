@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signOut as nextAuthSignOut, signOut } from "next-auth/react";
+import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { Session } from "next-auth";
 import { User } from "@/types/users";
 import { Store } from "@/types/stores";
@@ -11,6 +11,7 @@ import { Store } from "@/types/stores";
 declare global {
   interface Window {
     __fetchingStores?: boolean;
+    __isLoggingOut?: boolean;
   }
 }
 
@@ -29,12 +30,24 @@ interface VerifyUserPasswordProps extends BaseUserPasswordProps {
   otpToken?: string;
 }
 
+interface BaseUserEmailProps{
+  userId: string;
+  email: string;
+  newEmail: string;
+  password: string;
+}
+
+interface VerifyUserEmailProps extends BaseUserEmailProps {
+  otpCode: string;
+  otpToken?: string;
+}
+
 
 interface UserContextProps {
   currentUser: User | null;
   userStores: Store[];
   updateUser: (userId: string, updates: Partial<User> | FormData) => Promise<User | null>;
-  changeUserEmail: (userId: string, newEmail: string, currentPassword: string) => Promise<User | null>;
+  changeUserEmail: (props: BaseUserEmailProps) => Promise<User | null>;
   changeUserPassword: (props: BaseUserPasswordProps) => Promise<any>;
   isLoading: boolean;
   storesLoading: boolean;
@@ -42,8 +55,12 @@ interface UserContextProps {
   refreshUser: () => Promise<User | null>;
   fetchUserProfile: (userId: string, forceRefresh?: boolean) => Promise<User | null>;
   verifyUserPassword: (props: VerifyUserPasswordProps) => Promise<any>;
+  verifyUserEmail: (props: VerifyUserEmailProps) => Promise<User | null>;
   verifyUser: (userId: string, verificationData: FormData | object) => Promise<boolean>;
   getVerificationStatus: () => "not_started" | "pending" | "verified" | "banned";
+  getLastFetchError: () => string | null;
+  clearConnectionRefused: (userId: string) => void;
+  isConnectionRefused: (userId: string) => boolean;
   signOut: () => Promise<void>;
 }
 
@@ -55,109 +72,190 @@ interface UserProviderProps {
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);
 
-// Create a promise cache to prevent duplicate requests
-const requestCache: Record<string, Promise<User | null>> = {};
-
 export function UserProvider({ children, initialUser = null, initialSession = null }: UserProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [userStores, setUserStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(!!initialSession?.user && !initialUser);
   const [storesLoading, setStoresLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
-  const lastFetchTime = useRef<Record<string, number>>({});
+  
+  // Use refs to track state without causing re-renders
+  const isFetchingProfile = useRef(false);
+  const lastFetchError = useRef<string | null>(null);
+  const connectionRefusedUsers = useRef<Set<string>>(new Set());
+  const isLoggingOut = useRef(false);
+  const currentUserRef = useRef<User | null>(initialUser);
+  const hasInitialFetch = useRef(false);
+  
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Cache time in milliseconds (5 minutes)
-  const CACHE_TIME = 5 * 60 * 1000;
+  // Update ref when currentUser changes
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
+  // Sign out function - defined early to be used in other functions
+  const signOut = async () => {
+    // Set logout flag to prevent infinite loops
+    isLoggingOut.current = true;
+    
+    // Reset user context data
+    setCurrentUser(null);
+    setUserStores([]);
+    currentUserRef.current = null;
+    hasInitialFetch.current = false;
+
+    // Call NextAuth signOut
+    await nextAuthSignOut({ redirect: false });
+    
+    // Reset the flag after a delay to allow NextAuth to complete
+    setTimeout(() => {
+      isLoggingOut.current = false;
+    }, 1000);
+  };
+
+  // Helper function to handle 401 errors consistently
+  const handle401Error = async (data: any, response: Response) => {
+    if (data.statusCode === 401 || response.status === 401) {
+      console.log('Unauthorized access detected (401), logging out user');
+      setError('Session expired. Please log in again.');
+      
+      // Only logout if we're not already in the process of logging out
+      if (!isLoggingOut.current) {
+        await signOut();
+      }
+      return true; // Indicates 401 was handled
+    }
+    return false; // No 401 error
+  };
 
   // Fetch user profile from API with cache support
   const fetchUserProfile = useCallback(async (userId: string, forceRefresh = false): Promise<User | null> => {
-    const cacheKey = `user_${userId}`;
-
-    // If we already have the user and force refresh is not set, 
-    // and we fetched less than CACHE_TIME ago, return the cached user
-    if (
-      !forceRefresh &&
-      currentUser?.id === userId &&
-      lastFetchTime.current[cacheKey] &&
-      Date.now() - lastFetchTime.current[cacheKey] < CACHE_TIME
-    ) {
-      return currentUser;
+    // Prevent fetching if we're in the process of logging out
+    if (isLoggingOut.current) {
+      console.log('Skipping fetch - logout in progress');
+      return null;
     }
 
-    // If there's already a request in progress for this user, return that promise
-    if (!forceRefresh && cacheKey in requestCache) {
-      return requestCache[cacheKey];
+    // Prevent concurrent fetches
+    if (isFetchingProfile.current && !forceRefresh) {
+      console.log('Fetch already in progress, skipping');
+      return currentUserRef.current;
     }
 
-    // Set loading state only if we're actually going to fetch
+    // If we already have the user and it's not a forced refresh, return the cached user
+    if (!forceRefresh && currentUserRef.current?.id === userId) {
+      return currentUserRef.current;
+    }
+
+    // Check if this user has experienced ECONNREFUSED and prevent further attempts unless forced
+    if (!forceRefresh && connectionRefusedUsers.current.has(userId)) {
+      console.log(`Skipping fetch for user ${userId} - previous ECONNREFUSED error`);
+      return null;
+    }
+
+    // Check if we have a valid session token
+    if (!session?.user?.token) {
+      console.log('No valid session token available');
+      return null;
+    }
+
+    // Set loading and fetching state
     setIsLoading(true);
+    isFetchingProfile.current = true;
 
-    // Create the fetch promise
-    const fetchPromise = (async () => {
-      try {
-        setIsFetchingProfile(true);
-        setError(null);
+    try {
+      setError(null);
 
-        // Use the original API path
-        const response = await fetch(`/api/user/profile/${userId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${session?.user?.token}`,
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store',
-        });
+      // Fetch user profile from API
+      const response = await fetch(`/api/user/profile/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session?.user?.token}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      });
 
-        if (!response.ok) {
-          throw new Error(`Error fetching user profile: ${response.statusText}`);
-        }
+      // Always try to parse JSON response, even for error status codes
+      const data = await response.json();
 
-        const data = await response.json();
+      console.log("data", data);
 
-        if (data.statusCode === 200 && data.data) {
-          // Update user data
-          setCurrentUser(data.data);
-          lastFetchTime.current[cacheKey] = Date.now();
-
-          // After setting user data, fetch the user's stores separately
-          // Only fetch stores if we're not in an infinite loop situation
-          if (!window.__fetchingStores) {
-            fetchUserStores(userId);
-          }
-
-          return data.data;
-        } else {
-          throw new Error(data.message || 'Failed to fetch user profile');
-        }
-      } catch (err) {
-        console.error('Error fetching user profile:', err);
-        setError(err instanceof Error ? err.message : String(err));
+      // Check for 401 status code and logout user
+      if (await handle401Error(data, response)) {
         return null;
-      } finally {
-        setIsLoading(false);
-        setIsFetchingProfile(false);
-        // Remove the request from cache once it's done
-        delete requestCache[cacheKey];
       }
-    })();
 
-    // Store the promise in the cache
-    requestCache[cacheKey] = fetchPromise;
+      // Handle successful response
+      if (data.statusCode === 200 && data.data) {
+        // Clear any previous fetch errors on successful fetch
+        lastFetchError.current = null;
+        // Remove user from connection refused list on successful fetch
+        connectionRefusedUsers.current.delete(userId);
+        
+        // Update user data
+        setCurrentUser(data.data);
+        currentUserRef.current = data.data;
 
-    return fetchPromise;
-  }, [session]);
+        // After setting user data, fetch the user's stores separately
+        // Only fetch stores if we're not in an infinite loop situation
+        if (!window.__fetchingStores) {
+          fetchUserStores(userId);
+        }
+
+        return data.data;
+      } else {
+        // Handle error responses (400, 404, 500, etc.) with detailed message from API
+        const errorMessage = data.message || `Error: ${response.statusText}`;
+        console.error('Error fetching user profile:', errorMessage);
+        lastFetchError.current = errorMessage;
+        setError(errorMessage);
+        return null;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('Error fetching user profile:', errorMessage);
+      
+      // Check for ECONNREFUSED error and mark user to prevent future attempts
+      if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('fetch failed')) {
+        console.log(`Connection refused for user ${userId}, preventing future fetch attempts`);
+        connectionRefusedUsers.current.add(userId);
+      }
+      
+      lastFetchError.current = errorMessage;
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+      isFetchingProfile.current = false;
+    }
+  }, [session?.user?.token]); // Keep session token dependency to handle token changes
 
   // Fetch current user when session changes or on initial load with server session
   useEffect(() => {
+    // Don't fetch if we're in the process of logging out
+    if (isLoggingOut.current) {
+      return;
+    }
+    
     const activeSession = session || initialSession;
-    if (activeSession?.user?.id && !currentUser && !isFetchingProfile) {
+    
+    // Only fetch if we have a session, user ID, and haven't done initial fetch
+    if (activeSession?.user?.id && !hasInitialFetch.current && !isFetchingProfile.current) {
+      hasInitialFetch.current = true;
       fetchUserProfile(activeSession.user.id);
     }
-    // Use stable reference check for fetchUserProfile
-  }, [session, initialSession, currentUser, isFetchingProfile, fetchUserProfile]);
+  }, [session?.user?.id, fetchUserProfile]); // Added proper dependencies
+
+  // Cleanup effect to reset logout flag on unmount
+  useEffect(() => {
+    return () => {
+      isLoggingOut.current = false;
+      isFetchingProfile.current = false;
+    };
+  }, []);
 
   const updateUser = async (userId: string, updates: Partial<User> | FormData) => {
     try {
@@ -186,21 +284,26 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         body: isFormData ? updates : JSON.stringify(updates),
       });
 
-      if (!response.ok) {
-        throw new Error(`Error updating user: ${response.statusText}`);
+      const data = await response.json();
+
+      // Check for 401 status code and logout user
+      if (await handle401Error(data, response)) {
+        return null;
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `Error updating user: ${response.statusText}`);
+      }
 
       if (data.statusCode === 200 && data.data) {
         // Update the current user in state
         setCurrentUser(prevUser =>
           prevUser && prevUser.id === userId ? { ...prevUser, ...data.data } : prevUser
         );
-
-        // Update the last fetch time so we don't refetch immediately
-        const cacheKey = `user_${userId}`;
-        lastFetchTime.current[cacheKey] = Date.now();
+        // Also update the ref
+        currentUserRef.current = currentUserRef.current && currentUserRef.current.id === userId 
+          ? { ...currentUserRef.current, ...data.data } 
+          : currentUserRef.current;
 
         return data.data;
       } else {
@@ -250,10 +353,9 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       if (data.statusCode === 200) {
         // Update user role to pending without a full refetch
         setCurrentUser(prev => prev ? { ...prev, role: "pending" } : null);
-
-        // Update the last fetch time
-        const cacheKey = `user_${userId}`;
-        lastFetchTime.current[cacheKey] = Date.now();
+        if (currentUserRef.current) {
+          currentUserRef.current = { ...currentUserRef.current, role: "pending" };
+        }
 
         return true;
       } else {
@@ -268,19 +370,23 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     }
   };
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     if (!session?.user?.id) return null;
 
     try {
+      // Clear connection refused status before attempting refresh
+      clearConnectionRefused(session.user.id);
+      
       // Force refresh by passing true
       const updatedUser = await fetchUserProfile(session.user.id, true);
       router.refresh(); // Refresh the current page to reflect new data
       return updatedUser;
     } catch (err) {
       console.error('Error refreshing user:', err);
-      return currentUser;
+      return currentUserRef.current;
     }
-  };
+  }, [session?.user?.id, fetchUserProfile]); // Removed currentUser and isFetchingProfile from dependencies
+  
 
   const getVerificationStatus = () => {
     if (!currentUser) return "not_started";
@@ -317,12 +423,17 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         cache: 'no-store',
       });
 
-      if (!response.ok) {
-        console.error(`Error fetching user stores: ${response.statusText}`);
+      const data = await response.json();
+
+      // Check for 401 status code and logout user
+      if (await handle401Error(data, response)) {
         return;
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        console.error(`Error fetching user stores: ${data.message || response.statusText}`);
+        return;
+      }
 
       if (data.statusCode === 200 && data.data?.stores) {
         setUserStores(data.data.stores);
@@ -338,15 +449,21 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     }
   };
 
-  const changeUserEmail = async (userId: string, newEmail: string, currentPassword: string): Promise<User | null> => {
+  const changeUserEmail = async ({
+    userId,
+    email,
+    newEmail,
+    password
+  }: BaseUserEmailProps) => {
     try {
       setIsLoading(true);
       setError(null);
 
       // Create data with email and password
       const data = {
-        email: newEmail,
-        currentPassword
+        email: email,
+        newEmail: newEmail,
+        password: password
       };
 
       // Use a specific API endpoint for email change that requires password verification
@@ -368,12 +485,12 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       if (responseData.statusCode === 200 && responseData.data) {
         // Update the current user in state
         setCurrentUser(prevUser =>
-          prevUser && prevUser.id === userId ? { ...prevUser, ...responseData.data } : prevUser
+          prevUser && prevUser.id === userId ? { ...prevUser } : prevUser
         );
-
-        // Update the last fetch time so we don't refetch immediately
-        const cacheKey = `user_${userId}`;
-        lastFetchTime.current[cacheKey] = Date.now();
+        // Also update the ref
+        if (currentUserRef.current && currentUserRef.current.id === userId) {
+          currentUserRef.current = { ...currentUserRef.current, ...responseData.data };
+        }
 
         // Update last email change time in localStorage
         localStorage.setItem("lastEmailChange", new Date().toISOString());
@@ -390,6 +507,43 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       setIsLoading(false);
     }
   };
+
+  const verifyUserEmail = async ({
+    userId,
+    email,
+    newEmail,
+    password,
+    otpCode,
+    otpToken
+  }: VerifyUserEmailProps): Promise<any> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/user/email/verify`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.user?.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, email, newEmail, password, otpCode, otpToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error verifying user email: ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+
+      return responseData;
+    } catch (err) {
+      console.error('Error verifying user email:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const changeUserPassword = async ({
     userId,
@@ -429,10 +583,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       }
 
       if (responseData.statusCode === 200) {
-        // Update the last fetch time so we don't refetch immediately
-        const cacheKey = `user_${userId}`;
-        lastFetchTime.current[cacheKey] = Date.now();
-
         return responseData;
       } else {
         throw new Error(responseData.message || 'Failed to update password');
@@ -460,7 +610,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/user/password/verify/`, {
+      const response = await fetch(`/api/user/password/verify`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session?.user?.token}`,
@@ -485,13 +635,17 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     }
   };
 
-  const signOut = async () => {
-    // Reset user context data
-    setCurrentUser(null);
-    setUserStores([]);
+  const getLastFetchError = () => {
+    return lastFetchError.current;
+  };
 
-    // Call NextAuth signOut
-    await nextAuthSignOut({ redirect: false });
+  const clearConnectionRefused = (userId: string) => {
+    connectionRefusedUsers.current.delete(userId);
+    console.log(`Cleared connection refused status for user ${userId}`);
+  };
+
+  const isConnectionRefused = (userId: string) => {
+    return connectionRefusedUsers.current.has(userId);
   };
 
   return (
@@ -501,6 +655,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         userStores,
         updateUser,
         changeUserEmail,
+        verifyUserEmail,
         changeUserPassword,
         verifyUserPassword,
         isLoading,
@@ -510,7 +665,10 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         fetchUserProfile,
         verifyUser,
         getVerificationStatus,
+        getLastFetchError,
         signOut,
+        clearConnectionRefused,
+        isConnectionRefused,
       }}
     >
       {children}

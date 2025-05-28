@@ -63,7 +63,7 @@ const StoreItem: React.FC<StoreItemProps> = ({ store, onOpenStoreDetails }) => {
                 fallbackSrc={defaultImage.src}
               />
             </div>
-            <div className="ml-4">
+            <div className="ml-4 flex flex-col">
               <span className="text-lg font-medium text-gray-900">
                 {store.storeName}
               </span>

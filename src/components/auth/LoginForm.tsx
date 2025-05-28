@@ -25,9 +25,6 @@ export default function LoginForm(): JSX.Element {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isPending, setIsPending] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string> | null>(null);
-
-  // Reference to track if we should navigate
-  const shouldNavigateRef = useRef(false);
   
   // Use the dialog hook
   const {
@@ -43,10 +40,9 @@ export default function LoginForm(): JSX.Element {
 
   // Handle navigation outside of render cycle
   useEffect(() => {
-    if (shouldNavigateRef.current) {
-      shouldNavigateRef.current = false;
+    if(showSuccessDialog) {
       setTimeout(() => {
-        router.push("/profile");
+        router.push("/");
       }, 1000);
     }
   }, [showSuccessDialog]);

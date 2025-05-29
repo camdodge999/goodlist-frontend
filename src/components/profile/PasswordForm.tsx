@@ -180,7 +180,6 @@ export default function PasswordForm({
         }
       }
     } catch (error) {
-      console.error("Error changing password:", error);
 
       // Call the new error handler if provided
       if (onPasswordChangeError) {

@@ -50,8 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       );
     }
 
-  } catch (error) {
-    console.error("Error verifying store:", error);
+  } catch {
     return NextResponse.json(
       {
         statusCode: 500,
@@ -79,7 +78,6 @@ async function verifyStore(request: NextRequest, body: any): Promise<BodyRespons
       throw new Error(result.message || "Failed to verify store");
     }
   } catch (error) {
-    console.error("Error verifying store:", error);
     throw error;
   }
 }

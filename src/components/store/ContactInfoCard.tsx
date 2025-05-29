@@ -18,8 +18,7 @@ export default function ContactInfoCard({ contactInfo, userEmail }: ContactInfoC
     if (isValidJSON(contactInfo)) {
       try {
         contactData = JSON.parse(contactInfo) as ContactInfo;
-      } catch (error) {
-        console.error("Error parsing contact info:", error);
+      } catch {
         // Keep as string if parsing fails
       }
     }

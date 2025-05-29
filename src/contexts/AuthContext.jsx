@@ -27,8 +27,7 @@ export function AuthProvider({ children }) {
       });
       
       return !result?.error;
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch  {
       return false;
     }
   };
@@ -49,8 +48,7 @@ export function AuthProvider({ children }) {
       }
       
       return true;
-    } catch (error) {
-      console.error("Registration error:", error);
+    } catch { 
       return false;
     }
   };

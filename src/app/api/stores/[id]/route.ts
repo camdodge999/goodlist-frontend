@@ -48,8 +48,7 @@ export async function GET(
       data: store.data?.storeDetail,
       message: null,
     }, { status: 200 });
-  } catch (error) {
-    console.error("Internal server error", error);
+  } catch {
     return NextResponse.json(
       { statusCode: 500, message: "Internal server error", data: undefined },
       { status: 500 }
@@ -99,8 +98,7 @@ export async function PUT(
         { status: 400 }
       );
     }
-  } catch (error) {
-    console.error("Error updating store:", error);
+  } catch {
     return NextResponse.json(
       { statusCode: 500, message: "Internal server error", data: undefined },
       { status: 500 }

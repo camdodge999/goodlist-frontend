@@ -34,8 +34,7 @@ export default function StoreCard({ store }: StoreCardProps) {
         address: store.contactInfo.address || "",
       };
     }
-  } catch (error) {
-    console.error("Error parsing contact info:", error);
+  } catch {
   }
 
   return (

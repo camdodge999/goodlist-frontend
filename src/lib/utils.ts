@@ -50,14 +50,12 @@ export async function fetchAuthenticatedImageBlob(
     });
 
     if (!response.ok) {
-      console.error('Failed to fetch authenticated image:', response.statusText);
       return '';
     }
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
-  } catch (error) {
-    console.error('Error fetching authenticated image:', error);
+  } catch {
     return '';
   }
 } 

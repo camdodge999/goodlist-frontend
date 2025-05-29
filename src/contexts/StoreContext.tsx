@@ -105,7 +105,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         throw new Error(data.message || 'Failed to fetch stores');
       }
     } catch (err) {
-      console.error('Error fetching stores:', err);
       setError(err instanceof Error ? err.message : String(err));
 
       // Increment retry count and set fetch failed flag
@@ -146,8 +145,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       } else {
         throw new Error(data.message || 'Failed to fetch admin stores');
       }
-    } catch (err) {
-      console.error('Error fetching admin stores:', err);
+    } catch {
       return adminStores;
     }
   }, [session?.user?.token, adminStores]);
@@ -228,7 +226,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         throw new Error(data.message || 'Failed to update store');
       }
     } catch (err) {
-      console.error('Error updating store:', err);
       setError(err instanceof Error ? err.message : String(err));
       return null;
     } finally {
@@ -282,7 +279,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         throw new Error(data.message || 'Failed to verify store');
       }
     } catch (err) {
-      console.error('Error verifying store:', err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
       return null;
@@ -327,7 +323,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         throw new Error(data.message || 'Failed to delete store');
       }
     } catch (err) {
-      console.error('Error deleting store:', err);
       setError(err instanceof Error ? err.message : String(err));
       return false;
     } finally {
@@ -369,7 +364,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         throw new Error(data.message || 'Failed to add store');
       }
     } catch (err) {
-      console.error('Error adding store:', err);
       setError(err instanceof Error ? err.message : String(err));
       return null;
     } finally {
@@ -386,8 +380,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       const updatedStores = await fetchStores(true);
       router.refresh(); // Refresh the current page to reflect new data
       return updatedStores;
-    } catch (err) {
-      console.error('Error refreshing stores:', err);
+    } catch {
       return stores;
     } finally {
       setIsLoading(false);
@@ -442,7 +435,6 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         throw new Error(data.message || 'มีข้อผิดพลาดในการดึงข้อมูลร้านค้า');
       }
     } catch (err) {
-      console.error('Error fetching store by ID:', err);
       setError(err instanceof Error ? err.message : String(err));
       return null;
     } finally {

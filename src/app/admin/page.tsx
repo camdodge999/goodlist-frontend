@@ -28,7 +28,6 @@ async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
 
 
     if (!response.ok) {
-      console.error(`Error fetching admin stores: ${response.statusText}`);
       return [];
     }
 
@@ -39,8 +38,7 @@ async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
     }
     
     return [];
-  } catch (error) {
-    console.error('Error fetching admin stores server-side:', error);
+  } catch {
     return [];
   }
 }

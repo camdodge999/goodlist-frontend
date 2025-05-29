@@ -32,7 +32,6 @@ export function useAuthenticatedImage(imageUrl: string | null | undefined) {
         const url = URL.createObjectURL(blob);
         setAuthenticatedUrl(url);
       } catch (err) {
-        console.error('Error fetching authenticated image:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         setAuthenticatedUrl('');
       } finally {

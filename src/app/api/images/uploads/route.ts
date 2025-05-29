@@ -37,8 +37,7 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'public, max-age=86400', // Cache for 1 day
       },
     });
-  } catch (error) {
-    console.error('Error fetching image:', error);
+  } catch {
     return NextResponse.json({ status: 'error', message: 'Failed to fetch image' }, { status: 500 });
   }
 } 

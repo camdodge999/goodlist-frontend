@@ -25,7 +25,6 @@ export async function PUT(
 
     
     const body = await request.json();
-    console.log("reportId", body);
     const result = await updateReportById(request, reportId.toString(), body);
 
     if (result.statusCode === 200) {
@@ -44,8 +43,7 @@ export async function PUT(
         { status: 400 }
       );
     }
-  } catch (error) {
-    console.error("Error updating report:", error);
+  } catch {
     return NextResponse.json(
       { statusCode: 500, message: "Internal server error", data: undefined },
       { status: 500 }

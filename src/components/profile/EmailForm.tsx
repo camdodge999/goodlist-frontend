@@ -120,7 +120,6 @@ export default function EmailForm({
                 }
             }
         } catch (error) {
-            console.error("Error changing email:", error);
 
             // Call the error handler if provided
             if (onEmailChangeError) {

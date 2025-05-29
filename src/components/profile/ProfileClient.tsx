@@ -113,7 +113,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           initialized.current = true;
         }
       } catch {
-        console.error("Error fetching user profile:");
       }
     };
 
@@ -272,8 +271,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       } else {
         throw new Error("Failed to update profile");
       }
-    } catch (err) {
-      console.error("Error updating profile:", err);
+    } catch {
       displayErrorDialog("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
@@ -558,7 +556,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         setEmailOtpError(result?.message || "OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       }
     } catch (error) {
-      console.error("Error verifying email OTP:", error);
       setEmailOtpError(error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการยืนยัน OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsVerifyingEmailOtp(false);

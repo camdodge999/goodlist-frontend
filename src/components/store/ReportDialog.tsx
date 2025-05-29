@@ -141,7 +141,6 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
         setValidationErrors({
           form: "เกิดข้อผิดพลาดในการตรวจสอบข้อมูล กรุณาลองใหม่อีกครั้ง"
         });
-        console.error("Validation error:", error);
       }
       return false;
     }
@@ -178,8 +177,7 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
           form: result.message
         }));
       }
-    } catch (err) {
-      console.error("Error submitting report:", err);
+    } catch {
       
       // Show error in form
       setValidationErrors(prev => ({

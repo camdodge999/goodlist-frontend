@@ -30,8 +30,7 @@ export async function GET(
       { statusCode: 400, message: result.message, data: undefined },
       { status: 400 }
     );
-  } catch (error) {
-    console.error("Internal server error", error);
+  } catch {
     return NextResponse.json(
       { statusCode: 500, message: "Internal server error", data: undefined },
       { status: 500 }
@@ -86,8 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       );
     }
 
-  } catch (error) {
-    console.error("Error creating store:", error);
+  } catch {
     return NextResponse.json(
       { 
         statusCode: 500,

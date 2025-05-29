@@ -43,8 +43,7 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
   if (typeof store.contactInfo === 'string' && isValidJSON(store.contactInfo)) {
     try {
       contactInfo = JSON.parse(store.contactInfo) as ContactInfo;
-    } catch (error) {
-      console.error("Error parsing contact info:", error);
+    } catch {
       // Keep as string if parsing fails
     }
   }

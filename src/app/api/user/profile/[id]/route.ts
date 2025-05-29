@@ -50,8 +50,7 @@ export async function GET(
       data: profile.data?.profileDetail,
       message: null,
     }, { status: 200 });
-  } catch (error) {
-    console.error("Internal server error", error);
+  } catch {
     return NextResponse.json(
       { statusCode: 500, message: "Internal server error", data: undefined },
       { status: 500 }
@@ -101,7 +100,6 @@ export async function PUT(
       data: result.data,
     }, { status: result.statusCode });
   } catch (error) {
-    console.error("Error updating user profile:", error);
     return NextResponse.json(
       { 
         statusCode: 500, 

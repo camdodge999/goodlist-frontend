@@ -202,14 +202,12 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       } else {
         // Handle error responses (400, 404, 500, etc.) with detailed message from API
         const errorMessage = data.message || `Error: ${response.statusText}`;
-        console.error('Error fetching user profile:', errorMessage);
         lastFetchError.current = errorMessage;
         setError(errorMessage);
         return null;
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('Error fetching user profile:', errorMessage);
       
       // Check for ECONNREFUSED error and mark user to prevent future attempts
       if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('fetch failed')) {
@@ -300,7 +298,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         throw new Error(data.message || 'Failed to update user');
       }
     } catch (err) {
-      console.error('Error updating user:', err);
       setError(err instanceof Error ? err.message : String(err));
       return null;
     } finally {
@@ -352,7 +349,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         throw new Error(data.message || 'Failed to verify user');
       }
     } catch (err) {
-      console.error('Error verifying user:', err);
       setError(err instanceof Error ? err.message : String(err));
       return false;
     } finally {
@@ -371,8 +367,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       const updatedUser = await fetchUserProfile(session.user.id, true);
       router.refresh(); // Refresh the current page to reflect new data
       return updatedUser;
-    } catch (err) {
-      console.error('Error refreshing user:', err);
+    } catch {
       return currentUserRef.current;
     }
   }, [session?.user?.id, fetchUserProfile]); // Removed currentUser and isFetchingProfile from dependencies
@@ -421,15 +416,13 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       }
 
       if (!response.ok) {
-        console.error(`Error fetching user stores: ${data.message || response.statusText}`);
         return;
       }
 
       if (data.statusCode === 200 && data.data?.stores) {
         setUserStores(data.data.stores);
       }
-    } catch (err) {
-      console.error('Error fetching user stores:', err);
+    } catch {
       // Don't throw the error to prevent breaking the main user profile flow
     } finally {
       // Reset the flag
@@ -490,7 +483,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         throw new Error(responseData.message || 'Failed to update email');
       }
     } catch (err) {
-      console.error('Error updating email:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err; // Re-throw the error so it can be caught by the calling component
     } finally {
@@ -527,7 +519,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
 
       return responseData;
     } catch (err) {
-      console.error('Error verifying user email:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err; // Re-throw the error so it can be caught by the calling component
     } finally {
@@ -578,7 +569,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         throw new Error(responseData.message || 'Failed to update password');
       }
     } catch (err) {
-      console.error('Error updating password:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err; // Re-throw the error so it can be caught by the calling component
     } finally {
@@ -617,7 +607,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
 
       return responseData;
     } catch (err) {
-      console.error('Error verifying password:', err);
       setError(err instanceof Error ? err.message : String(err));
       throw err; // Re-throw the error so it can be caught by the calling component
     } finally {

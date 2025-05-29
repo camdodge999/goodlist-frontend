@@ -262,8 +262,7 @@ export default function SignupForm() {
         const errorData = await response.json();
         displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
       }
-    } catch (error) {
-      console.error("Error registering user:", error);
+    } catch {
       displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSendingOtp(false);
@@ -319,12 +318,10 @@ export default function SignupForm() {
           });
           
           if (result?.error) {
-            console.error("Auto login error:", result.error);
             // Still redirect to home page even if auto-login fails
             // User can manually log in
           }
-        } catch (loginError) {
-          console.error("Error during auto login:", loginError);
+        } catch {
         }
       } else {
         const errorData = await response.json();

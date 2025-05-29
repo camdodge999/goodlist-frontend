@@ -46,7 +46,6 @@ export async function POST(
     }, { status: result.statusCode });
     
   } catch (error) {
-    console.error("Error in user verification:", error);
     return NextResponse.json(
       { 
         statusCode: 500, 
@@ -78,7 +77,6 @@ async function verifyUser(
       throw new Error(result.message || "Failed to verify user");
     }
   } catch (error) {
-    console.error("Error calling verify API:", error);
     throw error;
   }
 } 

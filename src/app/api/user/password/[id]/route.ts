@@ -57,7 +57,6 @@ export async function PUT(
     }, { status: result.statusCode });
 
   } catch (error) {
-    console.error("Error updating user password:", error);
     return NextResponse.json(
       {
         statusCode: 500,

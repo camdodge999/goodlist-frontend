@@ -16,7 +16,6 @@ import useShowDialog from "@/hooks/useShowDialog";
 // Types
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
 import { User, UserResponse } from "@/types/users";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 interface ProfileClientProps {
   user: User;

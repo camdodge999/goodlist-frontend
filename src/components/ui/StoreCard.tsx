@@ -61,7 +61,7 @@ export default function StoreCard({ store }: StoreCardProps) {
                 <FontAwesomeIcon icon={faStore} className="text-4xl" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">{store.storeName}</h3>
+                <h4 className="text-xl font-semibold text-gray-900">{store.storeName}</h4>
                 <p className="text-gray-500">@{store.storeName.toLowerCase().replace(/\s+/g, "")}</p>
               </div>
             </div>

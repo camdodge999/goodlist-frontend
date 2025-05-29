@@ -22,7 +22,7 @@ export default function PrivacyPage() {
                     เว็บไซต์: Goodlistseller.com
                   </h2>
                   <p className="text-gray-600 mt-2">
-                    มีผลบังคับใช้ตั้งแต่วันที่ 1 มกราคม 2023
+                    มีผลบังคับใช้ตั้งแต่วันที่ 1 มิถุนายน 2568
                   </p>
                 </div>
                 

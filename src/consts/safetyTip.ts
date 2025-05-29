@@ -4,7 +4,7 @@ export const safetyTips = [
     {
       id: 1,
       title: "ตรวจสอบความปลอดภัยของเว็บไซต์",
-      description: "สแกน URL ร้านค้าด้วยเครื่องมือตรวจสอบเว็บไซต์ฟรีของเรา",
+      description: "ค้นหาชื่อร้านค้าด้วยเครื่องมือตรวจสอบของเรา",
       image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?q=80&w=600&auto=format&fit=crop",
       alt: "Check website safety"
     },

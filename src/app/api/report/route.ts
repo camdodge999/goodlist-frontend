@@ -30,7 +30,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<BodyRespon
       { status: 404 }
     );
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         statusCode: 500,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       );
     }
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         statusCode: 500,

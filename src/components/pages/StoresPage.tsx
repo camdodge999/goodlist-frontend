@@ -33,7 +33,7 @@ export default function StoresPage() {
     };
 
     loadStores();
-  }, [fetchStores]);
+  }, []);
 
   // Sync search query with URL parameters when component mounts or URL changes
   useEffect(() => {

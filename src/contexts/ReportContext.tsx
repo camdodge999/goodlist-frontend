@@ -254,7 +254,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.user.token}`,
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, reviewedById: session.user.id }),
       });
 
       if (!response.ok) {

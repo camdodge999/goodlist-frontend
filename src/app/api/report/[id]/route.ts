@@ -23,7 +23,9 @@ export async function PUT(
       );
     }
 
+    
     const body = await request.json();
+    console.log("reportId", body);
     const result = await updateReportById(request, reportId.toString(), body);
 
     if (result.statusCode === 200) {
@@ -58,8 +60,8 @@ async function updateReportById(
 ): Promise<BodyResponse<{ reportDetail: Report }>> {
   const result = await fetchWithAuth<BodyResponse<{ reportDetail: Report }>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/report/updateReport/${id}`,
-    method: "PUT",
+    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/report/reviewReport/${id}`,
+    method: "POST",
     body: updates
   });
   if (result.statusCode === 200) {

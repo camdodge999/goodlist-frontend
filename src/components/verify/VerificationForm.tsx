@@ -350,7 +350,7 @@ export default function VerificationForm({
 
         <div>
           <FormLabel htmlFor="line" required>
-            Line ID
+            Line ID (ไม่ต้องมี @)
           </FormLabel>
           <Input
             type="text"

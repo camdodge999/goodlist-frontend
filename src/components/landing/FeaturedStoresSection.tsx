@@ -6,8 +6,6 @@ import Link from "next/link";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle,
-  faCommentDots,
-  faGlobeAmericas,
   faArrowRight,
   faSearch,
   faExclamationTriangle
@@ -22,6 +20,8 @@ import { isValidJSON } from "@/utils/valid-json";
 import defaultLogo from "@images/logo.webp";
 import AuthenticatedImage from "@/components/ui/AuthenticatedImage";
 import { useStore } from "@/contexts/StoreContext";
+import EmptyStoreState from "@/components/ui/EmptyStoreState";
+import { faLine, faFacebook } from '@fortawesome/free-brands-svg-icons';
 
 // Section header component
 const SectionHeader = () => (
@@ -114,13 +114,13 @@ const StoreContactInfo = ({ contactInfo }: { contactInfo: ContactInfo }) => (
   <div className="space-y-2">
     {contactInfo.line && (
       <div className="flex items-center text-sm text-gray-600">
-        <FontAwesomeIcon icon={faCommentDots} className="mr-2 text-blue-500" />
+        <FontAwesomeIcon icon={faLine} className="mr-2 text-blue-500" />
         <span>Line: {contactInfo.line}</span>
       </div>
     )}
     {contactInfo.facebook && (
       <div className="flex items-center text-sm text-gray-600">
-        <FontAwesomeIcon icon={faGlobeAmericas} className="mr-2 text-blue-500" />
+        <FontAwesomeIcon icon={faFacebook} className="mr-2 text-blue-500" />
         <span>Facebook: {contactInfo.facebook}</span>
       </div>
     )}
@@ -198,6 +198,11 @@ export function FeaturedStoresSection() {
     <section className="py-24 bg-gray-50">
       <ContentWidth>
         <SectionHeader />
+        {featuredStores.length === 0 && (
+          <div className="mt-8">
+            <EmptyStoreState />
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {featuredStores.map((store, index) => (
             <StoreCard key={store.id} store={store} index={index} />

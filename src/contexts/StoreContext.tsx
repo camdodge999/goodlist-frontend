@@ -41,6 +41,11 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
   const [error, setError] = useState<string | null>(null);
   // Add a state to track fetch failures
   const [fetchFailed, setFetchFailed] = useState(false);
+  // Add retry counter for failed attempts
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRY_ATTEMPTS = 3;
+  // Add state to track successful initialization
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
 
@@ -50,6 +55,12 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     if (!force && (globalStoresCache.length > 0 || stores.length > 0)) {
       setIsLoading(false);
       return stores.length > 0 ? stores : globalStoresCache;
+    }
+
+    // If we have reached max retry attempts and it's not a forced refresh, don't retry
+    if (retryCount >= MAX_RETRY_ATTEMPTS && !force) {
+      setIsLoading(false);
+      return stores;
     }
 
     // If we have a previous fetch failure and it's not a forced refresh, don't retry
@@ -83,8 +94,11 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         setStores(data.data);
         globalStoresCache = data.data;
 
-        // Reset fetch failure flag on success
+        // Reset fetch failure flag and retry count on success
         setFetchFailed(false);
+        setRetryCount(0);
+        // Mark as successfully initialized
+        setIsInitialized(true);
 
         return data.data;
       } else {
@@ -94,14 +108,15 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       console.error('Error fetching stores:', err);
       setError(err instanceof Error ? err.message : String(err));
 
-      // Set fetch failed flag to prevent immediate retries
+      // Increment retry count and set fetch failed flag
+      setRetryCount(prev => prev + 1);
       setFetchFailed(true);
 
       return stores; // Return existing stores on error
     } finally {
       setIsLoading(false);
     }
-  }, [stores, fetchFailed]);
+  }, [fetchFailed, retryCount, MAX_RETRY_ATTEMPTS, stores]);
 
   const fetchAdminStores = useCallback(async () => {
     if (!session?.user?.token) return adminStores;
@@ -139,13 +154,34 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
 
   // Initialize with API data only if no initialStores were provided and global cache is empty
   useEffect(() => {
+    // Don't fetch if already successfully initialized
+    if (isInitialized) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Don't fetch if we've reached max retry attempts
+    if (retryCount >= MAX_RETRY_ATTEMPTS) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Don't fetch if stores exist (length > 0) unless both caches are empty
+    if (stores.length > 0 && globalStoresCache.length > 0) {
+      setIsLoading(false);
+      setIsInitialized(true); // Mark as initialized if we already have data
+      return;
+    }
+
     if (globalStoresCache.length === 0 && initialStores.length === 0) {
       fetchStores();
     } else if (initialStores.length > 0 && globalStoresCache.length === 0) {
       // If we have initialStores but no global cache, update the global cache
       globalStoresCache = initialStores;
+      setIsLoading(false);
+      setIsInitialized(true); // Mark as initialized with initial stores
     }
-  }, [fetchStores, initialStores]);
+  }, [fetchStores, initialStores, retryCount, MAX_RETRY_ATTEMPTS, stores.length, isInitialized]);
 
   // Update local stores when global cache changes - only run once on mount
   useEffect(() => {
@@ -344,6 +380,8 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
   const refreshStores = useCallback(async () => {
     try {
       setIsLoading(true);
+      // Reset initialization flag for forced refresh
+      setIsInitialized(false);
       // Force refresh ignores the fetchFailed flag
       const updatedStores = await fetchStores(true);
       router.refresh(); // Refresh the current page to reflect new data

@@ -6,7 +6,7 @@ export const sitemapSections: SitemapSection[] = [
         links: [
             { name: 'หน้าแรก', url: '/' },
             { name: 'ร้านค้าทั้งหมด', url: '/stores' },
-            { name: 'ค้นหาร้านค้า', url: '/search' },
+            // { name: 'ค้นหาร้านค้า', url: '/search' },
         ]
     },
     {
@@ -14,7 +14,7 @@ export const sitemapSections: SitemapSection[] = [
         links: [
             { name: 'เข้าสู่ระบบ', url: '/login' },
             { name: 'สมัครสมาชิก', url: '/signup' },
-            { name: 'แดชบอร์ด', url: '/dashboard' },
+            // { name: 'แดชบอร์ด', url: '/dashboard' },
             { name: 'โปรไฟล์', url: '/profile' },
         ]
     },
@@ -26,7 +26,7 @@ export const sitemapSections: SitemapSection[] = [
         ]
     },
     {
-        title: 'ข้อมูลทางกฎหมาย',
+        title: 'ข้อมูลอื่นๆ',
         links: [
             // { name: 'เงื่อนไขการใช้งาน', url: '/terms' },
             { name: 'นโยบายความเป็นส่วนตัว', url: '/privacy' },

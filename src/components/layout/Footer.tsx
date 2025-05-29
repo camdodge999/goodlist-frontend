@@ -73,7 +73,7 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">ข้อมูลทางกฎหมาย</h4>
+            <h4 className="text-lg font-semibold mb-4">ข้อมูลอื่นๆ</h4>
             <ul className="space-y-2">
               {/* <li>
                 <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
@@ -119,7 +119,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-          <p>© {currentYear} Goodlistseller. สงวนลิขสิทธิ์ทั้งหมด.</p>
+          <p>© {currentYear} Goodlistseller. </p>
         </div>
       </ContentWidth>
     </footer>

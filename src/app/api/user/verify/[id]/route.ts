@@ -30,8 +30,6 @@ export async function POST(
       // Handle FormData
       formData = await request.formData();
       
-      // Log the keys in the FormData to help debug
-      console.log('FormData keys:', Array.from(formData.keys()));
     } else {
       // Handle JSON data
       const jsonData = await request.json();

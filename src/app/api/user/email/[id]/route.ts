@@ -45,6 +45,20 @@ export async function PUT(
       password: password
     });
 
+    if (result.statusCode === 404) {
+      return NextResponse.json({
+        statusCode: result.statusCode,
+        message: result.message,
+        data: result.data,
+      }, { status: result.statusCode });
+    } else if (result.statusCode === 409) {
+      return NextResponse.json({
+        statusCode: result.statusCode,
+        message: result.message,
+        data: result.data,
+      }, { status: result.statusCode });
+    }
+
     return NextResponse.json({
       statusCode: result.statusCode,
       message: result.message,
@@ -94,6 +108,18 @@ async function updateUserEmail({
 
   if (result.statusCode === 200) {
     return result;
+  } else if (result.statusCode === 404) {
+    return {
+      statusCode: 404,
+      message: "ไม่พบผู้ใช้งาน",
+      data: undefined
+    };
+  } else if (result.statusCode === 409) {
+    return {
+      statusCode: 409,
+      message: "อีเมลใหม่ถูกใช้งานแล้ว",
+      data: undefined
+    };
   } else {
     throw new Error(result.message || "Failed to update email");
   }

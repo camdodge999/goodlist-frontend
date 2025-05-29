@@ -37,7 +37,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
     globalStoresCache.length > 0 ? globalStoresCache : initialStores
   );
   const [adminStores, setAdminStores] = useState<Store[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Add a state to track fetch failures
   const [fetchFailed, setFetchFailed] = useState(false);
@@ -48,6 +48,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
   const fetchStores = useCallback(async (force = false) => {
     // If we already have stores and it's not a forced refresh, return existing stores
     if (!force && (globalStoresCache.length > 0 || stores.length > 0)) {
+      setIsLoading(false);
       return stores.length > 0 ? stores : globalStoresCache;
     }
 
@@ -390,15 +391,17 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
       );
 
       if (!response.ok) {
-        throw new Error(`Error fetching store: ${response.statusText}`);
+        throw new Error(`มีข้อผิดพลาดในการดึงข้อมูลร้านค้า: ${response.statusText}`);
       }
 
       const data = await response.json();
 
       if (data.statusCode === 200 && data.data) {
         return data.data;
+      } else if (data.statusCode === 404) {
+        return null;
       } else {
-        throw new Error(data.message || 'Failed to fetch store');
+        throw new Error(data.message || 'มีข้อผิดพลาดในการดึงข้อมูลร้านค้า');
       }
     } catch (err) {
       console.error('Error fetching store by ID:', err);

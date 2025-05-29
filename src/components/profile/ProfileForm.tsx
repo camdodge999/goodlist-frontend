@@ -10,6 +10,8 @@ import dayjs from "dayjs";
 import 'dayjs/locale/th';
 import buddhistEra from 'dayjs/plugin/buddhistEra';
 import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
+import { User } from "@/types/users";
+
 dayjs.extend(buddhistEra);
 dayjs.locale('th');
 
@@ -21,10 +23,12 @@ interface ProfileFormProps {
   onSaveProfile: () => Promise<void>;
   onEditToggle: () => void;
   previewImage: string | null;
+  user: User;  
   fileInputRef: React.RefObject<HTMLInputElement>;
 }
 
 export default function ProfileForm({
+  user,
   initialData,
   isEditing,
   onInputChange,
@@ -147,8 +151,7 @@ export default function ProfileForm({
                   name="email"
                   className="mt-1"
                   disabled={true}
-                  defaultValue={initialData.email}
-                  onChange={onInputChange}
+                  defaultValue={user.email}
                 />
               </div>
             </div>

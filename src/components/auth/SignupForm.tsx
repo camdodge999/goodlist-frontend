@@ -128,7 +128,6 @@ export default function SignupForm() {
 
   const validateOtp = (): boolean => {
     try {
-      console.log(otpValue);
       otpSchema.parse(otpValue);
 
       return true;

@@ -99,7 +99,6 @@ export default function LoginForm(): JSX.Element {
       });
       
       // End loading state
-      console.log("result", result)
       setIsPending(false);
     
       if (result?.ok && !result?.error) {
@@ -124,7 +123,6 @@ export default function LoginForm(): JSX.Element {
     } catch (error) {
       setIsPending(false);
       console.error("Error during form submission:", error);
-      console.log(error);
       
       // Handle network errors or other exceptions
       if (error instanceof TypeError && error.message.includes('fetch')) {

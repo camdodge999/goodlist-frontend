@@ -16,14 +16,15 @@ import useShowDialog from "@/hooks/useShowDialog";
 // Types
 import { ProfileFormSchema, PasswordFormSchema } from "@/validators/profile.schema";
 import { User, UserResponse } from "@/types/users";
-
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 interface ProfileClientProps {
   user: User;
 }
 
 // ProfileClient component handles user profile management
 export default function ProfileClient({ user }: ProfileClientProps) {
-  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut, verifyUserPassword, changeUserPassword, changeUserEmail } = useUser();
+  const { userStores, fetchUserProfile, currentUser, updateUser, refreshUser, storesLoading, signOut, verifyUserPassword, verifyUserEmail, changeUserPassword, changeUserEmail } = useUser();
   const [activeTab, setActiveTab] = useState("stores");
   const [isEditing, setIsEditing] = useState(false);
   const [emailError, setEmailError] = useState("");
@@ -53,6 +54,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
   const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
   const [pendingEmailChange, setPendingEmailChange] = useState<{email: string, password: string} | null>(null);
 
+  const router = useRouter();
   // Add the useShowDialog hook
   const {
     showErrorDialog,
@@ -522,24 +524,25 @@ export default function ProfileClient({ user }: ProfileClientProps) {
       return;
     }
 
+    if (!pendingEmailChange || !displayUser?.id) {
+      setEmailOtpError("ไม่พบข้อมูลการเปลี่ยนอีเมล");
+      return;
+    }
+
     setIsVerifyingEmailOtp(true);
     setEmailOtpError("");
 
     try {
-      // Make API call to verify OTP and complete email change
-      const response = await fetch('/api/user/email/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: pendingEmailChange?.email,
-          otpCode: emailOtpValue,
-          password: pendingEmailChange?.password
-        }),
+      const result = await verifyUserEmail({
+        userId: displayUser.id,
+        email: displayUser.email || "",
+        newEmail: pendingEmailChange.email,
+        password: pendingEmailChange.password,
+        otpCode: emailOtpValue,
+        otpToken: emailOtpData?.refNumber || ""
       });
 
-      if (response.ok) {
+      if (result && result.statusCode === 200) {
         // Close OTP modal
         setShowEmailOtpModal(false);
         
@@ -550,15 +553,14 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         setIsEditing(false);
         displaySuccessDialog("อีเมลได้เปลี่ยนเรียบร้อยแล้ว");
         
-        // Refresh user data
         await refreshUser();
+        router.push("/profile");
       } else {
-        const errorData = await response.json();
-        setEmailOtpError(errorData.message || "OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+        setEmailOtpError(result?.message || "OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       }
     } catch (error) {
       console.error("Error verifying email OTP:", error);
-      setEmailOtpError("เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+      setEmailOtpError(error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการยืนยัน OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsVerifyingEmailOtp(false);
     }
@@ -572,29 +574,29 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     setPendingEmailChange(null);
   };
 
-  // const handleEmailChangeSuccess = (responseData: { data: UserResponse }, emailData: {email: string, password: string}) => {
-  //   // Check if response contains UserResponse with otpToken
-  //   if (responseData?.data) {
-  //     const userData = responseData.data;
-  //     setEmailOtpData({
-  //       email: userData.email,
-  //       refNumber: userData.refNumber,
-  //       displayName: userData.displayName,
-  //     });
-  //     setPendingEmailChange(emailData);
-  //     setShowEmailOtpModal(true);
-  //     // Start email cooldown timer since OTP was just sent
-  //     startEmailCooldownTimer();
-  //   } else {
-  //     // If no OTP required, show success message
-  //     displaySuccessDialog("อีเมลได้เปลี่ยนเรียบร้อยแล้ว");
-  //     setIsEditing(false);
-  //   }
-  // };
+  const handleEmailChangeSuccess = (responseData: { data: UserResponse }, emailData: {email: string, password: string}) => {
+    // Check if response contains UserResponse with otpToken
+    if (responseData?.data) {
+      const userData = responseData.data;
+      setEmailOtpData({
+        email: userData.email,
+        refNumber: userData.refNumber,
+        displayName: userData.displayName,
+      });
+      setPendingEmailChange(emailData);
+      setShowEmailOtpModal(true);
+      // Start email cooldown timer since OTP was just sent
+      startEmailCooldownTimer();
+    } else {
+      // If no OTP required, show success message
+      displaySuccessDialog("อีเมลได้เปลี่ยนเรียบร้อยแล้ว");
+      setIsEditing(false);
+    }
+  };
 
-  // const handleEmailChangeError = (error: string) => {
-  //   displayErrorDialog(error);
-  // };
+  const handleEmailChangeError = (error: string) => {
+    displayErrorDialog(error);
+  };
 
   const handleResendEmailOtp = async (): Promise<void> => {
     if (!pendingEmailChange) {
@@ -641,29 +643,12 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         message={errorMessage}
       />
 
-
       <StatusDialog
         isOpen={showSuccessDialog}
         setIsOpen={setShowSuccessDialog}
         type="success"
         message={successMessage}
       />
-
-      {/* {showOtpModal && (
-        <ProfileOtpModal
-          email={tempEmail}
-          otpValues={otpValues}
-          error={error}
-          isVerifying={isVerifying}
-          isSendingOtp={isSendingOtp}
-          otpSent={otpSent}
-          onOtpChange={handleOtpChange}
-          onKeyDown={handleKeyDown}
-          onVerify={handleVerifyOtp}
-          onClose={handleCloseOtpModal}
-          onSendOtp={handleSendOtp}
-        />
-      )} */}
 
       {/* Password OTP Modal */}
       {showPasswordOtpModal && passwordOtpData && (
@@ -743,6 +728,8 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                 onChangePassword={handleChangePassword}
                 onPasswordChangeSuccess={handlePasswordChangeSuccess}
                 onPasswordChangeError={handlePasswordChangeError}
+                onEmailChangeSuccess={handleEmailChangeSuccess}
+                onEmailChangeError={handleEmailChangeError}
                 onSaveProfile={handleSaveProfile}
                 onEditToggle={handleEditToggle}
                 fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}

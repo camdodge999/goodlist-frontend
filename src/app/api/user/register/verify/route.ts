@@ -26,8 +26,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       body: body,
     });
 
-    console.log(result);
-
     if(result.statusCode === 200){
       return NextResponse.json({  
         statusCode: 201,

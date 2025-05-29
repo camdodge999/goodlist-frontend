@@ -1,5 +1,8 @@
-import React from 'react';
+"use client"
+
+import React, { useState } from 'react';
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import  { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faShieldAlt, 
@@ -24,23 +27,46 @@ const SectionHeader = () => (
 );
 
 // Search tool component
-const SearchTool = () => (
-  <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 mb-16">
-    <div className="flex flex-col md:flex-row gap-4">
-      <Input 
-        type="text" 
-        placeholder="ใส่ชื่อร้านค้าหรือ URL ที่ต้องการตรวจสอบ" 
-        className="flex-1"
-      />
-      <Link href="/stores?search=">
-        <Button className="bg-blue-600 hover:bg-blue-700" >
+const SearchTool = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      router.push(`/stores?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/stores');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 mb-16">
+      <div className="flex flex-col md:flex-row gap-4">
+        <Input 
+          type="text" 
+          placeholder="ใส่ชื่อร้านค้าที่ต้องการตรวจสอบ" 
+          className="flex-1"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
+        />
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700" 
+          onClick={handleSearch}
+        >
           <FontAwesomeIcon icon={faSearch} className="mr-2" />
           <span>ตรวจสอบร้านค้า</span>
         </Button>
-      </Link>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // How it works component
 const HowItWorks = () => (

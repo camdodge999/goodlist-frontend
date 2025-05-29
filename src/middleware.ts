@@ -25,8 +25,6 @@ export default withAuth(
   async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
-    console.log(`Processing path: ${pathname}`);
-
     // Skip middleware for static assets and images
     if (pathname.includes("/images")) {
       return NextResponse.next();

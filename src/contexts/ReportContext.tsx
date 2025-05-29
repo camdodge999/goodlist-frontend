@@ -181,7 +181,6 @@ export function ReportProvider({ children }: ReportProviderProps) {
   // Fetch all reports (admin only)
   const fetchAllReports = useCallback(async (): Promise<Report[]> => {
     try {
-      console.log('ReportContext: Starting fetchAllReports...');
       setIsLoading(true);
       setError(null);
 
@@ -220,12 +219,10 @@ export function ReportProvider({ children }: ReportProviderProps) {
       }
 
       if (data.statusCode === 200 && data.data) {
-        console.log('ReportContext: Successfully fetched reports:', data.data.length);
         setAllReports(data.data);
         return data.data;
       } else {
         // If no reports found, return empty array
-        console.log('ReportContext: No reports found or invalid response');
         setAllReports([]);
         return [];
       }

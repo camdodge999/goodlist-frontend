@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/contexts/StoreContext";
 import type { Store } from "@/types/stores";
 import StoreError from "@/components/stores/StoreError";
@@ -11,8 +12,11 @@ import StorePagination from "@/components/stores/StorePagination";
 
 export default function StoresPage() {
   const { stores, isLoading, error, fetchStores } = useStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  // Initialize search query from URL parameter
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "");
   const [currentPage, setCurrentPage] = useState(1);
   const storesPerPage = 6;
   const [refreshing, setRefreshing] = useState(false);
@@ -21,6 +25,7 @@ export default function StoresPage() {
   useEffect(() => {
     const loadStores = async () => {
       try {
+        // Always attempt to fetch stores to ensure we have the latest data
         await fetchStores();
       } catch (err) {
         console.error("Error loading stores:", err);
@@ -29,6 +34,14 @@ export default function StoresPage() {
 
     loadStores();
   }, [fetchStores]);
+
+  // Sync search query with URL parameters when component mounts or URL changes
+  useEffect(() => {
+    const urlSearchQuery = searchParams.get('search') || "";
+    if (urlSearchQuery !== searchQuery) {
+      setSearchQuery(urlSearchQuery);
+    }
+  }, [searchParams]);
 
   // Handler for manual refresh
   const handleRefresh = useCallback(async () => {
@@ -41,6 +54,23 @@ export default function StoresPage() {
       setRefreshing(false);
     }
   }, [fetchStores]);
+
+  // Handler for search query changes with URL update
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    
+    // Update URL with search parameter
+    const params = new URLSearchParams(searchParams.toString());
+    if (query.trim()) {
+      params.set('search', query);
+    } else {
+      params.delete('search');
+    }
+    
+    // Update URL without causing a page reload
+    const newUrl = params.toString() ? `?${params.toString()}` : '/stores';
+    router.replace(newUrl, { scroll: false });
+  }, [router, searchParams]);
 
   // Filter stores based on search query and verification status
   const filteredStores = Array.isArray(stores)
@@ -58,6 +88,7 @@ export default function StoresPage() {
     setCurrentPage(1);
   }, [searchQuery, stores]);
 
+
   // Calculate pagination
   const totalPages = Math.ceil(filteredStores.length / storesPerPage);
   const startIndex = (currentPage - 1) * storesPerPage;
@@ -70,14 +101,15 @@ export default function StoresPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Show loading skeleton only on initial load, not during refreshes
-  if (isLoading && !refreshing && filteredStores.length === 0) {
+
+  // Show loading skeleton during initial load or when no stores are available yet
+  if (isLoading) {
     return (
       <div className="stores-page-loading py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <StoreHeader
           title="ร้านค้าที่ผ่านการตรวจสอบ"
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           isLoading={isLoading}
           isRefreshing={refreshing}
           onRefresh={handleRefresh}
@@ -95,7 +127,7 @@ export default function StoresPage() {
         <StoreHeader
           title="ร้านค้าที่ผ่านการตรวจสอบ"
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           isLoading={isLoading}
           isRefreshing={refreshing}
           onRefresh={handleRefresh}

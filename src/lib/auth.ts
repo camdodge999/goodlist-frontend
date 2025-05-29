@@ -81,20 +81,16 @@ export const authOptions: NextAuthOptions = {
 
           // Check if the response is ok (status 200-299)
           if (!response.ok) {
-            console.error(`HTTP Error: ${response.status} ${response.statusText}`);
             throw new Error(`SERVER_ERROR_${response.status}`);
           }
           
           const result = await response.json();
 
           if (result.statusCode === 401) {
-            console.error("Authentication failed:", result.error);
             throw new Error("INVALID_CREDENTIALS");
           } else if (result.statusCode === 500) {
-            console.error("Internal server error:", result.error);
             throw new Error("SERVER_ERROR_500");
           } else if (result.statusCode && result.statusCode !== 200) {
-            console.error(`Server error ${result.statusCode}:`, result.error);
             throw new Error(`SERVER_ERROR_${result.statusCode}`);
           }
 
@@ -124,7 +120,6 @@ export const authOptions: NextAuthOptions = {
           return user;
 
         } catch (error) {
-          console.error("Auth error details:", error);
           
           if (error instanceof Error) {
             // Handle specific fetch/network errors
@@ -140,7 +135,6 @@ export const authOptions: NextAuthOptions = {
             }
           } else {
             // Handle unknown error types
-            console.error("Unknown auth error:", error);
             throw new Error("UNKNOWN_ERROR");
           }
         }
@@ -171,8 +165,7 @@ export const authOptions: NextAuthOptions = {
             token.role = decoded.role;
           }
           
-        } catch (error) {
-          console.error("Failed to decode token:", error);
+        } catch {
         }
       }
       return token;
@@ -196,8 +189,7 @@ export const authOptions: NextAuthOptions = {
 
         session.expires = new Date(token?.exp as number * 1000).toISOString();
 
-      } catch (error) {
-        console.error("Error processing session:", error);
+      } catch { 
       }
       
       return session;

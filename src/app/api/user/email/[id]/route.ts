@@ -66,7 +66,6 @@ export async function PUT(
     }, { status: result.statusCode });
 
   } catch (error) {
-    console.error("Error updating user email:", error);
     return NextResponse.json(
       {
         statusCode: 500,

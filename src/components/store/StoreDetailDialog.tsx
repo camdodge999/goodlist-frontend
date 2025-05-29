@@ -64,8 +64,7 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
         address: store.contactInfo.address || "",
       };
     }
-  } catch (error) {
-    console.error("Error parsing contact info:", error);
+  } catch {
   }
 
   // Determine verification status and styling

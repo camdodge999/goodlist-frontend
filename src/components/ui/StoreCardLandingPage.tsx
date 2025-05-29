@@ -28,8 +28,7 @@ export default function StoreCardLandingPage({ store, index }: StoreCardLandingP
     if (typeof store.contactInfo === 'string' && isValidJSON(store.contactInfo)) {
       try {
         contactInfo = JSON.parse(store.contactInfo) as ContactInfo;
-      } catch (error) {
-        console.error("Error parsing contact info:", error);
+      } catch {
         // Keep as string if parsing fails
       }
     }

@@ -32,7 +32,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
   // Enhanced fetch function with proper Bearer token authentication
   const fetchAdminStores = useCallback(async (): Promise<Store[]> => {
     if (!session?.user?.token) {
-      console.warn('No authentication token available');
+      // console.warn('No authentication token available');
       return [];
     }
     
@@ -63,8 +63,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       } else {
         throw new Error(data.message || 'Failed to fetch admin stores');
       }
-    } catch (err) {
-      console.error('Error fetching admin stores:', err);
+    } catch {
       return [];
     } finally {
       setIsLoading(false);
@@ -129,8 +128,7 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
             fetchAllReports()
           ]);
           initialized.current = true;
-        } catch (error) {
-          console.error('useAdminStores: Error during initialization:', error);
+        } catch {
         }
       }
     };
@@ -248,11 +246,9 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
         
         return response;
       } else {
-        console.error(`Failed to update report ${reportId} status`);
         return { success: false, message: `ไม่สามารถอัปเดตสถานะรายงานได้ กรุณาลองใหม่อีกครั้ง` };
       }
     } catch (error) {
-      console.error("Error updating report status:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }, [contextUpdateReportStatus]);
@@ -271,7 +267,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
         return { success: false, message: contextError };
       }
     } catch (error) {
-      console.error("Error approving store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }, [verifyStore, storeError]);
@@ -290,7 +285,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
         return { success: false, message: contextError };
       }
     } catch (error) {
-      console.error("Error rejecting store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }, [verifyStore, storeError]);
@@ -309,7 +303,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
         return { success: false, message: contextError };
       }
     } catch (error) {
-      console.error("Error banning store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }, [verifyStore, storeError]);
@@ -328,7 +321,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
         return { success: false, message: contextError };
       }
     } catch (error) {
-      console.error("Error unbanning store:", error);
       return { success: false, message: `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }, [verifyStore, storeError]);

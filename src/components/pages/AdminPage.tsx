@@ -93,8 +93,7 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
     const initializeReports = async () => {
       try {
         await fetchAllReports();
-      } catch (error) {
-        console.error('AdminPage: Error fetching reports:', error);
+      } catch {
       }
     };
 
@@ -305,10 +304,6 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
     );
   }
 
-  // Show error if reports failed to load
-  if (reportsError) {
-    console.error('AdminPage: Reports error:', reportsError);
-  }
 
   return (
     <>

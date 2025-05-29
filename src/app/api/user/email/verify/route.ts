@@ -53,8 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       );
     }
 
-  } catch (error) {
-    console.error("Error verifying email:", error);
+  } catch {
     return NextResponse.json(
       { 
         statusCode: 500,

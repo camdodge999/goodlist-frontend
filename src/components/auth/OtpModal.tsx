@@ -84,6 +84,7 @@ export default function OtpModal({
             โปรดกรอกรหัสยืนยัน (OTP) ที่ส่งไปยัง <span className="font-bold">{email}</span><br />
             หากยังไม่ได้รับรหัส โปรดตรวจสอบในโฟลเดอร์อีเมลขยะ
             หรือกดปุ่ม &quot;ส่งรหัส OTP&quot; อีกครั้ง
+            โดยที่รหัส OTP มีอายุการใช้งาน 5 นาที
           </p>
 
           <div className="flex justify-center">

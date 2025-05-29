@@ -36,8 +36,7 @@ const StoreItem: React.FC<StoreItemProps> = ({ store, onOpenStoreDetails }) => {
         address: store.contactInfo.address || "",
       };
     }
-  } catch (error) {
-    console.error("Error parsing contact info:", error);
+  } catch {
   }
 
   return (

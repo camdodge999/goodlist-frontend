@@ -77,8 +77,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
     }
-  } catch (error) {
-    console.error("Error confirming password reset:", error);
+  } catch {
     return NextResponse.json(
       {
         statusCode: 500,

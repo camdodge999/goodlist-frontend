@@ -204,8 +204,7 @@ export default function ResetPasswordForm({ onSuccess, token }: ResetPasswordFor
       } else {
         displayErrorDialog(data.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
       }
-    } catch (error) {
-      console.error("Reset password error:", error);
+    } catch {
       displayErrorDialog("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsLoading(false);
@@ -249,8 +248,7 @@ export default function ResetPasswordForm({ onSuccess, token }: ResetPasswordFor
       } else {
         displayErrorDialog(data.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
       }
-    } catch (error) {
-      console.error("Set new password error:", error);
+    } catch {
       displayErrorDialog("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsLoading(false);

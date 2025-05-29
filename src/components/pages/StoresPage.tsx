@@ -27,8 +27,7 @@ export default function StoresPage() {
       try {
         // Always attempt to fetch stores to ensure we have the latest data
         await fetchStores();
-      } catch (err) {
-        console.error("Error loading stores:", err);
+      } catch  {
       }
     };
 
@@ -48,8 +47,7 @@ export default function StoresPage() {
     setRefreshing(true);
     try {
       await fetchStores(true); // Force refresh
-    } catch (err) {
-      console.error("Error refreshing stores:", err);
+    } catch {
     } finally {
       setRefreshing(false);
     }

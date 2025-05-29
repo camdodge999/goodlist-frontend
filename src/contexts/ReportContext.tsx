@@ -110,7 +110,6 @@ export function ReportProvider({ children }: ReportProviderProps) {
         throw new Error(data.message || "เกิดข้อผิดพลาดในการส่งรายงาน");
       }
     } catch (err) {
-      console.error("Error submitting report:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
       
@@ -169,7 +168,6 @@ export function ReportProvider({ children }: ReportProviderProps) {
         throw new Error(data.message || "เกิดข้อผิดพลาดในการดึงข้อมูลรายงาน");
       }
     } catch (err) {
-      console.error("Error fetching user reports:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
       return [];
@@ -227,7 +225,6 @@ export function ReportProvider({ children }: ReportProviderProps) {
         return [];
       }
     } catch (err) {
-      console.error("Error fetching all reports:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
       return [];
@@ -241,7 +238,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
     try {
       // Only admins can update report status
       if (!session?.user?.token || session.user.role !== 'admin') {
-        console.warn('Only admins can update report status');
+        // console.warn('Only admins can update report status');
         return false;
       }
 
@@ -269,7 +266,6 @@ export function ReportProvider({ children }: ReportProviderProps) {
         throw new Error(data.message || 'Failed to update report status');
       }
     } catch (err) {
-      console.error("Error updating report status:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
       return false;

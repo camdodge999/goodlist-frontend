@@ -55,7 +55,7 @@ interface UserContextProps {
   refreshUser: () => Promise<User | null>;
   fetchUserProfile: (userId: string, forceRefresh?: boolean) => Promise<User | null>;
   verifyUserPassword: (props: VerifyUserPasswordProps) => Promise<any>;
-  verifyUserEmail: (props: VerifyUserEmailProps) => Promise<User | null>;
+  verifyUserEmail: (props: VerifyUserEmailProps) => Promise<any>;
   verifyUser: (userId: string, verificationData: FormData | object) => Promise<boolean>;
   getVerificationStatus: () => "not_started" | "pending" | "verified" | "banned";
   getLastFetchError: () => string | null;
@@ -118,7 +118,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
   // Helper function to handle 401 errors consistently
   const handle401Error = async (data: any, response: Response) => {
     if (data.statusCode === 401 || response.status === 401) {
-      console.log('Unauthorized access detected (401), logging out user');
       setError('Session expired. Please log in again.');
       
       // Only logout if we're not already in the process of logging out
@@ -134,13 +133,11 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
   const fetchUserProfile = useCallback(async (userId: string, forceRefresh = false): Promise<User | null> => {
     // Prevent fetching if we're in the process of logging out
     if (isLoggingOut.current) {
-      console.log('Skipping fetch - logout in progress');
       return null;
     }
 
     // Prevent concurrent fetches
     if (isFetchingProfile.current && !forceRefresh) {
-      console.log('Fetch already in progress, skipping');
       return currentUserRef.current;
     }
 
@@ -151,13 +148,11 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
 
     // Check if this user has experienced ECONNREFUSED and prevent further attempts unless forced
     if (!forceRefresh && connectionRefusedUsers.current.has(userId)) {
-      console.log(`Skipping fetch for user ${userId} - previous ECONNREFUSED error`);
       return null;
     }
 
     // Check if we have a valid session token
     if (!session?.user?.token) {
-      console.log('No valid session token available');
       return null;
     }
 
@@ -180,8 +175,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
 
       // Always try to parse JSON response, even for error status codes
       const data = await response.json();
-
-      console.log("data", data);
 
       // Check for 401 status code and logout user
       if (await handle401Error(data, response)) {
@@ -220,7 +213,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
       
       // Check for ECONNREFUSED error and mark user to prevent future attempts
       if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('fetch failed')) {
-        console.log(`Connection refused for user ${userId}, preventing future fetch attempts`);
         connectionRefusedUsers.current.add(userId);
       }
       
@@ -261,8 +253,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     try {
       setIsLoading(true);
       setError(null);
-
-      console.log(updates);
 
       // Check if updates is FormData or a regular object
       const isFormData = updates instanceof FormData;
@@ -476,11 +466,11 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error(`Error updating email: ${response.statusText}`);
-      }
-
       const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || `Error updating email: ${response.statusText}`);
+      }
 
       if (responseData.statusCode === 200 && responseData.data) {
         // Update the current user in state
@@ -502,7 +492,7 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     } catch (err) {
       console.error('Error updating email:', err);
       setError(err instanceof Error ? err.message : String(err));
-      return null;
+      throw err; // Re-throw the error so it can be caught by the calling component
     } finally {
       setIsLoading(false);
     }
@@ -529,17 +519,17 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
         body: JSON.stringify({ userId, email, newEmail, password, otpCode, otpToken }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Error verifying user email: ${response.statusText}`);
-      }
-
       const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || `Error verifying user email: ${response.statusText}`);
+      }
 
       return responseData;
     } catch (err) {
       console.error('Error verifying user email:', err);
       setError(err instanceof Error ? err.message : String(err));
-      return null;
+      throw err; // Re-throw the error so it can be caught by the calling component
     } finally {
       setIsLoading(false);
     }
@@ -641,7 +631,6 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
 
   const clearConnectionRefused = (userId: string) => {
     connectionRefusedUsers.current.delete(userId);
-    console.log(`Cleared connection refused status for user ${userId}`);
   };
 
   const isConnectionRefused = (userId: string) => {
@@ -683,4 +672,3 @@ export function useUser() {
   }
   return context;
 }
-

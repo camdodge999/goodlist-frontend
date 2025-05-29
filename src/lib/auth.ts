@@ -86,7 +86,6 @@ export const authOptions: NextAuthOptions = {
           }
           
           const result = await response.json();
-          console.log("Auth response:", result);
 
           if (result.statusCode === 401) {
             console.error("Authentication failed:", result.error);

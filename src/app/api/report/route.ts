@@ -5,23 +5,15 @@ import { Report } from "@/types/report";
 
 export async function GET(request: NextRequest): Promise<NextResponse<BodyResponse<Report[]>>> {
   try {
-    console.log('API Route: GET /api/report - Fetching all reports...');
     const result = await fetchAllReports(request);
-    console.log('API Route: Backend response:', { 
-      statusCode: result.statusCode, 
-      hasData: !!result.data,
-      dataLength: result.data?.reportDetail?.length || 0
-    });
     
     if (result.statusCode === 200) {
       if (!result.data) {
-        console.log('API Route: No data in response');
         return NextResponse.json(
           { statusCode: 404, message: "ไม่พบข้อมูลรายงาน", data: undefined },
           { status: 404 }
         );
       }
-      console.log('API Route: Returning reports:', result?.data?.reportDetail?.length || 0);
       return NextResponse.json({
         statusCode: 200,
         data: result?.data?.reportDetail || [],
@@ -38,8 +30,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<BodyRespon
       { status: 404 }
     );
 
-  } catch (error) {
-    console.error("Error fetching all reports:", error);
+  } catch {
     return NextResponse.json(
       {
         statusCode: 500,
@@ -90,8 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       );
     }
 
-  } catch (error) {
-    console.error("Error creating user:", error);
+  } catch {
     return NextResponse.json(
       {
         statusCode: 500,

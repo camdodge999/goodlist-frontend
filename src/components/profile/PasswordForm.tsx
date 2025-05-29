@@ -31,7 +31,7 @@ interface PasswordFormProps {
 export default function PasswordForm({
   isEditing,
   passwordError,
-  isChangingPassword, 
+  isChangingPassword,
   email,
   displayName,
   cooldownSeconds,
@@ -61,7 +61,7 @@ export default function PasswordForm({
       ...prev,
       [name]: value
     }));
-    
+
     // If this is the new password field, validate it in real-time
     if (name === 'newPassword') {
       setPasswordValidation({
@@ -72,7 +72,7 @@ export default function PasswordForm({
         samePassword: value === formData.confirmPassword
       });
     }
-    
+
     // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors(prev => ({
@@ -80,7 +80,7 @@ export default function PasswordForm({
         [name]: ""
       }));
     }
-    
+
     // Also call the parent handler
     onPasswordChange(e);
   };
@@ -121,7 +121,7 @@ export default function PasswordForm({
     }
 
     const result = passwordFormSchema.safeParse(formData);
-    
+
     if (!result.success) {
       const errors: Record<string, string> = {};
       result.error.errors.forEach((error) => {
@@ -132,30 +132,30 @@ export default function PasswordForm({
       setValidationErrors(errors);
       return false;
     }
-    
+
     setValidationErrors({});
     return true;
   };
 
   const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const result = await changeUserPassword({
         userId,
         oldPassword: formData.oldPassword,
-        newPassword: formData.newPassword,  
+        newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
         email: email,
         displayName: displayName
       });
-      
+
       if (result) {
         // Reset form on success
         setFormData({
@@ -171,7 +171,7 @@ export default function PasswordForm({
           hasNumber: false,
           samePassword: false
         });
-        
+
         // Call the new success handler if provided, otherwise call the old one
         if (onPasswordChangeSuccess) {
           onPasswordChangeSuccess(result);
@@ -181,7 +181,7 @@ export default function PasswordForm({
       }
     } catch (error) {
       console.error("Error changing password:", error);
-      
+
       // Call the new error handler if provided
       if (onPasswordChangeError) {
         onPasswordChangeError(error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
@@ -252,7 +252,7 @@ export default function PasswordForm({
                 <FontAwesomeIcon icon={showNewPassword ? faEyeSlash : faEye} className="w-5 h-5" />
               </button>
             </div>
-            
+
             {/* Password requirements */}
             {formData.newPassword && (
               <div className="mt-2 mb-4 p-3 bg-gray-50 rounded-md border text-sm space-y-2">
@@ -296,7 +296,7 @@ export default function PasswordForm({
                 </ul>
               </div>
             )}
-            
+
             {validationErrors.newPassword && (
               <p className="mt-1 text-sm text-red-600">{validationErrors.newPassword}</p>
             )}

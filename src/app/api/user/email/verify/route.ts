@@ -3,6 +3,7 @@ import { BodyResponse } from "@/types/response";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { UserResponse } from "@/types/users";
 
+
 export async function POST(request: NextRequest): Promise<NextResponse<BodyResponse<UserResponse>>> {
   try {
     const body = await request.json();

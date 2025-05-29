@@ -23,11 +23,11 @@ interface EmailFormProps {
     isEditing: boolean;
     emailError: string;
     emailCooldownSeconds?: number;
+    onFormReset?: () => void;
     onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onEmailChangeSuccess?: (responseData: { data: UserResponse }, emailData: {email: string, password: string}) => void;
+    onEmailChangeSuccess?: (responseData: { data: UserResponse }, emailData: { email: string, password: string }) => void;
     onEmailChangeError?: (error: string) => void;
     shouldResetForm?: boolean;
-    onFormReset?: () => void;
     userId: string;
 }
 
@@ -49,7 +49,7 @@ export default function EmailForm({
     const [newEmail, setNewEmail] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // Validation states
     const [validationErrors, setValidationErrors] = useState<Partial<EmailChangeSchema>>({});
     const [isValid, setIsValid] = useState(false);
@@ -107,9 +107,11 @@ export default function EmailForm({
             });
 
             if (result) {
-                // Don't reset form fields here - keep them until OTP verification is complete
-                // Only clear the password field for security
+                // Reset form on success (similar to PasswordForm pattern)
+                setNewEmail("");
                 setCurrentPassword("");
+                setValidationErrors({});
+                setIsValid(false);
 
                 // Call the success handler if provided
                 if (onEmailChangeSuccess) {
@@ -119,7 +121,7 @@ export default function EmailForm({
             }
         } catch (error) {
             console.error("Error changing email:", error);
-            
+
             // Call the error handler if provided
             if (onEmailChangeError) {
                 onEmailChangeError(error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการเปลี่ยนอีเมล");
@@ -159,6 +161,13 @@ export default function EmailForm({
                 transition={{ duration: 0.3 }}
             >
                 <h3 className="text-lg font-medium text-gray-900 mb-4">เปลี่ยนอีเมล</h3>
+
+                {emailError && (
+                    <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+                        <span className="block sm:inline">{emailError}</span>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 gap-6">
                         <div>
@@ -206,9 +215,6 @@ export default function EmailForm({
                             />
                             {validationErrors.newEmail && (
                                 <p className="mt-1 text-sm text-red-600">{validationErrors.newEmail}</p>
-                            )}
-                            {emailError && (
-                                <p className="mt-1 text-sm text-red-600">{emailError}</p>
                             )}
                         </div>
 

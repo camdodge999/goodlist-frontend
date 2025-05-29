@@ -58,7 +58,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       const data = await response.json();
 
       if (data.statusCode === 200 && data.data) {
-        console.log('useAdminStores: Fetched admin stores:', data.data.length);
         setAdminStores(data.data);
         return data.data;
       } else {
@@ -124,13 +123,11 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
   useEffect(() => {
     const initializeData = async () => {
       if (!initialized.current && session?.user?.token) {
-        console.log('useAdminStores: Initializing data...');
         try {
           await Promise.all([
             fetchAdminStores(),
             fetchAllReports()
           ]);
-          console.log('useAdminStores: Data initialization complete');
           initialized.current = true;
         } catch (error) {
           console.error('useAdminStores: Error during initialization:', error);
@@ -245,7 +242,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
       const apiStatus = newStatus === "valid" ? "reviewed" : "invalid";
       const success = await contextUpdateReportStatus(reportId, apiStatus as "valid" | "invalid");
       if (success) {
-        console.log(`Report ${reportId} status updated to ${newStatus}`);
         
         // Return success immediately for dialog display
         const response = { success: true, message: `อัปเดตสถานะรายงานสำเร็จ` };
@@ -302,7 +298,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
   const handleBanStore = useCallback(async (storeId: number): Promise<{ success: boolean; message: string }> => {
     try {
       const result = await verifyStore(storeId, false, true);
-      console.log("RESULT", result);
       if (result) {
         // Return success immediately for dialog display
         const response = { success: true, message: "แบนร้านค้าสำเร็จ" };
@@ -340,7 +335,6 @@ export default function useAdminStores({ initialStores = [] }: UseAdminStoresOpt
 
   // Refresh function for manual data refresh
   const refreshStores = useCallback(async () => {
-    console.log('useAdminStores: Manual refresh triggered');
     const [stores] = await Promise.all([
       fetchAdminStores(),
       fetchAllReports()

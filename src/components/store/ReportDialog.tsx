@@ -259,7 +259,7 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
               <Button 
                 type="submit"
                 disabled={reportSubmitting || Object.keys(validationErrors).length > 0}
-                variant="default"
+                variant="primary"
               >
                 {reportSubmitting ? (
                   <>

@@ -37,7 +37,6 @@ export async function GET(
     }
 
     if(profile.statusCode === 401) {
-      console.log("result", profile);
       return NextResponse.json({
         statusCode: profile.statusCode,
         message: profile.message,
@@ -95,7 +94,6 @@ export async function PUT(
     // Forward the update request to the backend API
     const result = await updateUserProfile(request, userId.toString(), body);
 
-    console.log("result", result);
 
     return NextResponse.json({
       statusCode: result.statusCode,

@@ -21,17 +21,26 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
     };
   }
 
+  // Helper function to convert tags string to array
+  const getTagsArray = (tags?: string): string[] => {
+    if (!tags) return [];
+    return tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  };
+
+  const tagsArray = getTagsArray(blog.tags);
+  const authorName = typeof blog.author === 'string' ? blog.author : blog.author?.name || 'Unknown Author';
+
   return {
     title: blog.title,
     description: blog.excerpt,
-    keywords: blog.tags.join(', '),
+    keywords: tagsArray.join(', '),
     openGraph: {
       title: blog.title,
       description: blog.excerpt,
       type: 'article',
       publishedTime: blog.publishedAt,
-      authors: [blog.author],
-      tags: blog.tags,
+      authors: [authorName],
+      tags: tagsArray,
     },
     twitter: {
       card: 'summary_large_image',

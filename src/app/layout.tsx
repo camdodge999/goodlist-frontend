@@ -2,6 +2,9 @@ import React from "react";
 import localFont from "next/font/local";
 import type { Metadata } from "next";
 import "./globals.css";
+import "@fortawesome/fontawesome-svg-core/styles.css";
+import "@/lib/fontawesome";
+import "@/lib/csp-debug";
 import NavBar from "@/components/layout/NavBar";
 import { NextAuthProvider } from "@/providers/NextAuthProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
@@ -9,6 +12,8 @@ import { AppProviders } from "@/providers/AppProviders";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Session } from "next-auth";
+import { getNonceFromRequest } from "@/lib/nonce";
+import { CSPWrapper } from "@/components/CSPWrapper";
 
 const prompt = localFont({
   src: [
@@ -62,22 +67,30 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: { nonce: string };
 }) {
   // Pre-fetch the session on the server for better initial loading experience
   const session = await getServerSession(authOptions);
+  const nonce = params.nonce;
 
   return (
     <html lang="th" className={`${prompt.className} antialiased`}>
+      <head>
+        {nonce && <meta name="csp-nonce" content={nonce} />}
+      </head>
       <body>
-        <NextAuthProvider session={session as unknown as Session}>
-          <AppProviders session={session as unknown as Session}>
-            <NavBar session={session as unknown as Session} />
-            <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
-            <ToastProvider />
-          </AppProviders>
-        </NextAuthProvider>
+        <CSPWrapper>
+          <NextAuthProvider session={session as unknown as Session}>
+            <AppProviders session={session as unknown as Session}>
+              <NavBar session={session as unknown as Session} />
+              <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
+              <ToastProvider />
+            </AppProviders>
+          </NextAuthProvider>
+        </CSPWrapper>
       </body>
     </html>
   );

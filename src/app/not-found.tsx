@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faHome, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
-export default function NotFound() {
+export default async function NotFound() {
     return (
         <div className="relative isolate min-h-[calc(100vh-80px)] overflow-hidden">
             {/* Animated background elements */}

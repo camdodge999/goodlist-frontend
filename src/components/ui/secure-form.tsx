@@ -107,12 +107,7 @@ export function SecureForm({
           name="website"
           autoComplete="off"
           tabIndex={-1}
-          style={{
-            position: 'absolute',
-            left: '-9999px',
-            opacity: 0,
-            pointerEvents: 'none'
-          }}
+          className="absolute -left-[9999px] opacity-0 pointer-events-none"
           aria-hidden="true"
         />
         

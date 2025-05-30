@@ -11,20 +11,22 @@ import BlogLoadingSkeleton from "./BlogLoadingSkeleton";
 interface BlogClientWrapperProps {
   initialData: BlogsResponse;
   initialSearchQuery?: string;
+  nonce?: string | null;
 }
 
 export default function BlogClientWrapper({ 
   initialData, 
-  initialSearchQuery = "" 
+  initialSearchQuery = "",
+  nonce
 }: BlogClientWrapperProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [blogs, setBlogs] = useState<Blog[]>(initialData.blogs);
+  const [blogs, setBlogs] = useState<Blog[]>(initialData?.blogs || []);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentPage, setCurrentPage] = useState(initialData.pagination.currentPage);
-  const [totalPages, setTotalPages] = useState(initialData.pagination.totalPages);
+  const [currentPage, setCurrentPage] = useState(initialData?.pagination?.currentPage);
+  const [totalPages, setTotalPages] = useState(initialData?.pagination?.totalPages);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
 
   // Sync search query with URL parameters when component mounts or URL changes

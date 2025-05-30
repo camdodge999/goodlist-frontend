@@ -1,6 +1,6 @@
 import { Blog, BlogsResponse } from "@/types/blog";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 
 export async function getBlogs(params?: {
   page?: number;

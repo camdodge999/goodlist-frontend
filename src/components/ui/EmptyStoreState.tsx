@@ -11,6 +11,15 @@ export default function EmptyStoreState({
   message = "คุณเป็นร้านแรกที่ได้รับการตรวจสอบ!",
   className = ""
 }: EmptyStoreStateProps) {
+  const sparklePositions = [
+    "left-[20%] top-[30%]",
+    "left-[32%] top-[50%]", 
+    "left-[44%] top-[30%]",
+    "left-[56%] top-[50%]",
+    "left-[68%] top-[30%]",
+    "left-[80%] top-[50%]"
+  ];
+
   return (
     <div className={`relative isolate overflow-hidden ${className}`}>
       {/* Animated background elements */}
@@ -38,7 +47,7 @@ export default function EmptyStoreState({
             ✨ เป็นผู้นำแนวหน้า! ✨
           </h3>
           <motion.p
-            className="text-lg text-gray-600 font-medium"
+            className="text-lg font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
             animate={{
               backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
             }}
@@ -46,13 +55,6 @@ export default function EmptyStoreState({
               duration: 3,
               repeat: Infinity,
               ease: "easeInOut"
-            }}
-            style={{
-              background: "linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #6366f1)",
-              backgroundSize: "200% 100%",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent"
             }}
           >
             {message}
@@ -75,14 +77,10 @@ export default function EmptyStoreState({
 
         {/* Sparkle effects */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(6)].map((_, i) => (
+          {sparklePositions.map((position, i) => (
             <motion.div
               key={i}
-              className="absolute w-1 h-1 bg-yellow-400 rounded-full"
-              style={{
-                left: `${20 + (i * 12)}%`,
-                top: `${30 + (i % 2) * 20}%`,
-              }}
+              className={`absolute w-1 h-1 bg-yellow-400 rounded-full ${position}`}
               animate={{
                 opacity: [0, 1, 0],
                 scale: [0, 1, 0],

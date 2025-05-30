@@ -30,17 +30,17 @@ export default withAuth(
     // Define Content Security Policy
     const cspHeader = `
       default-src 'self';
-      script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://vercel.live;
-      style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com;
-      img-src 'self' blob: data: https://images.unsplash.com https://api.goodlist2.chaninkrew.com;
-      font-src 'self' https://fonts.gstatic.com;
-      connect-src 'self' https://api.goodlist2.chaninkrew.com ${process.env.NEXT_PUBLIC_BACKEND_URL};
+      script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
+      style-src 'self' 'nonce-${nonce}' data:;
+      img-src 'self' blob: data: https://images.unsplash.com https://api.goodlist2.chaninkrew.com https://maps.googleapis.com https://maps.gstatic.com *.googleapis.com *.gstatic.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      connect-src 'self' https://api.goodlist2.chaninkrew.com ${process.env.NEXT_PUBLIC_BACKEND_URL} https://maps.googleapis.com;
       media-src 'self';
       object-src 'none';
       base-uri 'self';
       form-action 'self';
       frame-ancestors 'none';
-      frame-src 'none';
+      frame-src 'self' https://www.google.com;
       upgrade-insecure-requests;
     `;
 
@@ -50,7 +50,7 @@ export default withAuth(
       .trim();
 
     // Skip middleware for static assets and images
-    if (pathname.includes("/images")) {
+    if (pathname.includes("/images") || pathname.startsWith("/_next/static")) {
       return NextResponse.next();
     }
 

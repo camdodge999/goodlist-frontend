@@ -15,6 +15,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import "highlight.js/styles/github.css";
+import dayjs from "dayjs";
 
 interface BlogPostClientProps {
   blog: Blog;
@@ -23,31 +24,32 @@ interface BlogPostClientProps {
 export default function BlogPostClient({ blog }: BlogPostClientProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    });
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "No date";
+    const date = dayjs(dateString);
+    return date.format("DD MMMM YYYY");
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: blog.title,
-          text: blog.excerpt,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
-    }
+  // Helper function to convert tags string to array
+  const getTagsArray = (tags?: string | string[]): string[] => {
+    if (!tags) return [];
+    if (Array.isArray(tags)) return tags.filter(tag => tag.length > 0);
+    return tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
   };
+
+  // Helper function to calculate read time from content
+  const calculateReadTime = (content?: string, fallbackReadTime?: number): number => {
+    if (fallbackReadTime) return fallbackReadTime;
+    if (!content) return 1;
+    
+    const wordsPerMinute = 200;
+    const wordCount = content.split(/\s+/).length;
+    return Math.ceil(wordCount / wordsPerMinute);
+  };
+
+  const tagsArray = getTagsArray(blog?.tags);
+  const readTime = calculateReadTime(blog?.content, blog?.readTime);
+  const authorName = typeof blog?.author === 'string' ? blog?.author : blog?.author?.name || 'Unknown Author';
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -77,32 +79,74 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
 
         {/* Blog Header */}
         <header className="mb-8">
+          {/* Featured badge */}
+          {blog.featured && (
+            <div className="mb-4">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                ⭐ Featured Post
+              </span>
+            </div>
+          )}
+
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             {blog.title}
           </h1>
           
           <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
-            <span>By {blog.author}</span>
+            <span>By {authorName}</span>
             <span>•</span>
             <span>{formatDate(blog.publishedAt)}</span>
             <span>•</span>
-            <span>{blog.readTime} min read</span>
+            <span>{readTime} min read</span>
+            {blog.viewCount > 0 && (
+              <>
+                <span>•</span>
+                <span>{blog.viewCount} views</span>
+              </>
+            )}
           </div>
           
-          <div className="flex flex-wrap gap-2 mb-6">
-            {blog.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          {/* Tags */}
+          {tagsArray.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {tagsArray.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Engagement metrics */}
+          {(blog.likeCount > 0 || blog.shareCount > 0 || blog.commentCount > 0) && (
+            <div className="flex items-center gap-6 text-sm text-gray-500 mb-6 p-4 bg-gray-50 rounded-lg">
+              {blog.likeCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <span>👍</span>
+                  {blog.likeCount} likes
+                </span>
+              )}
+              {blog.shareCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <span>📤</span>
+                  {blog.shareCount} shares
+                </span>
+              )}
+              {blog.commentCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <span>💬</span>
+                  {blog.commentCount} comments
+                </span>
+              )}
+            </div>
+          )}
         </header>
 
         {/* Blog Content */}
-        <article className="bg-white rounded-lg shadow-sm p-8">
+        <article className="mb-8">
           <div className="prose prose-lg max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
@@ -163,10 +207,18 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
                 ),
               }}
             >
-              {blog.content}
+              {blog.content || "No content available."}
             </ReactMarkdown>
           </div>
         </article>
+
+        {/* Blog metadata */}
+        {blog.metaDescription && (
+          <div className="mb-8 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">Summary</h3>
+            <p className="text-blue-800 text-sm">{blog.metaDescription}</p>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="mt-8 pt-8 border-t border-gray-200">
@@ -181,16 +233,21 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
               กลับไปยังบล็อกทั้งหมด
             </Link>
             
-            <button
-              onClick={handleShare}
-              className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              disabled={isLoading}
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-              </svg>
-              แชร์บทความ
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Share:</span>
+              <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <span className="sr-only">Share on Twitter</span>
+                🐦
+              </button>
+              <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <span className="sr-only">Share on Facebook</span>
+                📘
+              </button>
+              <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <span className="sr-only">Copy link</span>
+                🔗
+              </button>
+            </div>
           </div>
         </div>
       </div>

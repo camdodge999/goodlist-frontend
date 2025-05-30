@@ -12,8 +12,6 @@ const headers = [
   "X-Requested-With",
 ];
 
-
-
 const nextConfig: NextConfig = {
   /* config options here */
   // experimental: {
@@ -31,7 +29,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "api.goodlist.chaninkrew.com",
+        hostname: "api.goodlist2.chaninkrew.com",
         port: "3000",
         pathname: "/**",
       },
@@ -60,6 +58,26 @@ const nextConfig: NextConfig = {
           { key: "Access-Control-Allow-Headers", value: headers.join(", ") },
         ],
       },
+      // Security headers for production
+      ...(process.env.NODE_ENV === 'production' ? [
+        {
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'Strict-Transport-Security',
+              value: 'max-age=31536000; includeSubDomains; preload',
+            },
+            {
+              key: 'X-DNS-Prefetch-Control',
+              value: 'on',
+            },
+            {
+              key: 'X-Download-Options',
+              value: 'noopen',
+            },
+          ],
+        },
+      ] : []),
     ];
   },
   async rewrites() {

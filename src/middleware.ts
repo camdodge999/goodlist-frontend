@@ -20,10 +20,34 @@ import { withAuth } from "next-auth/middleware";
 
 const isApiRoute = (pathname: string): boolean => pathname.startsWith("/api/");
 
-
 export default withAuth(
   async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
+
+    // Generate nonce for CSP
+    const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+    
+    // Define Content Security Policy
+    const cspHeader = `
+      default-src 'self';
+      script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://vercel.live;
+      style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com;
+      img-src 'self' blob: data: https://images.unsplash.com https://api.goodlist2.chaninkrew.com;
+      font-src 'self' https://fonts.gstatic.com;
+      connect-src 'self' https://api.goodlist2.chaninkrew.com ${process.env.NEXT_PUBLIC_BACKEND_URL};
+      media-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+      frame-src 'none';
+      upgrade-insecure-requests;
+    `;
+
+    // Clean up CSP header (remove newlines and extra spaces)
+    const contentSecurityPolicyHeaderValue = cspHeader
+      .replace(/\s{2,}/g, ' ')
+      .trim();
 
     // Skip middleware for static assets and images
     if (pathname.includes("/images")) {
@@ -34,7 +58,6 @@ export default withAuth(
     if (pathname.startsWith("/api/auth/") || pathname === "/api/user/register" || pathname === "/api/user/register/verify") {
       return NextResponse.next();
     }
-
 
     // For other API routes, check authentication
     if (isApiRoute(pathname)) {
@@ -47,6 +70,24 @@ export default withAuth(
       // }
       return NextResponse.next();
     }
+
+    // Create response with CSP and security headers
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-nonce', nonce);
+    requestHeaders.set('Content-Security-Policy', contentSecurityPolicyHeaderValue);
+
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    // Set security headers on response
+    response.headers.set('Content-Security-Policy', contentSecurityPolicyHeaderValue);
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
     // Get authentication token
     // console.log(`Session:`, session, `isAuth: ${isAuth}`);
@@ -76,7 +117,7 @@ export default withAuth(
     // }
 
     // Allow access to authenticated users
-    return NextResponse.next();
+    return response;
   },
   {
     callbacks: {
@@ -86,5 +127,20 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    {
+      source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+  ],
 };

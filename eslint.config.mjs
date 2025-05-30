@@ -21,7 +21,8 @@ eslintConfig.push({
     "src/utils/valid-json.ts",
     "src/contexts/UserContext.tsx",
     "src/app/api/user/verify/[id]/route.ts",
-    "src/app/api/stores/verify/route.ts"
+    "src/app/api/stores/verify/route.ts",
+    "src/lib/input-sanitizer.ts"
   ],
   rules: {
     "no-console": "off",

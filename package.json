@@ -5,10 +5,14 @@
   "scripts": {
     "dev": "next dev -p 4200",
     "dev:https": "next dev --experimental-https -p 4200",
+    "dev:https-custom": "node server-dev.js",
     "build": "next build",
     "start": "next start",
+    "start:https": "node server.js",
+    "generate-certs": "node generate-certificates.js",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:csp": "node scripts/test-csp.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

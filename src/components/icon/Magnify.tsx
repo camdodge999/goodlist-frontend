@@ -8,13 +8,7 @@ export default function Magnify() {
                     viewBox="0 0 160 160"
                     fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="opacity-15 -rotate-12 transform scale-150"
-                style={{
-                    position: 'absolute',
-                    top: '50%',
-                    right: '-200px',
-                    transform: 'translateY(-50%) rotate(-12deg) scale(1.5)'
-                }}
+                className="opacity-15 -rotate-12 transform scale-150 absolute top-1/2 -right-[200px] -translate-y-1/2"
             >
                 {/* Magnifying Glass Handle */}
                 <path

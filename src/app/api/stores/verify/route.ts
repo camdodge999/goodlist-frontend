@@ -67,7 +67,7 @@ async function verifyStore(request: NextRequest, body: any): Promise<BodyRespons
     // For FormData, we use it directly - fetchWithAuth handles it correctly
     const result = await fetchWithAuth<BodyResponse<{verifyStore: Store}>>({
       request,
-      url: `${process.env.NEXTAUTH_BACKEND_URL}/api/store/VerifyStore/${body.id}`,
+      url: `${process.env.NEXTAUTH_URL }/api/store/VerifyStore/${body.id}`,
       method: 'POST',
       body: body
     });

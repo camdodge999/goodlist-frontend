@@ -1,7 +1,7 @@
 import AdminPage from "@/components/pages/AdminPage";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { Store } from "@/types/stores";
 import { Metadata } from "next";
 import { metadataPages } from "@/consts/metadata";
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXTAUTH_BACKEND_URL}/api/store/`,
+      `${process.env.NEXTAUTH_URL }/api/store/`,
       {
         method: 'GET',
         headers: {
@@ -47,7 +47,14 @@ export default async function Page() {
   const session = await getServerSession(authOptions);
   
   if (!session || session.user.role !== "admin") {
-    redirect("/login");
+    // Return a minimal redirect response with no body to prevent information leakage
+    return NextResponse.redirect(new URL("/login", process.env.NEXTAUTH_URL || "http://localhost:3000"), {
+      status: 302,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Redirect-Security': 'minimal-response'
+      }
+    });
   }
 
   // Fetch stores data server-side

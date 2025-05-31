@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Disallow crawling of API routes and admin areas
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+
+# Allow crawling of important pages
+Allow: /
+
+# Sitemap location (you can update this URL when you have a sitemap)
+# Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl delay (optional - removes this if not needed)
+# Crawl-delay: 1 

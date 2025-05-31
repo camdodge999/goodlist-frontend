@@ -114,7 +114,7 @@ async function fetchStoreById(
   // Accept token as a parameter
   const result = await fetchWithAuth<BodyResponse<{ storeDetail: Store }>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/store/storeDetail/${id}`,
+    url: `${process.env.NEXTAUTH_URL !}/api/store/storeDetail/${id}`,
     method: "GET"
   });
 
@@ -139,7 +139,7 @@ async function updateStoreById(
 ): Promise<BodyResponse<{ storeDetail: Store }>> {
   const result = await fetchWithAuth<BodyResponse<{ storeDetail: Store }>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/store/updateStore/${id}`,
+    url: `${process.env.NEXTAUTH_URL !}/api/store/updateStore/${id}`,
     method: "PUT",
     body: updates
   });

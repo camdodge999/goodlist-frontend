@@ -66,7 +66,7 @@ async function verifyUser(
     // Use fetchWithAuth to handle token extraction and API call
     const result = await fetchWithAuth<BodyResponse<unknown>>({
       request,
-      url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/user/verify/${id}`,
+      url: `${process.env.NEXTAUTH_URL !}/api/user/verify/${id}`,
       method: "POST",
       body: formData,
     });

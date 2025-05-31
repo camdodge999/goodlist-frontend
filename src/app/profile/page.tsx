@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import ProfileClient from "@/components/profile/ProfileClient";
@@ -16,9 +16,16 @@ export default async function ProfilePage() {
   // Get session using server component
   const session = await getServerSession(authOptions);
 
-  // If no session exists, redirect to login
+  // If no session exists, return a minimal redirect response
   if (!session || !session.user) {
-    redirect("/login");
+    // Return a minimal redirect response with no body to prevent information leakage
+    return NextResponse.redirect(new URL("/login?callbackUrl=/profile", process.env.NEXTAUTH_URL || "http://localhost:3000"), {
+      status: 302,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Redirect-Security': 'minimal-response'
+      }
+    });
   }
 
   // Convert the session user to our User type for initial rendering

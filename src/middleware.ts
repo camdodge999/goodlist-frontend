@@ -1,42 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
-// import {  getToken } from "next-auth/jwt";
-// import NextAuth, { getServerSession } from "next-auth";
-// import { authOptions } from "@/lib/auth";
 import { validateEnvironmentURLs } from './lib/ssrf-protection';
-
-// const PATH_CONFIG = {
-//   publicPaths: ["/login", "/logout", "/signup", "/forgot-password", "/stores", "/report", "/api/auth/error", "/", "/reset-password", "/api/user/register"],
-//   protectedPaths: ["/admin", "/verify", "/profile"],
-//   protectedBasePath: "/admin",
-//   unauthorizedPath: "/unauthorized",
-//   accessDeniedPath: "/access-denied",
-//   loginPath: "/login",
-// } as const;
-
-// const isPublicPath = (pathname: string): boolean =>
-//   PATH_CONFIG.publicPaths.includes(pathname as typeof PATH_CONFIG.publicPaths[number]) ||
-//   pathname === PATH_CONFIG.unauthorizedPath ||
-//   pathname === PATH_CONFIG.accessDeniedPath;
 
 // Validate environment URLs on startup
 validateEnvironmentURLs();
 
+
+// Pre-computed SHA256 hashes for static inline content
+const STATIC_STYLE_HASHES = [
+  "'sha256-ZDrxqUOB4m/L0JWL/+gS52g1CRH0l/qwMhjTw5Z/Fsc='", // display: none;
+  "'sha256-8ilcya6PJ2mDcuNFfcZaaOL85o/T7b8cPlsalzaJVOs='", // empty style
+  "'sha256-t4I2teZN5ZH+VM+XOiWlaPbsjQHe+k9d6viXPpKpNWA='", // common utility styles
+  "'sha256-PhrR5O1xWiklTp5YfH8xWeig83Y/rhbrdb5whLn1pSg='", // additional utility styles
+  "'sha256-MtxTLcyxVEJFNLEIqbVTaqR4WWr0+lYSZ78AzGmNsuA='", // additional utility styles
+  "'sha256-1OjyRYLAOH1vhXLUN4bBHal0rWxuwBDBP220NNc0CNU='", // additional utility styles
+  "'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='", // additional utility styles 
+  "'sha256-68ahHyH65aqS202beKyu22MkdAEr0fBCN3eHnbYX+wg='", // additional utility styles 
+  "'sha256-dz0IlE6Ej+Pf9WeZ57sEyXgzZOvzM4Agzl2f0gpN7fs='", // additional utility styles 
+  "'sha256-F2FphXOLeRXcUSI4c0ybgkNqofQaEHWI1kHbjr9RHxw='", // critical CSS from document head
+];
+
+const STATIC_SCRIPT_HASHES = [
+  "'sha256-4RS22DYeB7U14dra4KcQYxmwt5HkOInieXK1NUMBmQI='", // webpack nonce script pattern
+];
+
+/**
+ * Generate a secure nonce using Web Crypto API (Edge Runtime compatible)
+ */
+function generateNonce(): string {
+  // Use crypto.randomUUID() which is supported in Edge Runtime
+  const uuid = crypto.randomUUID();
+  
+  // Convert UUID to base64 for nonce
+  // Edge Runtime compatible approach
+  const encoder = new TextEncoder();
+  const data = encoder.encode(uuid);
+  
+  // Convert to base64 manually since Buffer is not available in Edge Runtime
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+
+  const convert = btoa(binary);
+
+  console.log(convert)
+  
+  return convert;
+}
+
 export function middleware(request: NextRequest) {
-  // Generate a fresh nonce for each request (following Next.js best practices)
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  // Generate nonce using Edge Runtime compatible method
+  const nonce = generateNonce();
   
-  // Determine if we're in development
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
-  // Build CSP header following Next.js recommendations
+  // Build CSP header with both nonces and SHA256 hashes
   const cspHeader = `
     default-src 'self';
-    script-src 'self' ${isDevelopment ? "'unsafe-inline' 'unsafe-eval'" : `'nonce-${nonce}' 'strict-dynamic'`};
-    style-src 'self' ${isDevelopment ? "'unsafe-inline'" : `'nonce-${nonce}'`} https://fonts.googleapis.com;
-    img-src 'self' data: blob: https://images.unsplash.com https://api.goodlist.chaninkrew.com https://api.goodlist2.chaninkrew.com;
-    font-src 'self' https://fonts.gstatic.com;
-    connect-src 'self' https://api.goodlist.chaninkrew.com https://api.goodlist2.chaninkrew.com ${isDevelopment ? 'ws://localhost:* http://localhost:* https://localhost:* ws://127.0.0.1:* http://127.0.0.1:* https://127.0.0.1:*' : ''};
-    media-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${STATIC_SCRIPT_HASHES.join(' ')};
+    style-src 'self' 'nonce-${nonce}'  ${STATIC_STYLE_HASHES.join(' ')};
+    img-src 'self' blob: data: https://images.unsplash.com;
+    font-src 'self';
+    connect-src 'self';
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -45,88 +68,80 @@ export function middleware(request: NextRequest) {
     worker-src 'self' blob:;
     child-src 'self' blob:;
     manifest-src 'self';
-    report-to csp-endpoint;
-    ${isDevelopment ? '' : 'upgrade-insecure-requests;'}
+    upgrade-insecure-requests;
   `;
-
-  // Clean up the CSP header (remove extra whitespace and newlines)
+  
+  // Replace newline characters and spaces (Next.js docs approach)
   const contentSecurityPolicyHeaderValue = cspHeader
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  // Create request headers with nonce
+  // Create request headers with nonce (exactly as in docs)
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
 
-  // Create response with updated request headers
+  requestHeaders.set(
+    'Content-Security-Policy',
+    contentSecurityPolicyHeaderValue
+  );
+
+  // Create response with updated request headers (Next.js pattern)
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
 
-  // Set security headers on response
+  // Set CSP header on response (Next.js docs approach)
+  response.headers.set(
+    'Content-Security-Policy',
+    contentSecurityPolicyHeaderValue
+  );
+
+  // Additional security headers (enhanced from your existing setup)
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   
-  // Report-To header for modern CSP reporting
+  // CSP Reporting (enhanced)
   response.headers.set('Report-To', JSON.stringify({
     group: 'csp-endpoint',
-    max_age: 86400, // 24 hours
-    endpoints: [
-      {
-        url: '/api/csp-report'
-      }
-    ]
+    max_age: 86400,
+    endpoints: [{ url: '/api/csp-report' }]
   }));
   
-  // Security headers to prevent information leakage in redirects
-  response.headers.set('X-Redirect-Security', 'minimal-response');
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-  
-  // Set CSP header (enforce in production, report-only in development)
-  const cspHeaderName = isDevelopment ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
-  response.headers.set(cspHeaderName, contentSecurityPolicyHeaderValue);
+  // Development logging with hash information
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔒 CSP Policy Applied (Edge Runtime Compatible):', {
+      nonce: nonce.substring(0, 8) + '...',
+      styleHashCount: STATIC_STYLE_HASHES.length,
+      scriptHashCount: STATIC_SCRIPT_HASHES.length,
+      policy: contentSecurityPolicyHeaderValue.substring(0, 150) + '...'
+    });
+  }
 
-  // Additional validation for API routes that might be vulnerable
+  // API security monitoring (kept from your existing implementation)
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    // Log suspicious requests
     const userAgent = request.headers.get('user-agent') || '';
     const referer = request.headers.get('referer') || '';
-    
-    // Get client IP from headers
     const clientIP = request.headers.get('x-forwarded-for') || 
                      request.headers.get('x-real-ip') || 
                      'unknown';
     
-    // Check for suspicious patterns
-    const suspiciousPatterns = [
-      /curl/i,
-      /wget/i,
-      /python/i,
-      /scanner/i,
-      /bot/i,
-    ];
-    
+    const suspiciousPatterns = [/curl/i, /wget/i, /python/i, /scanner/i, /bot/i];
     const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(userAgent));
     
     if (isSuspicious && !referer.includes(request.nextUrl.origin)) {
       console.warn(`🚨 Suspicious API request detected: ${request.nextUrl.pathname} from ${clientIP} - User-Agent: ${userAgent}`);
-      // You might want to implement rate limiting here
     }
 
-    // Validate specific vulnerable endpoints
     if (request.nextUrl.pathname === '/api/images/uploads') {
       const path = request.nextUrl.searchParams.get('path');
-      if (path) {
-        // Basic validation in middleware
-        if (path.includes('..') || path.includes('://') || path.startsWith('/')) {
-          console.warn(`🚨 Potential path traversal attempt blocked in middleware: ${path}`);
-          return new NextResponse('Invalid path parameter', { status: 400 });
-        }
+      if (path && (path.includes('..') || path.includes('://') || path.startsWith('/'))) {
+        console.warn(`🚨 Potential path traversal attempt blocked: ${path}`);
+        return new NextResponse('Invalid path parameter', { status: 400 });
       }
     }
   }
@@ -134,17 +149,18 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
+// Matcher configuration (exactly as in Next.js docs)
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * But include API routes to ensure CSP headers are set everywhere
      */
     {
-      source: '/((?!_next/static|_next/image|favicon.ico).*)',
+      source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

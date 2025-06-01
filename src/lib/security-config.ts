@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 /**
  * Centralized Security Configuration for SSRF Protection
  * and other security measures
@@ -69,7 +71,12 @@ export const SECURITY_CONFIG = {
     production: {
       'default-src': ["'self'"],
       'script-src': ["'self'", "'strict-dynamic'"], // Nonce will be added dynamically
-      'style-src': ["'self'", "https://fonts.googleapis.com"], // Hash will be added dynamically
+      'style-src': [
+        "'self'", 
+        "https://fonts.googleapis.com",
+        "'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='", // Known inline style hash
+        "'sha256-1OjyRYLAOH1vhXLUN4bBHal0rWxuwBDBP220NNc0CNU='" // Another inline style hash
+      ], // Hash will be added dynamically
       'img-src': [
         "'self'", 
         'data:', 
@@ -101,7 +108,7 @@ export const SECURITY_CONFIG = {
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   },
   
   // Suspicious User Agent patterns

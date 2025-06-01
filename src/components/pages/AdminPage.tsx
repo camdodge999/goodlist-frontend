@@ -266,7 +266,7 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
 
   if (isLoading || reportsLoading) {
     return (
-      <div className="py-8">
+      <div className="py-8 bg-gray-50 min-h-screen">
         <div className="admin-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="admin-header sm:flex sm:items-center">
             <div className="admin-header-content sm:flex-auto">
@@ -328,7 +328,7 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
         onButtonClick={handleErrorClose}
       />
 
-      <div className="admin-page py-8">
+      <div className="admin-page py-8 bg-gray-50 min-h-screen">
         <div className="admin-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="admin-header sm:flex sm:items-center">
             <div className="admin-header-content sm:flex-auto">
@@ -374,30 +374,27 @@ export default function AdminPage({ initialStores = [] }: AdminPageProps) {
                 onSearchChange={setSearchQuery}
               />
 
-              <div className="admin-stores-list bg-white shadow overflow-hidden sm:rounded-md">
-                <ul role="list" className="stores-list divide-y divide-gray-200">
-                  {displayedStores.map((store) => (
-                    <li key={store.id} className="store-item">
-                      <StoreItem
-                        store={store}
-                        activeTab={activeTab}
-                        reports={reports}
-                        onViewStore={handleViewStore}
-                        onViewReport={handleViewSingleReport}
-                        onApproveStore={handleApproveStoreWithDialog}
-                        onRejectStore={handleRejectStoreWithDialog}
-                        onBanStore={handleBanStoreWithDialog}
-                        onUnbanStore={handleUnbanStoreWithDialog}
-                        onUpdateReportStatus={handleUpdateModalReportStatus}
-                      />
-                    </li>
-                  ))}
-                  {displayedStores.length === 0 && (
-                    <li className="empty-state px-4 py-8 text-center text-gray-500">
-                      ไม่พบร้านค้าในหมวดหมู่นี้
-                    </li>
-                  )}
-                </ul>
+              <div className="admin-stores-list space-y-4">
+                {displayedStores.map((store) => (
+                  <StoreItem
+                    key={store.id}
+                    store={store}
+                    activeTab={activeTab}
+                    reports={reports}
+                    onViewStore={handleViewStore}
+                    onViewReport={handleViewSingleReport}
+                    onApproveStore={handleApproveStoreWithDialog}
+                    onRejectStore={handleRejectStoreWithDialog}
+                    onBanStore={handleBanStoreWithDialog}
+                    onUnbanStore={handleUnbanStoreWithDialog}
+                    onUpdateReportStatus={handleUpdateModalReportStatus}
+                  />
+                ))}
+                {displayedStores.length === 0 && (
+                  <div className="empty-state px-4 py-8 text-center text-gray-500 bg-white rounded-lg border border-gray-200">
+                    ไม่พบร้านค้าในหมวดหมู่นี้
+                  </div>
+                )}
               </div>
 
               {/* Pagination */}

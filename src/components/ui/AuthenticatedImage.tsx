@@ -13,6 +13,7 @@ interface AuthenticatedImageProps {
   width?: number;
   height?: number;
   priority?: boolean;
+  style?: React.CSSProperties;
 }
 
 const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({ 
@@ -25,7 +26,8 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
   onError,
   width,
   height,
-  priority = false
+  priority = false,
+  style
 }) => {
   const { authenticatedUrl, isLoading } = useAuthenticatedImage(src);
 
@@ -37,17 +39,20 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
   // Use authenticated URL or fallback
   const imageSrc = authenticatedUrl || fallbackSrc;
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.currentTarget as HTMLImageElement;
+    target.srcset = fallbackSrc;
+  };
+
   const imageProps = {
     src: imageSrc,
     alt,
     className,
-    onError: onError || ((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-      const target = e.currentTarget as HTMLImageElement;
-      target.src = fallbackSrc;
-    }),
+    onError: onError || handleImageError,
     priority,
     ...(fill ? { fill: true } : { width, height }),
-    ...(sizes && { sizes })
+    ...(sizes && { sizes }),
+    ...(style && { style })
   };
 
   return <Image {...imageProps} />;

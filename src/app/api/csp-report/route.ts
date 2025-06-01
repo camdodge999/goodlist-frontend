@@ -2,10 +2,15 @@
  * CSP Violation Report Endpoint
  * Handles Content Security Policy violation reports
  * Supports both legacy csp-report format and modern Report API format
+ * 
+ * Enhanced with automatic hash extraction for production debugging
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { logCSPViolation, type CSPViolationReport } from '@/lib/csp-utils';
+
+// Temporary storage for captured hashes (in production, use database)
+const capturedHashes: string[] = [];
 
 // Modern Report API format
 interface ModernCSPReport {
@@ -84,7 +89,7 @@ function processViolationReport(report: CSPViolationReport, request: NextRequest
   const violation = report['csp-report'];
   
   // Log structured violation data
-  console.log('CSP Violation Report:', {
+  console.log('🚨 CSP Violation Report:', {
     timestamp: new Date().toISOString(),
     documentUri: violation['document-uri'],
     violatedDirective: violation['violated-directive'],
@@ -97,11 +102,54 @@ function processViolationReport(report: CSPViolationReport, request: NextRequest
     referer: request.headers.get('referer'),
   });
   
+  // Extract potential hashes from style-src violations
+  if (violation['violated-directive'].includes('style-src') && 
+      violation['blocked-uri'] === 'inline') {
+    
+    const suggestedHash = extractHashFromViolation(violation);
+    if (suggestedHash) {
+      console.log('🔑 Extracted CSP Hash:', suggestedHash);
+      console.log('📝 Add this hash to your CSP configuration:');
+      console.log(`   node scripts/csp-hash-helper.mjs --add "${suggestedHash}"`);
+      
+      // Store for batch processing
+      if (!capturedHashes.includes(suggestedHash)) {
+        capturedHashes.push(suggestedHash);
+        
+        // In development, automatically log the command
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🛠️  Development Auto-Fix Command:');
+          console.log(`   node scripts/csp-hash-helper.mjs --add "${suggestedHash}"`);
+        }
+      }
+    }
+  }
+  
   // Check for common violation patterns that might need attention
   const commonIssues = analyzeViolation(violation);
   if (commonIssues.length > 0) {
-    console.warn('Common CSP Issues Detected:', commonIssues);
+    console.warn('⚠️  Common CSP Issues Detected:', commonIssues);
   }
+}
+
+// Extract hash suggestion from CSP violation
+function extractHashFromViolation(violation: CSPViolationReport['csp-report']): string | null {
+  // CSP violations don't directly provide the hash, but we can guide users
+  // to generate the hash from the inline content
+  
+  const sourceInfo = {
+    file: violation['source-file'],
+    line: violation['line-number'],
+    column: violation['column-number']
+  };
+  
+  console.log('🎯 Style violation detected at:', sourceInfo);
+  console.log('💡 To fix this violation:');
+  console.log('   1. Find the inline style at the location above');
+  console.log('   2. Use: node scripts/csp-hash-helper.mjs --content "your-style-content"');
+  console.log('   3. Or add a nonce to the style element');
+  
+  return null; // Cannot extract exact hash from violation report
 }
 
 // Analyze violation for common patterns
@@ -117,7 +165,7 @@ function analyzeViolation(violation: CSPViolationReport['csp-report']): string[]
   // Check for inline style violations
   if (violation['violated-directive'].includes('style-src') && 
       violation['blocked-uri'] === 'inline') {
-    issues.push('Inline style detected - consider using CSS classes or style hashes');
+    issues.push('Inline style detected - consider using CSS classes, nonces, or style hashes');
   }
   
   // Check for eval violations
@@ -137,13 +185,22 @@ function analyzeViolation(violation: CSPViolationReport['csp-report']): string[]
   return issues;
 }
 
+// API endpoint to get captured hashes (for development debugging)
+export async function GET() {
+  return NextResponse.json({
+    capturedHashes,
+    count: capturedHashes.length,
+    message: 'Use these hashes in your CSP configuration'
+  });
+}
+
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Allow-Content-Type': 'application/json, application/reports+json',
     },

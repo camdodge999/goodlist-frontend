@@ -8,6 +8,7 @@ import {
   faChevronUp
 } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Store } from "@/types/stores";
 import { Report } from "@/types/report";
 import { isValidJSON } from "@/utils/valid-json";
@@ -70,9 +71,9 @@ export default function StoreItem({
   };
 
   return (
-    <div className="border-b border-gray-200">
+    <Card className="mb-4 hover:shadow-md transition-shadow duration-200">
       {/* Store Header */}
-      <div className="px-3 py-3 sm:px-6 sm:py-4 cursor-pointer hover:bg-gray-50" onClick={() => onViewStore(store)}>
+      <CardHeader className="cursor-pointer" onClick={() => onViewStore(store)}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
           <div className="flex items-center flex-1 min-w-0">
             <StoreItemImage 
@@ -214,22 +215,22 @@ export default function StoreItem({
             )}
           </div>
         </div>
-      </div>
+      </CardHeader>
 
       {/* Reports Subheader (Expandable) */}
       {hasReports && isExpanded && (
-        <div className="bg-gray-50 border-t border-gray-200">
-          <div className="px-3 py-3 sm:px-6 sm:py-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">
-              รายงานทั้งหมด ({storeReports.length})
-            </h4>
-            <div className="space-y-2 sm:space-y-3">
-              {storeReports.map((report) => (
-                <div 
-                  key={report.id} 
-                  className="bg-white p-3 sm:p-4 rounded-md border border-gray-200 hover:border-gray-300 cursor-pointer"
-                  onClick={(e) => handleReportClick(e, report)}
-                >
+        <CardContent className="bg-gray-50 border-t pt-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            รายงานทั้งหมด ({storeReports.length})
+          </h4>
+          <div className="space-y-3">
+            {storeReports.map((report) => (
+              <Card 
+                key={report.id} 
+                className="bg-white hover:shadow-sm cursor-pointer transition-shadow duration-200"
+                onClick={(e) => handleReportClick(e, report)}
+              >
+                <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-2">
@@ -288,12 +289,12 @@ export default function StoreItem({
                       )}
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 } 

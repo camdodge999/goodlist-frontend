@@ -54,7 +54,7 @@ const SearchTool = () => {
           className="flex-1"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
         />
         <Button 
           className="bg-blue-600 hover:bg-blue-700" 

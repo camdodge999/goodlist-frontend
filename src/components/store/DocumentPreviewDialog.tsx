@@ -28,6 +28,9 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
         <div className="relative p-4">
           <div className="relative w-full h-[70vh]">
             <Image
+                      style={{
+                        color: undefined, // This is required to prevent the inline style of `next/image`
+                      }}
               src={imageUrl || defaultImage.src}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;

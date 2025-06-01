@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
+import { generateSecureNonce } from './src/lib/csp-utils';
 
 const headers = [
   "Accept",
@@ -130,6 +131,7 @@ const securityHeadersConfig = (phase: string) => {
   const isDevelopment = phase === PHASE_DEVELOPMENT_SERVER;
   
   const cspHeader = () => {
+    const nonce = generateSecureNonce();
     
     const upgradeInsecure = (!isDevelopment) ? 'upgrade-insecure-requests;' : '';
     
@@ -137,8 +139,8 @@ const securityHeadersConfig = (phase: string) => {
     // Following Next.js documentation recommendations
     const cspDirectives = `
       default-src 'self';
-      script-src 'self' ${isDevelopment ? "'unsafe-inline' 'unsafe-eval'" : "'strict-dynamic'"};
-      style-src 'self' ${isDevelopment ? "'unsafe-inline'" : ""} https://fonts.googleapis.com;
+      script-src 'self' 'nonce-${nonce}' ${isDevelopment ? "'unsafe-inline' 'unsafe-eval'" : "'strict-dynamic'"};
+      style-src 'self' 'nonce-${nonce}' ${isDevelopment ? "'unsafe-inline'" : ""};
       img-src 'self' data: blob: https://api.goodlist2.chaninkrew.com https://images.unsplash.com;
       font-src 'self' https://fonts.gstatic.com;
       connect-src 'self' https://api.goodlist2.chaninkrew.com ${process.env.NEXT_PUBLIC_BACKEND_URL || ''} ${process.env.NEXTAUTH_URL || ''} ${isDevelopment ? 'ws://localhost:* http://localhost:* https://localhost:* ws://127.0.0.1:* http://127.0.0.1:* https://127.0.0.1:*' : ''};
@@ -213,7 +215,7 @@ const securityHeadersConfig = (phase: string) => {
     // Permissions Policy (formerly Feature Policy)
     {
       key: 'Permissions-Policy',
-      value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+      value: 'camera=(), microphone=(), geolocation=()'
     },
     // Cross-Origin Policies
     {

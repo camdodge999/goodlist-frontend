@@ -99,6 +99,10 @@ export default function ReportPage() {
     updateFormData('reason', value);
   };
 
+  const handleRouteBack = () => {
+    router.back();
+  };
+
   // Handle file change
   const handleFileChange = (file: File | null) => {
     if (file) {
@@ -272,7 +276,7 @@ export default function ReportPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={handleRouteBack}
                 disabled={reportSubmitting}
                 className="cancel-button"
               >

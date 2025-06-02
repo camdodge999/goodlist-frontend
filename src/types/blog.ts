@@ -56,6 +56,7 @@ export interface BlogFormData {
   tags: string;
   metaDescription: string;
   featured: boolean;
+  uploadedImages?: string[]; // Array of image file paths
 }
 
 export interface BlogsResponse {

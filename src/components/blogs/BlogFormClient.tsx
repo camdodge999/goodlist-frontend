@@ -18,6 +18,14 @@ import BlogFormSkeleton from '@/components/blogs/BlogFormSkeleton';
 import StatusDialog from '@/components/common/StatusDialog';
 import useShowDialog from '@/hooks/useShowDialog';
 
+interface UploadedImage {
+  fileName: string;
+  path: string;
+  url: string;
+  size: number;
+  type: string;
+}
+
 interface BlogFormClientProps {
   blogId?: string;
 }
@@ -67,8 +75,14 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(!!blogId);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
 
   const isEditing = !!blogId;
+
+  // Handle uploaded images from markdown editor
+  const handleImageUpload = (images: UploadedImage[]) => {
+    setUploadedImages(images);
+  };
 
   // Check authentication and redirect if not admin
   useEffect(() => {
@@ -139,8 +153,14 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     setIsLoading(true);
 
     try {
+      // Create form data with uploaded images
+      const blogDataWithImages = {
+        ...formData,
+        uploadedImages: uploadedImages.map(img => img.path) // Include image paths
+      };
+
       if (isEditing && editingBlog) {
-        const updated = await updateBlog(editingBlog.id, formData);
+        const updated = await updateBlog(editingBlog.id, blogDataWithImages);
         if (updated) {
           displaySuccessDialog({
             title: "สำเร็จ",
@@ -150,7 +170,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
           });
         }
       } else {
-        const created = await createBlog(formData);
+        const created = await createBlog(blogDataWithImages);
         if (created) {
           displaySuccessDialog({
             title: "สำเร็จ",
@@ -292,6 +312,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                 onChange={(value) => setFormData({ ...formData, content: value })}
                 placeholder="เขียนเนื้อหาบทความของคุณในรูปแบบ Markdown..."
                 minHeight="500px"
+                onImageUpload={handleImageUpload}
               />
             </CardContent>
           </Card>

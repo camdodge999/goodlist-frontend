@@ -30,7 +30,7 @@ export default function BlogNotFound({ slug }: BlogNotFoundProps) {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/blogs">บล็อก</Link>
+                  <Link href="/blogs">บทความ</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -80,7 +80,7 @@ export default function BlogNotFound({ slug }: BlogNotFoundProps) {
                     <span className="font-medium text-blue-900">ค้นหาบทความ</span>
                   </div>
                   <p className="text-sm text-blue-800">
-                    ลองค้นหาบทความที่คุณสนใจในหน้าบล็อกหลัก
+                    ลองค้นหาบทความที่คุณสนใจในหน้าบทความหลัก
                   </p>
                 </div>
 
@@ -137,7 +137,7 @@ export default function BlogNotFound({ slug }: BlogNotFoundProps) {
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                กลับไปยังบล็อก
+                กลับไปยังบทความ
               </Link>
               
               <Link
@@ -163,7 +163,7 @@ export default function BlogNotFound({ slug }: BlogNotFoundProps) {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              กลับไปยังบล็อกทั้งหมด
+              กลับไปยังบทความทั้งหมด
             </Link>
             
             <Link

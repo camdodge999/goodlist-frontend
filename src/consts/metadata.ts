@@ -63,5 +63,26 @@ export const metadataPages = {
         keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
         author: "Goodlist Seller",
         robots: "index, follow",
+    },
+    "blog-management":{
+        title: "จัดการบทความ | Goodlistseller",
+        description: "จัดการบทความ",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    "new-blog":{
+        title: "สร้างบทความใหม่ | Goodlistseller",
+        description: "สร้างบทความใหม่",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    "edit-blog":{
+        title: "แก้ไขบทความ | Goodlistseller",
+        description: "แก้ไขบทความ",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
     }
 }

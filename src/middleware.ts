@@ -17,6 +17,7 @@ const STATIC_STYLE_HASHES = [
   "'sha256-68ahHyH65aqS202beKyu22MkdAEr0fBCN3eHnbYX+wg='", // additional utility styles 
   "'sha256-dz0IlE6Ej+Pf9WeZ57sEyXgzZOvzM4Agzl2f0gpN7fs='", // additional utility styles 
   "'sha256-F2FphXOLeRXcUSI4c0ybgkNqofQaEHWI1kHbjr9RHxw='", // critical CSS from document head
+  "'sha256-fFiwGJFfGZ3i0Vt+xXYQgf88NKsgAfBwvY2aBowdoj4='", // critical CSS from document head
 ];
 
 const STATIC_SCRIPT_HASHES = [
@@ -56,8 +57,8 @@ export function middleware(request: NextRequest) {
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${STATIC_SCRIPT_HASHES.join(' ')};
-    style-src 'self' 'nonce-${nonce}'  ${STATIC_STYLE_HASHES.join(' ')};
-    img-src 'self' blob: data: https://images.unsplash.com;
+    style-src 'self' 'nonce-${nonce}' 'unsafe-hashes'  ${STATIC_STYLE_HASHES.join(' ')};
+    img-src 'self' blob: data:;
     font-src 'self';
     connect-src 'self';
     object-src 'none';

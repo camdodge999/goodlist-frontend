@@ -35,20 +35,9 @@ const nextConfig = (phase: string): NextConfig => {
         },
         {
           protocol: "https",
-          hostname: "api.goodlist.chaninkrew.com",
-          port: "3000",
-          pathname: "/**",
-        },
-        {
-          protocol: "https",
           hostname: "api.goodlist2.chaninkrew.com",
           pathname: "/**",
-        },
-        {
-          protocol: "https",
-          hostname: "images.unsplash.com",
-          pathname: "/**",
-        },
+        }
       ],
     },
     async headers() {
@@ -90,36 +79,7 @@ const nextConfig = (phase: string): NextConfig => {
         },
       ];
     },
-    async rewrites() {
-      return {
-        beforeFiles: [
-          // Handle dashboard subdomain for pages
-          {
-            source: '/:path*',
-            has: [
-              {
-                type: 'host',
-                value: 'dashboard.localhost:4200',
-              },
-            ],
-            destination: '/dashboard/:path*',
-          },
-          // Handle dashboard subdomain for API routes
-          {
-            source: '/api/:path*',
-            has: [
-              {
-                type: 'host',
-                value: 'dashboard.localhost:4200',
-              },
-            ],
-            destination: '/api/dashboard/:path*',
-          },
-        ],
-        afterFiles: [],
-        fallback: []
-      };
-    },
+    
   };
 
   return nextConfigOptions;
@@ -140,7 +100,7 @@ const securityHeadersConfig = (phase: string) => {
     const cspDirectives = `
       default-src 'self';
       script-src 'self' 'nonce-${nonce}' ${isDevelopment ? "'unsafe-inline' 'unsafe-eval'" : "'strict-dynamic'"};
-      style-src 'self' 'nonce-${nonce}' ${isDevelopment ? "'unsafe-inline'" : ""};
+      style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${isDevelopment ? "'unsafe-inline'" : ""};
       img-src 'self' data: blob: https://api.goodlist2.chaninkrew.com https://images.unsplash.com;
       font-src 'self' https://fonts.gstatic.com;
       connect-src 'self' https://api.goodlist2.chaninkrew.com ${process.env.NEXT_PUBLIC_BACKEND_URL || ''} ${process.env.NEXTAUTH_URL || ''} ${isDevelopment ? 'ws://localhost:* http://localhost:* https://localhost:* ws://127.0.0.1:* http://127.0.0.1:* https://127.0.0.1:*' : ''};

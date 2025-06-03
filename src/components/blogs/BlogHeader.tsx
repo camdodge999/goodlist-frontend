@@ -55,7 +55,7 @@ export default function BlogHeader({
         />
         <Input
           type="text"
-          placeholder="ค้นหาบล็อก..."
+          placeholder="ค้นหาบทความ..."
           value={searchQuery}
           onChange={(e) => {
             if (onSearchChange) {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Blog, BlogsResponse } from "@/types/blog";
+import { useBlog } from "@/hooks/useBlog";
 import BlogHeader from "./BlogHeader";
 import BlogGrid from "./BlogGrid";
 import BlogPagination from "./BlogPagination";
@@ -10,129 +10,66 @@ import BlogLoadingSkeleton from "./BlogLoadingSkeleton";
 
 interface BlogClientWrapperProps {
   initialData: BlogsResponse;
-  initialSearchQuery?: string;
+  initialSearchQuery: string;
   nonce?: string | null;
 }
 
 export default function BlogClientWrapper({ 
   initialData, 
-  initialSearchQuery = "",
-  nonce
+  initialSearchQuery 
 }: BlogClientWrapperProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  
-  const [blogs, setBlogs] = useState<Blog[]>(initialData?.blogs || []);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [currentPage, setCurrentPage] = useState(initialData?.pagination?.currentPage);
-  const [totalPages, setTotalPages] = useState(initialData?.pagination?.totalPages);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const {
+    blogs,
+    loading,
+    error,
+    pagination,
+    fetchBlogs
+  } = useBlog();
 
-  // Sync search query with URL parameters when component mounts or URL changes
+  // Initialize with server-side data
   useEffect(() => {
-    const urlSearchQuery = searchParams.get('search') || "";
-    if (urlSearchQuery !== searchQuery) {
-      setSearchQuery(urlSearchQuery);
-    }
-  }, [searchParams]);
-
-  // Client-side data fetching for search and pagination
-  const fetchBlogs = useCallback(async (page: number = 1, search: string = "", forceRefresh: boolean = false) => {
-    if (forceRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: "6",
-        ...(search && { search })
+    // Only fetch if we don't have initial data or if search query changed
+    if (!initialData.blogs.length || searchQuery !== initialSearchQuery) {
+      fetchBlogs({
+        page: currentPage,
+        limit: 6,
+        search: searchQuery
       });
-
-      const response = await fetch(`/api/blogs?${params}`);
-      const data: BlogsResponse = await response.json();
-
-      setBlogs(data.blogs);
-      setCurrentPage(data.pagination.currentPage);
-      setTotalPages(data.pagination.totalPages);
-      
-      // Update URL without page reload
-      const newParams = new URLSearchParams(searchParams.toString());
-      if (search) {
-        newParams.set('search', search);
-      } else {
-        newParams.delete('search');
-      }
-      if (page > 1) {
-        newParams.set('page', page.toString());
-      } else {
-        newParams.delete('page');
-      }
-      
-      const newUrl = newParams.toString() ? `?${newParams.toString()}` : '/blogs';
-      router.replace(newUrl, { scroll: false });
-      
-    } catch (error) {
-      console.error("Error fetching blogs:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
     }
-  }, [router, searchParams]);
+  }, [searchQuery, currentPage, fetchBlogs, initialData.blogs.length, initialSearchQuery]);
 
-  // Handler for manual refresh
-  const handleRefresh = useCallback(async () => {
-    try {
-      await fetchBlogs(currentPage, searchQuery, true); // Force refresh
-    } catch {
-      // Error handling is done in fetchBlogs
-    }
-  }, [fetchBlogs, currentPage, searchQuery]);
-
-  // Handler for search query changes with URL update
-  const handleSearchChange = useCallback((query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
-    // Update URL with search parameter
-    const params = new URLSearchParams(searchParams.toString());
-    if (query.trim()) {
-      params.set('search', query);
-    } else {
-      params.delete('search');
-    }
-    
-    // Update URL without causing a page reload
-    const newUrl = params.toString() ? `?${params.toString()}` : '/blogs';
-    router.replace(newUrl, { scroll: false });
+    setCurrentPage(1); // Reset to first page when searching
+  };
 
-    // Fetch blogs with new search query
-    fetchBlogs(1, query);
-  }, [router, searchParams, fetchBlogs]);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
-  // Handle page changes
-  const handlePageChange = useCallback((page: number) => {
-    fetchBlogs(page, searchQuery);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchQuery, fetchBlogs]);
+  // Use initial data if available and no search is active
+  const displayBlogs = (searchQuery === initialSearchQuery && currentPage === 1) 
+    ? initialData.blogs 
+    : blogs;
+  
+  const displayPagination = (searchQuery === initialSearchQuery && currentPage === 1)
+    ? initialData.pagination
+    : pagination;
 
-  // Show loading skeleton during initial load
-  if (loading && !refreshing) {
+  if (error) {
     return (
-      <div className="blogs-page-loading">
-        <BlogHeader
-          title="บล็อกของเรา"
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          isLoading={loading}
-          isRefreshing={refreshing}
-          onRefresh={handleRefresh}
-        />
-        <div className="loading-skeleton-container mt-4">
-          <BlogLoadingSkeleton />
-        </div>
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Blogs</h2>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button
+          onClick={() => fetchBlogs({ page: currentPage, limit: 6, search: searchQuery })}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -141,31 +78,60 @@ export default function BlogClientWrapper({
     <div className="blogs-page">
       <div className="blogs-container">
         <BlogHeader
-          title="บล็อกของเรา"
+          title="บทความของเรา"
           searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
+          onSearchChange={handleSearch}
           isLoading={loading}
-          isRefreshing={refreshing}
-          onRefresh={handleRefresh}
+          isRefreshing={false}
+          onRefresh={() => fetchBlogs({ page: currentPage, limit: 6, search: searchQuery })}
         />
 
-        {refreshing ? (
-          <div className="refreshing-skeleton-container mt-4">
-            <BlogLoadingSkeleton />
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading blogs...</p>
           </div>
         ) : (
           <>
             <BlogGrid 
-              blogs={blogs} 
+              blogs={displayBlogs} 
               searchQuery={searchQuery}
               isLoading={loading}
             />
 
-            <BlogPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            {displayPagination && displayPagination.totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-2 mt-8">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={!displayPagination.hasPrevPage}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                {Array.from({ length: displayPagination.totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-2 border rounded-md text-sm font-medium ${
+                      page === displayPagination.currentPage
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!displayPagination.hasNextPage}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

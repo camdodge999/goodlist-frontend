@@ -22,8 +22,9 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
   }
 
   // Helper function to convert tags string to array
-  const getTagsArray = (tags?: string): string[] => {
+  const getTagsArray = (tags?: string | string[]): string[] => {
     if (!tags) return [];
+    if (Array.isArray(tags)) return tags.filter(tag => tag.trim().length > 0);
     return tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
   };
 

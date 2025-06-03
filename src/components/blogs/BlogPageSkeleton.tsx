@@ -5,12 +5,10 @@ export const BlogPageSkeleton = () => {
   return (
     <div className="blogs-page-loading">
     <BlogHeader
-      title="บล็อกของเรา"
+      title="บทความของเรา"
       searchQuery={""}
-      onSearchChange={() => {}}
-      isLoading={false}
+      isLoading={true}
       isRefreshing={false}
-      onRefresh={() => {}}
     />
     <div className="loading-skeleton-container mt-4">
       <BlogLoadingSkeleton />

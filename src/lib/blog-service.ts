@@ -27,7 +27,19 @@ export async function getBlogs(params?: {
       throw new Error(`Failed to fetch blogs: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    
+    // Ensure the response matches the expected BlogsResponse format
+    return {
+      blogs: data.blogs || [],
+      pagination: data.pagination || {
+        currentPage: 1,
+        totalPages: 0,
+        totalBlogs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    };
   } catch (error) {
     console.error('Error fetching blogs:', error);
     // Return empty response on error

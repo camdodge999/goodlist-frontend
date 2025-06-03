@@ -13,6 +13,7 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import { MotionCSPProvider } from "@/lib/motion";
 import { getNonce } from "@/lib/nonce";
+config.autoAddCss = false;
 
 const prompt = localFont({
   src: [

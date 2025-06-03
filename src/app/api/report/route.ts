@@ -96,7 +96,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
 async function fetchAllReports(request: NextRequest): Promise<BodyResponse<{ reportDetail: Report[] }>> {
   const result = await fetchWithAuth<BodyResponse<{ reportDetail: Report[] }>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/report/`,
+    url: `${process.env.NEXTAUTH_URL !}/api/report/`,
     method: 'GET'
   });
   if (result.statusCode === 200) {
@@ -110,7 +110,7 @@ async function createReport(request: NextRequest, body: FormData): Promise<BodyR
   // For FormData, we use it directly - fetchWithAuth handles it correctly
   const result = await fetchWithAuth<BodyResponse<{ reportDetail: Report }>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/report/createReport`,
+    url: `${process.env.NEXTAUTH_URL !}/api/report/createReport`,
     method: 'POST',
     body: body
   });

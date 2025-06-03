@@ -144,6 +144,9 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
                 alt={`รูปภาพร้าน ${store.storeName}`}
                 className="object-contain"
                 fallbackSrc={defaultImage.src}
+                style={{
+                  color: undefined, // This is required to prevent the inline style of `next/image`
+                }}
               />
             </div>
 
@@ -231,8 +234,8 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
                           className="text-blue-600 hover:text-blue-800 text-sm flex items-center cursor-pointer"
                           onClick={() => handleDocumentAction({
                             type: 'certIncorp',
-                            name: 'หนังสือรับรองบริษัท',
-                            path: store.certIncrop || ''
+                            path: store.certIncrop || '',
+                            name: store.certIncrop?.split('\\').pop() || 'หนังสือรับรองบริษัท',
                           })}
                         >
                           <Download size={16} className="mr-1" />
@@ -245,8 +248,8 @@ const StoreDetailDialog: React.FC<StoreDetailDialogProps> = ({ store, isOpen, on
                           className="text-blue-600 hover:text-blue-800 text-sm flex items-center cursor-pointer"
                           onClick={() => handleDocumentAction({
                             type: 'imageIdCard',
-                            name: 'สำเนาบัตรประชาชน',
-                            path: store.imageIdCard || ''
+                            path: store.imageIdCard || '',
+                            name: store.imageIdCard?.split('\\').pop() || 'สำเนาบัตรประชาชน'
                           })}
                         >
                           <Eye size={16} className="mr-1" />

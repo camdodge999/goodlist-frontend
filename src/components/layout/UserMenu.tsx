@@ -51,15 +51,15 @@ export default function UserMenu({
                 <span>โปรไฟล์</span>
               </div>
             </Link>
-            <button
+            <Button
               onClick={resetUserState}
-              className="w-full block rounded-lg px-4 py-3 text-base font-semibold text-gray-900 hover:bg-red-50 active:bg-red-100 transition-colors"
+              variant="destructive"
             >
               <div className="flex items-center">
                 <FontAwesomeIcon icon={faSignOutAlt} className="h-5 w-5 text-red-500 mr-3" />
                 <span>ออกจากระบบ</span>
               </div>
-            </button>
+            </Button>
           </>
         ) : (
           <>
@@ -102,6 +102,9 @@ export default function UserMenu({
                   src={imageUrl || undefined}
                   alt={user.displayName || "User"}
                   className="transition-opacity duration-300"
+                  style={{
+                    color: undefined, // This is required to prevent the inline style of `next/image`
+                  }}
                 />
                 <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-medium">
                   {user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}

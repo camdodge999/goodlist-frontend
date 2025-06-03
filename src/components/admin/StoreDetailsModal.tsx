@@ -56,6 +56,9 @@ export default function StoreDetailsModal({
                 fill
                 className="object-cover"
                 fallbackSrc={defaultLogo.src}
+                style={{
+                  color: undefined, // This is required to prevent the inline style of `next/image`
+                }}
               />
             </div>
             <div className="flex-1">

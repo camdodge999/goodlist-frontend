@@ -174,6 +174,9 @@ const ReportDetailDialog: React.FC<ReportDetailDialogProps> = ({
                     <div>
                       <div className="text-sm text-gray-500">ไฟล์หลักฐาน</div>
                       <div className="font-medium">หลักฐานการรายงาน</div>
+                      <div className="text-xs text-gray-500">
+                        {report.evidenceUrl.split('\\').pop()}
+                      </div>
                     </div>
                     <button
                       className="text-blue-600 hover:text-blue-800 text-sm flex items-center cursor-pointer"

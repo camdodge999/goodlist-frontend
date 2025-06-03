@@ -44,6 +44,10 @@ export default function ReportsModal({
     }).format(date);
   };
 
+  const handleUpdateReportStatus = (reportId: string, newStatus: "valid" | "invalid") => {
+    onUpdateReportStatus(reportId, newStatus);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl">
@@ -110,7 +114,7 @@ export default function ReportsModal({
                       size="sm"
                       variant="outline"
                       className="border-green-500 text-green-600 hover:bg-green-50"
-                      onClick={() => onUpdateReportStatus(report.id, "valid")}
+                      onClick={() => handleUpdateReportStatus(report.id, "valid")}
                     >
                       <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 mr-1" />
                       ยืนยัน
@@ -119,7 +123,7 @@ export default function ReportsModal({
                       size="sm"
                       variant="outline"
                       className="border-red-500 text-red-600 hover:bg-red-50"
-                      onClick={() => onUpdateReportStatus(report.id, "invalid")}
+                      onClick={() => handleUpdateReportStatus(report.id, "invalid")}
                     >
                       <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4 mr-1" />
                       ปฏิเสธ

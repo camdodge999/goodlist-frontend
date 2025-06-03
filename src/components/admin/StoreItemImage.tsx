@@ -21,6 +21,9 @@ const StoreItemImage: React.FC<StoreItemImageProps> = ({
         fill
         className="object-cover"
         fallbackSrc={defaultLogo.src}
+        style={{
+          color: undefined, // This is required to prevent the inline style of `next/image`
+        }}
       />
     </div>
   );

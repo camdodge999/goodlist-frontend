@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest } from "next/server";
 import { Session } from "next-auth";
+import { validateURL, secureFetch, SSRFProtectionError } from "./ssrf-protection";
 
 // Define possible body types
 type RequestBody = FormData | object | null;
@@ -22,6 +23,20 @@ export async function fetchWithAuth<T>({
   isFormData?: boolean;
   session?: Session | null;
 }): Promise<T> {
+  // Validate URL for SSRF protection
+  const urlValidation = validateURL(url, {
+    allowLocalhost: process.env.NODE_ENV === 'development',
+    customAllowedDomains: [
+      // Add any additional trusted domains from environment
+      ...(process.env.TRUSTED_DOMAINS?.split(',') || [])
+    ]
+  });
+
+  if (!urlValidation.isValid) {
+    console.error(`🚨 SSRF Protection: Blocked request to ${url} - ${urlValidation.error}`);
+    throw new SSRFProtectionError(`Request blocked: ${urlValidation.error}`, 'URL_VALIDATION_FAILED');
+  }
+
   // Set up headers
   const headers: HeadersInit = {};
   
@@ -62,11 +77,14 @@ export async function fetchWithAuth<T>({
     }
   }
 
-  // Make the request to the backend
-  const response = await fetch(url, {
+  // Use secure fetch with SSRF protection
+  const response = await secureFetch(urlValidation.normalizedUrl!, {
     method,
     headers: { ...headers, ...extendHeaders },
     body: bodyData,
+    allowLocalhost: process.env.NODE_ENV === 'development',
+    timeout: 30000, // 30 second timeout
+    maxRedirects: 3, // Allow some redirects for API calls
   });
 
   // Parse JSON response

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     // Send request to backend
     const result = await fetchWithAuth<BodyResponse<UserResponse>>({
       request,
-      url: `${process.env.NEXTAUTH_BACKEND_URL}/api/profile/verify-password`,
+      url: `${process.env.NEXTAUTH_URL }/api/profile/verify-password`,
       method: 'POST',
       body: bodyData,
     });

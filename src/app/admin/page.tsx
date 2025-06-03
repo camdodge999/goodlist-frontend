@@ -1,10 +1,10 @@
 import AdminPage from "@/components/pages/AdminPage";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { Store } from "@/types/stores";
 import { Metadata } from "next";
 import { metadataPages } from "@/consts/metadata";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: metadataPages.admin.title,
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXTAUTH_BACKEND_URL}/api/store/`,
+      `${process.env.NEXTAUTH_URL }/api/store/`,
       {
         method: 'GET',
         headers: {

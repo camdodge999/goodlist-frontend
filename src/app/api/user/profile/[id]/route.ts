@@ -119,7 +119,7 @@ async function fetchProfileById(
   // Use fetchWithAuth to handle token extraction and API call
   const result = await fetchWithAuth<BodyResponse<{profileDetail: User} >>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/profile/${id}`,
+    url: `${process.env.NEXTAUTH_URL !}/api/profile/profile/${id}`,
     method: "GET"
   });
   
@@ -145,7 +145,7 @@ async function updateUserProfile(
   // Use fetchWithAuth to handle token extraction and API call
   const result = await fetchWithAuth<BodyResponse<{profileDetail: User}>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/profile/editProfile/${id}`,
+    url: `${process.env.NEXTAUTH_URL !}/api/profile/editProfile/${id}`,
     method: "PUT",
     body: updateData,
   });

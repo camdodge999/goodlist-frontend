@@ -20,6 +20,19 @@ export default function StoreFilter({ activeFilter, onFilterChange, stores, sear
     const verifiedStores = stores.filter((store) => store.isVerified === true).length;
     const rejectedStores = stores.filter((store) => store.isVerified === false).length;
 
+
+    const handleFilterChangeAll = () => {
+        onFilterChange('all');
+    };
+
+    const handleFilterChangeApproved = () => {
+        onFilterChange('approved');
+    };
+
+    const handleFilterChangeRejected = () => {
+        onFilterChange('rejected');
+    };
+
     return (
         <div className="flex flex-col gap-4 mb-4">
             {/* Search Input */}
@@ -47,14 +60,14 @@ export default function StoreFilter({ activeFilter, onFilterChange, stores, sear
                     <div className="flex gap-2 ">
                         <Button
                             variant={activeFilter === 'all' ? 'default' : 'outline'}
-                            onClick={() => onFilterChange('all')}
+                            onClick={handleFilterChangeAll}
                             size="sm"
                         >
                             <span>ทั้งหมด</span>
                         </Button>
                         <Button
                             variant={activeFilter === 'approved' ? 'default' : 'outline'}
-                            onClick={() => onFilterChange('approved')}
+                            onClick={handleFilterChangeApproved}
                             size="sm"
                             className={activeFilter === 'approved' ? 'bg-green-600 hover:bg-green-700' : ''}
                         >
@@ -62,7 +75,7 @@ export default function StoreFilter({ activeFilter, onFilterChange, stores, sear
                         </Button>
                         <Button
                             variant={activeFilter === 'rejected' ? 'default' : 'outline'}
-                            onClick={() => onFilterChange('rejected')}
+                            onClick={handleFilterChangeRejected}
                             size="sm"
                             className={activeFilter === 'rejected' ? 'bg-red-600 hover:bg-red-700' : ''}
                         >

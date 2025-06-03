@@ -2,6 +2,18 @@ import React from 'react';
 import Image from 'next/image';
 import { useAuthenticatedImage } from '@/hooks/useAuthenticatedImage';
 
+// Define specific image formats
+type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'gif' | 'webp' | 'svg+xml' | 'bmp' | 'tiff';
+
+// More specific data URL type for images
+type ImageDataURL<T extends ImageFormat = ImageFormat> = `data:image/${T};base64,${string}`;
+
+// General data URL type (for any data URL)
+type DataURL = `data:${string}`;
+
+// Next.js compatible placeholder type
+type Placeholder = "blur" | "empty";
+
 interface AuthenticatedImageProps {
   src: string | null | undefined;
   alt: string;
@@ -13,7 +25,10 @@ interface AuthenticatedImageProps {
   width?: number;
   height?: number;
   priority?: boolean;
-}
+  style?: React.CSSProperties;
+  placeholder?: Placeholder;
+  blurDataURL?: ImageDataURL | DataURL; // For blur placeholder
+} 
 
 const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({ 
   src,
@@ -22,10 +37,13 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
   className = "",
   sizes,
   fallbackSrc = "/images/logo.webp",
+  placeholder = "blur",   
   onError,
   width,
   height,
-  priority = false
+  priority = false,
+  style,
+  blurDataURL
 }) => {
   const { authenticatedUrl, isLoading } = useAuthenticatedImage(src);
 
@@ -37,17 +55,22 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
   // Use authenticated URL or fallback
   const imageSrc = authenticatedUrl || fallbackSrc;
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.currentTarget as HTMLImageElement;
+    target.srcset = fallbackSrc;
+  };
+
   const imageProps = {
     src: imageSrc,
     alt,
     className,
-    onError: onError || ((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-      const target = e.currentTarget as HTMLImageElement;
-      target.src = fallbackSrc;
-    }),
+    onError: onError || handleImageError,
     priority,
+    placeholder,
     ...(fill ? { fill: true } : { width, height }),
-    ...(sizes && { sizes })
+    ...(sizes && { sizes }),
+    ...(style && { style }),
+    ...(blurDataURL && { blurDataURL })
   };
 
   return <Image {...imageProps} />;

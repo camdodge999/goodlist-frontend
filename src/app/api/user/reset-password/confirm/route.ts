@@ -50,7 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Forward the password reset confirmation request to the backend API
     const result = await fetchWithAuth<BodyResponse<{ message: string }>>({
       request,
-      url: `${process.env.NEXTAUTH_BACKEND_URL}/api/auth/reset-password/confirm`,
+      url: `${process.env.NEXTAUTH_URL }/api/auth/reset-password/confirm`,
       method: 'POST',
       body: { 
         token,

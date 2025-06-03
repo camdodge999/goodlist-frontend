@@ -21,7 +21,12 @@ eslintConfig.push({
     "src/utils/valid-json.ts",
     "src/contexts/UserContext.tsx",
     "src/app/api/user/verify/[id]/route.ts",
-    "src/app/api/stores/verify/route.ts"
+    "src/app/api/stores/verify/route.ts",
+    "src/components/ui/AnimationWrapper.tsx",
+    "src/components/ui/dropdown-filter.tsx",
+    "src/lib/csp-debug.tsx",
+    "src/lib/document-csp.tsx",
+    "src/app/_document.tsx",
   ],
   rules: {
     "no-console": "off",

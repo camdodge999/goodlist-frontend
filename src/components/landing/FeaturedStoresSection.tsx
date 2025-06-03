@@ -63,6 +63,9 @@ const StoreCard = ({ store, index }: { store: Store; index: number }) => {
             className="object-contain transition-transform duration-500 group-hover:scale-110"
             priority={index < 2}
             fallbackSrc={defaultLogo.src}
+            style={{
+              color: undefined, // This is required to prevent the inline style of `next/image`
+            }}
           />
           {/* Verification Badge */}
           {store.isVerified && (

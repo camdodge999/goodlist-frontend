@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
 
           // Proceed with authentication
           const response = await fetch(
-            `${process.env.NEXTAUTH_BACKEND_URL!}/api/auth/login`,
+            `${process.env.NEXTAUTH_URL !}/api/auth/login`,
             {
               method: "POST",
               headers: {
@@ -195,39 +195,48 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle error redirects
+      // Handle error redirects with minimal response
       if (url.startsWith('/api/auth/error')) {
-        return `${baseUrl}/login?error=${encodeURIComponent(url.split('error=')[1] || 'Unknown error')}`;
+        const errorParam = url.split('error=')[1] || 'Unknown error';
+        return `${baseUrl}/login?error=${encodeURIComponent(errorParam)}`;
       }
       
-      // Handle callback URLs
+      // Handle callback URLs with security validation
       if (url.includes('callbackUrl=')) {
         const callbackUrl = new URL(url).searchParams.get('callbackUrl');
         if (callbackUrl) {
-          // Check if it's an absolute URL
+          // Validate callback URL to prevent open redirects
           try {
             const urlObj = new URL(callbackUrl);
-            // If it's same origin or a relative path, allow it
-            if (urlObj.origin === baseUrl || callbackUrl.startsWith('/')) {
+            // Only allow same origin redirects
+            if (urlObj.origin === baseUrl) {
               return callbackUrl;
             }
           } catch {
-            // If URL parsing fails, it's likely a relative path
-            if (callbackUrl.startsWith('/')) {
+            // If URL parsing fails, check if it's a safe relative path
+            if (callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')) {
               return `${baseUrl}${callbackUrl}`;
             }
           }
         }
       }
       
-      // Redirect to baseUrl if url is relative
-      if (url.startsWith('/')) {
+      // For relative URLs, ensure they're safe
+      if (url.startsWith('/') && !url.startsWith('//')) {
         return `${baseUrl}${url}`;
       }
-      // Allow redirects to same host
-      else if (new URL(url).origin === baseUrl) {
-        return url;
+      
+      // For absolute URLs, only allow same origin
+      try {
+        const urlObj = new URL(url);
+        if (urlObj.origin === baseUrl) {
+          return url;
+        }
+      } catch {
+        // Invalid URL, fallback to base
       }
+      
+      // Default fallback - always return to base URL for security
       return baseUrl;
     },
   },

@@ -49,6 +49,9 @@ export default function StoreCard({ store }: StoreCardProps) {
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             fallbackSrc={defaultLogo.src}
+            style={{
+              color: undefined, // This is required to prevent the inline style of `next/image`
+            }}
           />
         </div>
 

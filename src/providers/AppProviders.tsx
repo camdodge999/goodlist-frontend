@@ -9,16 +9,17 @@ import { Session } from 'next-auth';
 interface AppProvidersProps {
   children: ReactNode;
   session?: Session | null;
+  nonce?: string | null;
 }
 
 export function AppProviders({ children, session }: AppProvidersProps) {
   return (
-    <UserProvider initialSession={session}>
-      <StoreProvider>
-        <ReportProvider>
-          {children}
-        </ReportProvider>
-      </StoreProvider>
-    </UserProvider>
+      <UserProvider initialSession={session}>
+        <StoreProvider>
+          <ReportProvider>
+            {children}
+          </ReportProvider>
+        </StoreProvider>
+      </UserProvider>
   );
 } 

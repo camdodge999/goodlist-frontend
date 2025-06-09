@@ -13,8 +13,6 @@ export const NETWORK_ERRORS = {
     INVALID_TOKEN_FORMAT: "INVALID_TOKEN_FORMAT",
 }
 
-
-
 export const getErrorMessage = (error: string) => {
      // Handle specific error codes from auth.ts
      let errorMessage = "เกิดข้อผิดพลาดขณะเข้าสู่ระบบ";

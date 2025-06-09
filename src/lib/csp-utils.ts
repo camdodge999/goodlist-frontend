@@ -182,7 +182,7 @@ export const buildCSPDirectives = (config: CSPConfig = {}): Record<string, strin
   // Script sources - prioritize nonces over hashes
   const scriptSrc = ["'self'"];
   if (isDevelopment) {
-    scriptSrc.push("'unsafe-inline'", "'unsafe-eval'");
+    scriptSrc.push("'unsafe-inline'");
   } else {
     // In production, use nonce-based approach when available
     if (nonce) {

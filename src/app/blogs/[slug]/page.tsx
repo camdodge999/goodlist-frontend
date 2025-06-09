@@ -5,14 +5,15 @@ import ContentWidth from "@/components/layout/ContentWidth";
 import { Footer } from "@/components/layout/Footer";
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: BlogPostPageProps) {
-  const blog = await getBlogBySlug(params.slug);
+  const { slug } = await params;
+  const blog = await getBlogBySlug(slug);
   
   if (!blog) {
     return {
@@ -53,7 +54,8 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
 
 // Server Component for initial data fetching
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const blog = await getBlogBySlug(params.slug);
+  const { slug } = await params;
+  const blog = await getBlogBySlug(slug);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -61,7 +63,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {blog ? (
           <BlogPostClient blog={blog} />
         ) : (
-          <BlogNotFound slug={params.slug} />
+          <BlogNotFound slug={slug} />
         )}
       </ContentWidth>
       <Footer />

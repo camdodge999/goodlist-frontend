@@ -34,7 +34,6 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
   const router = useRouter();
   const {
     loading,
-    error,
     createBlog,
     updateBlog,
     getBlogById,
@@ -121,7 +120,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
               onButtonClick: () => router.push('/blog-management')
             });
           }
-        } catch (err) {
+        } catch {
           displayErrorDialog({
             title: "เกิดข้อผิดพลาด",
             message: "ไม่สามารถโหลดข้อมูลบทความได้",
@@ -180,7 +179,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
           });
         }
       }
-    } catch (err) {
+    } catch {
       displayErrorDialog({
         title: "เกิดข้อผิดพลาด",
         message: `ไม่สามารถ${isEditing ? 'อัพเดต' : 'สร้าง'}บทความได้`,
@@ -331,7 +330,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                   <Label htmlFor="status">สถานะ</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value as any })}
+                    onValueChange={(value) => setFormData({ ...formData, status: value as "draft" | "published" | "archived" | "deleted" })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกสถานะ" />

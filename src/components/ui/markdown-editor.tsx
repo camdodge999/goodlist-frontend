@@ -21,6 +21,7 @@ import {
   faHeading,
   faSpinner
 } from "@fortawesome/free-solid-svg-icons"
+import Image from "next/image"
 
 interface UploadedImage {
   fileName: string;
@@ -206,6 +207,8 @@ export function MarkdownEditor({
     <div className={cn("border rounded-lg overflow-hidden", className)}>
       {/* Hidden file input */}
       <input
+        title="Upload Image"
+        placeholder="Upload Image"
         ref={fileInputRef}
         type="file"
         accept="image/*"
@@ -294,9 +297,9 @@ export function MarkdownEditor({
                     </pre>
                   ),
                   img: ({ src, alt }) => (
-                    <img 
-                      src={src} 
-                      alt={alt} 
+                    <Image
+                      src={src as string} 
+                      alt={alt || ""} 
                       className="max-w-full h-auto rounded-lg shadow-sm mb-3"
                       loading="lazy"
                     />

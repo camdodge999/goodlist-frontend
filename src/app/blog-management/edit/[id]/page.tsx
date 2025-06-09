@@ -10,15 +10,17 @@ export const metadata: Metadata = {
 };
 
 interface EditBlogPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditBlogPage({ params }: EditBlogPageProps) {
+  const { id } = await params;
+  
   return (
     <Suspense fallback={<BlogFormSkeleton />}>
-      <BlogFormClient blogId={params.id} />
+      <BlogFormClient blogId={id} />
     </Suspense>
   );
 } 

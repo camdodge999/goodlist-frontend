@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Blog, BlogFormData, BlogsResponse, BlogSearchParams } from '@/types/blog';
 
@@ -40,7 +40,7 @@ interface UseBlogReturn {
 }
 
 export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [currentBlog, setCurrentBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(true);

@@ -35,7 +35,7 @@ export const SECURITY_CONFIG = {
     // Development CSP (more permissive for hot reload)
     development: {
       'default-src': ["'self'"],
-      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Development only
+      'script-src': ["'self'", "'unsafe-inline'"], // Development only
       'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       'img-src': [
         "'self'", 

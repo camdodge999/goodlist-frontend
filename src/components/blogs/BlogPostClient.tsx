@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -22,8 +21,6 @@ interface BlogPostClientProps {
 }
 
 export default function BlogPostClient({ blog }: BlogPostClientProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return "No date";
     const date = dayjs(dateString);

@@ -73,7 +73,7 @@ interface BlogData {
 }
 
 // Updated mock blogs with store verification content
-let mockBlogs: BlogData[] = [
+const mockBlogs: BlogData[] = [
   {
     id: "550e8400-e29b-41d4-a716-446655440001",
     title: "How to Verify Amazon Stores: Complete Safety Guide",
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
   const featured = searchParams.get('featured');
 
   // Filter blogs based on query parameters
-  let filteredBlogs = mockBlogs.filter(blog => {
+  const filteredBlogs = mockBlogs.filter(blog => {
     if (status && blog.status !== status) return false;
     if (featured === 'true' && !blog.featured) return false;
     if (featured === 'false' && blog.featured) return false;

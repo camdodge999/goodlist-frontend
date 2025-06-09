@@ -60,7 +60,7 @@ export default function BlogNotFound({ slug }: BlogNotFoundProps) {
             </p>
             
             <p className="text-gray-500 mb-8">
-              บทความ "{slug}" อาจถูกลบ ย้าย หรือไม่เคยมีอยู่จริง
+              บทความ &quot;{slug}&quot; อาจถูกลบ ย้าย หรือไม่เคยมีอยู่จริง
             </p>
 
             {/* Helpful Actions */}

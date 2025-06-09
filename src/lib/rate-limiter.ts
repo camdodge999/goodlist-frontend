@@ -1,31 +1,62 @@
 import { NextRequest } from 'next/server';
-import { RateLimiter } from 'limiter';
+import rateLimit from 'express-rate-limit';
 
 /**
- * Professional Rate Limiter using the 'limiter' npm package
- * Provides token bucket algorithm with configurable burst and sustained rates
+ * Professional Rate Limiter using express-rate-limit
+ * Provides configurable rate limiting with memory store
  */
 
 export interface RateLimitConfig {
   tokensPerInterval: number;
-  interval: 'second' | 'minute' | 'hour' | 'day' | number; // Limiter package types
+  interval: 'second' | 'minute' | 'hour' | 'day' | number;
   fireImmediately?: boolean;
 }
 
+interface MockExpressRequest {
+  ip: string;
+  headers: Record<string, string>;
+  method: string;
+  url: string;
+}
+
+interface MockExpressResponse {
+  status: () => MockExpressResponse;
+  json: () => MockExpressResponse;
+  send: () => MockExpressResponse;
+  set: () => MockExpressResponse;
+  header: () => MockExpressResponse;
+  locals: {
+    rateLimit?: {
+      remaining: number;
+    };
+  };
+}
+
+interface SyncRateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+
 // Rate limiter instances store
-const rateLimiters = new Map<string, RateLimiter>();
+const rateLimiters = new Map<string, ReturnType<typeof rateLimit>>();
+
+// Extend globalThis to include our sync store
+declare global {
+  // eslint-disable-next-line no-var
+  var __rateLimitSyncStore: Map<string, SyncRateLimitRecord> | undefined;
+}
 
 // Default configurations for different endpoints
 export const RATE_LIMITS = {
   // Authentication forms
-  LOGIN: { tokensPerInterval: 5, interval: 'minute' as const }, // 5 attempts per minute
-  REGISTRATION: { tokensPerInterval: 3, interval: 'hour' as const }, // 3 attempts per hour
-  PASSWORD_RESET: { tokensPerInterval: 3, interval: 'hour' as const }, // 3 attempts per hour
+  LOGIN: { tokensPerInterval: 10, interval: 'minute' as const }, // 5 attempts per minute
+  REGISTRATION: { tokensPerInterval: 5, interval: 'hour' as const }, // 3 attempts per hour
+  PASSWORD_RESET: { tokensPerInterval: 5, interval: 'hour' as const }, // 3 attempts per hour
   
   // Form submissions
-  VERIFICATION: { tokensPerInterval: 2, interval: 'hour' as const }, // 2 attempts per hour
-  REPORT: { tokensPerInterval: 5, interval: 'hour' as const }, // 5 attempts per hour
-  PROFILE_UPDATE: { tokensPerInterval: 10, interval: 'hour' as const }, // 10 attempts per hour
+  VERIFICATION: { tokensPerInterval: 5, interval: 'hour' as const }, // 2 attempts per hour
+  REPORT: { tokensPerInterval: 10, interval: 'hour' as const }, // 5 attempts per hour
+  PROFILE_UPDATE: { tokensPerInterval: 20, interval: 'hour' as const }, // 10 attempts per hour
   
   // General API
   API_GENERAL: { tokensPerInterval: 100, interval: 'minute' as const }, // 100 requests per minute
@@ -67,14 +98,39 @@ function getClientIP(request: NextRequest): string {
 }
 
 /**
+ * Convert interval to milliseconds for express-rate-limit
+ */
+function getWindowMs(interval: 'second' | 'minute' | 'hour' | 'day' | number): number {
+  if (typeof interval === 'number') {
+    return interval;
+  }
+  
+  switch (interval) {
+    case 'second': return 1000;
+    case 'minute': return 60 * 1000;
+    case 'hour': return 60 * 60 * 1000;
+    case 'day': return 24 * 60 * 60 * 1000;
+    default: return 60 * 1000; // Default to 1 minute
+  }
+}
+
+/**
  * Get or create a rate limiter for a specific key
  */
-function getRateLimiter(key: string, config: RateLimitConfig): RateLimiter {
+function getRateLimiter(key: string, config: RateLimitConfig) {
   if (!rateLimiters.has(key)) {
-    const limiter = new RateLimiter({
-      tokensPerInterval: config.tokensPerInterval,
-      interval: config.interval,
-      fireImmediately: config.fireImmediately || false,
+    const limiter = rateLimit({
+      windowMs: getWindowMs(config.interval),
+      max: config.tokensPerInterval,
+      message: 'Too many requests, please try again later.',
+      standardHeaders: true,
+      legacyHeaders: false,
+      // Custom key generator to use our IP detection
+      keyGenerator: () => key,
+      // Skip successful requests for some endpoints
+      skipSuccessfulRequests: false,
+      // Skip failed requests
+      skipFailedRequests: false,
     });
     rateLimiters.set(key, limiter);
   }
@@ -83,7 +139,7 @@ function getRateLimiter(key: string, config: RateLimitConfig): RateLimiter {
 }
 
 /**
- * Check if request should be rate limited using the limiter package
+ * Check if request should be rate limited using express-rate-limit
  */
 export async function checkRateLimit(
   request: NextRequest, 
@@ -99,26 +155,47 @@ export async function checkRateLimit(
   
   const limiter = getRateLimiter(key, config);
   
-  try {
-    // Try to remove 1 token
-    const remainingRequests = await limiter.removeTokens(1);
+  return new Promise((resolve) => {
+    // Create mock Express req/res objects for express-rate-limit
+    const mockReq: MockExpressRequest = {
+      ip: clientIP,
+      headers: Object.fromEntries(request.headers.entries()),
+      method: request.method,
+      url: request.url,
+    };
     
-    return {
-      limited: false,
-      remaining: Math.max(0, remainingRequests),
+    const mockRes: MockExpressResponse = {
+      status: () => mockRes,
+      json: () => mockRes,
+      send: () => mockRes,
+      set: () => mockRes,
+      header: () => mockRes,
+      locals: {},
     };
-  } catch {
-    // Rate limit exceeded - limiter throws when no tokens available
-    return {
-      limited: true,
-      remaining: 0,
-      retryAfter: getRetryAfterSeconds(config),
-    };
-  }
+    
+    // Apply rate limiter
+    limiter(mockReq as never, mockRes as never, (error?: Error) => {
+      if (error) {
+        // Rate limit exceeded
+        resolve({
+          limited: true,
+          remaining: 0,
+          retryAfter: getRetryAfterSeconds(config),
+        });
+      } else {
+        // Request allowed
+        const remaining = mockRes.locals?.rateLimit?.remaining || config.tokensPerInterval - 1;
+        resolve({
+          limited: false,
+          remaining: Math.max(0, remaining),
+        });
+      }
+    });
+  });
 }
 
 /**
- * Synchronous rate limit check (non-blocking)
+ * Synchronous rate limit check (simplified version)
  */
 export function checkRateLimitSync(
   request: NextRequest, 
@@ -128,33 +205,47 @@ export function checkRateLimitSync(
   limited: boolean; 
   remaining: number; 
 } {
+  // For sync version, we'll use a simplified in-memory counter
   const clientIP = getClientIP(request);
   const key = identifier ? `${clientIP}:${identifier}` : clientIP;
+  const now = Date.now();
+  const windowMs = getWindowMs(config.interval);
   
-  const limiter = getRateLimiter(key, config);
+  // Simple in-memory tracking for sync calls
+  const syncStore = globalThis.__rateLimitSyncStore || new Map<string, SyncRateLimitRecord>();
+  globalThis.__rateLimitSyncStore = syncStore;
   
-  // Use tryRemoveTokens for synchronous check
-  const success = limiter.tryRemoveTokens(1);
+  const record = syncStore.get(key) || { count: 0, resetTime: now + windowMs };
+  
+  // Reset if window has passed
+  if (now > record.resetTime) {
+    record.count = 0;
+    record.resetTime = now + windowMs;
+  }
+  
+  const limited = record.count >= config.tokensPerInterval;
+  
+  if (!limited) {
+    record.count++;
+    syncStore.set(key, record);
+  }
   
   return {
-    limited: !success,
-    remaining: success ? limiter.getTokensRemaining() : 0,
+    limited,
+    remaining: Math.max(0, config.tokensPerInterval - record.count),
   };
 }
 
 /**
- * Get remaining tokens for a specific request
+ * Get remaining tokens for a specific request (simplified)
  */
 export function getRemainingTokens(
   request: NextRequest,
   config: RateLimitConfig,
   identifier?: string
 ): number {
-  const clientIP = getClientIP(request);
-  const key = identifier ? `${clientIP}:${identifier}` : clientIP;
-  
-  const limiter = getRateLimiter(key, config);
-  return limiter.getTokensRemaining();
+  const result = checkRateLimitSync(request, config, identifier);
+  return result.remaining;
 }
 
 /**
@@ -216,6 +307,12 @@ export function createRateLimitMiddleware(
 export function resetRateLimit(ip: string, identifier?: string): void {
   const key = identifier ? `${ip}:${identifier}` : ip;
   rateLimiters.delete(key);
+  
+  // Also clear sync store
+  const syncStore = globalThis.__rateLimitSyncStore;
+  if (syncStore) {
+    syncStore.delete(key);
+  }
 }
 
 /**
@@ -227,11 +324,15 @@ export function getActiveLimiters(): Array<{
 }> {
   const limiters: Array<{ key: string; remaining: number }> = [];
   
-  for (const [key, limiter] of rateLimiters.entries()) {
-    limiters.push({
-      key,
-      remaining: limiter.getTokensRemaining(),
-    });
+  // This is simplified since express-rate-limit doesn't expose internal state easily
+  const syncStore = globalThis.__rateLimitSyncStore;
+  if (syncStore) {
+    for (const [key, record] of syncStore.entries()) {
+      limiters.push({
+        key,
+        remaining: Math.max(0, record.count || 0),
+      });
+    }
   }
   
   return limiters;
@@ -241,20 +342,21 @@ export function getActiveLimiters(): Array<{
  * Clean up unused rate limiters (call periodically)
  */
 export function cleanupInactiveLimiters(): void {
-  const inactiveLimiters: string[] = [];
+  const now = Date.now();
+  const syncStore = globalThis.__rateLimitSyncStore;
   
-  for (const [key, limiter] of rateLimiters.entries()) {
-    // Remove limiters that have been at full capacity for a while
-    // Note: Accessing private property tokensPerInterval may not be available
-    const remaining = limiter.getTokensRemaining();
-    if (remaining > 0) { // Simplified check for cleanup
-      inactiveLimiters.push(key);
+  if (syncStore) {
+    for (const [key, record] of syncStore.entries()) {
+      if (now > record.resetTime) {
+        syncStore.delete(key);
+      }
     }
   }
   
-  // Remove inactive limiters after they've been idle
-  if (inactiveLimiters.length > 100) { // Cleanup when too many limiters
-    inactiveLimiters.slice(0, 50).forEach(key => rateLimiters.delete(key));
+  // Clean up express-rate-limit instances if too many
+  if (rateLimiters.size > 100) {
+    const keys = Array.from(rateLimiters.keys());
+    keys.slice(0, 50).forEach(key => rateLimiters.delete(key));
   }
 }
 
@@ -271,32 +373,21 @@ export function createBurstRateLimiter(
     const sustainedKey = `sustained:${clientIP}:${identifier || 'default'}`;
     const burstKey = `burst:${clientIP}:${identifier || 'default'}`;
     
-    const sustainedLimiter = getRateLimiter(sustainedKey, sustainedRate);
-    const burstLimiter = getRateLimiter(burstKey, burstRate);
-    
-    try {
-      // Check burst limit first (short-term protection)
-      await burstLimiter.removeTokens(1);
-      
-      // Then check sustained limit (long-term protection)
-      await sustainedLimiter.removeTokens(1);
-      
-      return {
-        limited: false,
-        remaining: Math.min(
-          sustainedLimiter.getTokensRemaining(),
-          burstLimiter.getTokensRemaining()
-        ),
-      };
-    } catch {
-      return {
-        limited: true,
-        remaining: 0,
-        retryAfter: Math.max(
-          getRetryAfterSeconds(sustainedRate),
-          getRetryAfterSeconds(burstRate)
-        ),
-      };
+    // Check burst limit first (short-term protection)
+    const burstResult = await checkRateLimit(request, burstRate, burstKey);
+    if (burstResult.limited) {
+      return burstResult;
     }
+    
+    // Then check sustained limit (long-term protection)
+    const sustainedResult = await checkRateLimit(request, sustainedRate, sustainedKey);
+    if (sustainedResult.limited) {
+      return sustainedResult;
+    }
+    
+    return {
+      limited: false,
+      remaining: Math.min(burstResult.remaining, sustainedResult.remaining),
+    };
   };
 } 

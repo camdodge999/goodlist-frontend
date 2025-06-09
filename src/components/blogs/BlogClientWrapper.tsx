@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Blog, BlogsResponse } from "@/types/blog";
+import { BlogsResponse } from "@/types/blog";   
 import { useBlog } from "@/hooks/useBlog";
 import BlogHeader from "./BlogHeader";
 import BlogGrid from "./BlogGrid";
-import BlogPagination from "./BlogPagination";
-import BlogLoadingSkeleton from "./BlogLoadingSkeleton";
 
 interface BlogClientWrapperProps {
   initialData: BlogsResponse;

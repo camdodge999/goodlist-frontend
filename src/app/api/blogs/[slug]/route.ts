@@ -18,17 +18,17 @@ const getMarkdownContent = (filename: string): string => {
 // Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return { isAuthenticated: false, isAdmin: false, error: 'No authorization header' };
   }
 
   try {
-    const token = await getToken({ 
-      req: request, 
-      secret: process.env.NEXTAUTH_SECRET 
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET
     });
-    
+
     if (!token) {
       return { isAuthenticated: false, isAdmin: false, error: 'Invalid token' };
     }
@@ -73,7 +73,7 @@ interface BlogData {
 }
 
 // Updated mock blogs with store verification content
-let mockBlogs: BlogData[] = [
+const mockBlogs: BlogData[] = [
   {
     id: "550e8400-e29b-41d4-a716-446655440001",
     title: "How to Verify Amazon Stores: Complete Safety Guide",
@@ -168,9 +168,9 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params;
-  
+
   const blog = mockBlogs.find(blog => blog.slug === slug);
-  
+
   if (!blog) {
     return NextResponse.json(
       { error: "Blog post not found" },
@@ -189,9 +189,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await context.params;
+
     // Check admin authentication
     const authCheck = await checkAdminAuth(request);
     if (!authCheck.isAuthenticated || !authCheck.isAdmin) {
@@ -201,7 +203,6 @@ export async function PUT(
       );
     }
 
-    const { slug } = params;
     const updateData: Partial<BlogFormData> = await request.json();
 
     // Find blog by slug
@@ -247,9 +248,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await context.params;
     // Check admin authentication
     const authCheck = await checkAdminAuth(request);
     if (!authCheck.isAuthenticated || !authCheck.isAdmin) {
@@ -258,8 +260,6 @@ export async function DELETE(
         { status: 401 }
       );
     }
-
-    const { slug } = params;
 
     // Find blog by slug
     const blogIndex = mockBlogs.findIndex(blog => blog.slug === slug);

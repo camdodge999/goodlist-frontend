@@ -1,7 +1,8 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest } from "next/server";
 import { Session } from "next-auth";
-import { validateURL, secureFetch, SSRFProtectionError } from "./ssrf-protection";
+import { validateURL, secureFetch } from "./ssrf-protection";
+import { SSRFProtectionError} from "./ssrf-protection";
 
 // Define possible body types
 type RequestBody = FormData | object | null;

@@ -7,7 +7,7 @@ import {
   faMagnifyingGlass, 
   faArrowsRotate 
 } from '@fortawesome/free-solid-svg-icons';
-import { Blog } from '@/types/blog';
+import { Blog, BlogSearchParams } from '@/types/blog';
 import { useBlog } from '@/hooks/useBlog';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -18,21 +18,15 @@ import BlogManagementSkeleton from '@/components/blogs/BlogManagementSkeleton';
 import BlogStatsCards from '@/components/blogs/BlogStatsCards';
 import BlogTable from '@/components/blogs/BlogTable';
 
-interface BlogManagementClientProps {
-  initialBlogs?: Blog[];
-}
 
-export default function BlogManagementClient({ initialBlogs = [] }: BlogManagementClientProps) {
+export default function BlogManagementClient() {
   const router = useRouter();
   const {
     blogs,
     loading,
     error,
-    pagination,
     fetchBlogs,
     deleteBlog,
-    isAuthenticated,
-    isAdmin,
     canManageBlogs
   } = useBlog({ adminOnly: true });
 
@@ -50,7 +44,7 @@ export default function BlogManagementClient({ initialBlogs = [] }: BlogManageme
   // Fetch blogs on component mount and when filters change
   useEffect(() => {
     if (canManageBlogs) {
-      const params: any = {};
+      const params: BlogSearchParams = {};
       if (searchTerm) params.search = searchTerm;
       fetchBlogs(params);
     }

@@ -28,7 +28,7 @@ interface UploadedImage {
 }
 
 interface BlogFormClientProps {
-  blogId?: string;
+  readonly blogId?: string;
 }
 
 export default function BlogFormClient({ blogId }: BlogFormClientProps) {
@@ -88,7 +88,6 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
   useEffect(() => {
     if (!loading && !canManageBlogs) {
       router.push('/login');
-      return;
     }
   }, [loading, canManageBlogs, router]);
 
@@ -104,13 +103,13 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
             setFormData({
               title: blog.title,
               slug: blog.slug,
-              content: blog.content || '',
-              excerpt: blog.excerpt || '',
-              linkPath: blog.linkPath || '',
-              fileMarkdownPath: blog.fileMarkdownPath || '',
+              content: blog.content ?? '',
+              excerpt: blog.excerpt ?? '',
+              linkPath: blog.linkPath ?? '',
+              fileMarkdownPath: blog.fileMarkdownPath ?? '',
               status: blog.status,
-              tags: typeof blog.tags === 'string' ? blog.tags : blog.tags?.join(',') || '',
-              metaDescription: blog.metaDescription || '',
+              tags: typeof blog.tags === 'string' ? blog.tags : blog.tags?.join(',') ?? '',
+              metaDescription: blog.metaDescription ?? '',
               featured: blog.featured
             });
           } else {
@@ -323,7 +322,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
             <CardHeader>
               <CardTitle>การตั้งค่า</CardTitle>
               <CardDescription>
-                กำหนดค่าการเผยแพร่และจัดการSEO
+                กำหนดค่าการเผยแพร่และจัดการ SEO
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -431,7 +430,12 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                 className="flex items-center gap-2"
               >
                 <FontAwesomeIcon icon={faSave} className="h-4 w-4" />
-                <span>{isLoading ? 'กำลังบันทึก...' : (isEditing ? 'อัพเดตบทความ' : 'สร้างบทความ')}</span>
+                <span>
+                  {(() => {
+                    if (isLoading) return 'กำลังบันทึก...';
+                    return isEditing ? 'อัพเดตบทความ' : 'สร้างบทความ';
+                  })()}
+                </span>
               </Button>
             </div>
           </div>

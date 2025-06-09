@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
+import Image from "next/image";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { Blog } from "@/types/blog";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import "highlight.js/styles/github.css";
 import dayjs from "dayjs";
+import * as React from "react";
 
 interface BlogPostClientProps {
   readonly blog: Blog;
@@ -47,6 +49,46 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
   const tagsArray = getTagsArray(blog?.tags);
   const readTime = calculateReadTime(blog?.content, blog?.readTime);
   const authorName = typeof blog?.author === 'string' ? blog?.author : blog?.author?.name || 'Unknown Author';
+
+  // Memoize components to avoid recreation on every render
+  const markdownComponents = React.useMemo(() => ({
+    h1: ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
+    h2: ({ children }: { children: React.ReactNode }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
+    h3: ({ children }: { children: React.ReactNode }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+    p: ({ children }: { children: React.ReactNode }) => <p className="mb-3 leading-relaxed">{children}</p>,
+    ul: ({ children }: { children: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+    ol: ({ children }: { children: React.ReactNode }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+    blockquote: ({ children }: { children: React.ReactNode }) => (
+      <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3">
+        {children}
+      </blockquote>
+    ),
+    code: ({ children, className }: { children: React.ReactNode; className?: string }) => {
+      const isInline = !className
+      return isInline ? (
+        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+          {children}
+        </code>
+      ) : (
+        <code className={className}>{children}</code>
+      )
+    },
+    pre: ({ children }: { children: React.ReactNode }) => (
+      <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-3">
+        {children}
+      </pre>
+    ),
+    img: ({ src, alt }: { src?: string; alt?: string }) => (
+      <Image
+        src={src as string} 
+        alt={alt || ""} 
+        className="max-w-full h-auto rounded-lg shadow-sm mb-3"
+        loading="lazy"
+        width={800}
+        height={600}
+      />
+    ),
+  }), [])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -123,19 +165,19 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
               {blog.likeCount > 0 && (
                 <span className="flex items-center gap-1">
                   <span>👍</span>
-                  {blog.likeCount} likes
+                  <span>{blog.likeCount} likes</span>
                 </span>
               )}
               {blog.shareCount > 0 && (
                 <span className="flex items-center gap-1">
                   <span>📤</span>
-                  {blog.shareCount} shares
+                  <span>{blog.shareCount} shares</span>
                 </span>
               )}
               {blog.commentCount > 0 && (
                 <span className="flex items-center gap-1">
                   <span>💬</span>
-                  {blog.commentCount} comments
+                  <span>{blog.commentCount} comments</span>
                 </span>
               )}
             </div>
@@ -148,63 +190,9 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeHighlight]}
-              components={{
-                h1: ({ children }) => (
-                  <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-8 first:mt-0">
-                    {children}
-                  </h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-4 mt-8">
-                    {children}
-                  </h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">
-                    {children}
-                  </h3>
-                ),
-                p: ({ children }) => (
-                  <p className="text-gray-700 mb-4 leading-relaxed">
-                    {children}
-                  </p>
-                ),
-                code: ({ children, className }) => {
-                  const isInline = !className;
-                  return isInline ? (
-                    <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm">
-                      {children}
-                    </code>
-                  ) : (
-                    <code className={className}>{children}</code>
-                  );
-                },
-                pre: ({ children }) => (
-                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-6">
-                    {children}
-                  </pre>
-                ),
-                ul: ({ children }) => (
-                  <ul className="list-disc list-inside mb-4 space-y-2">
-                    {children}
-                  </ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal list-inside mb-4 space-y-2">
-                    {children}
-                  </ol>
-                ),
-                li: ({ children }) => (
-                  <li className="text-gray-700">{children}</li>
-                ),
-                blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4">
-                    {children}
-                  </blockquote>
-                ),
-              }}
+              components={markdownComponents as unknown as Components}
             >
-              {blog.content || "No content available."}
+              {blog.content ?? "No content available."}
             </ReactMarkdown>
           </div>
         </article>
@@ -227,22 +215,22 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              กลับไปยังบทความทั้งหมด
+              <span>กลับไปยังบทความทั้งหมด</span>
             </Link>
             
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">Share:</span>
               <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                 <span className="sr-only">Share on Twitter</span>
-                🐦
+                <span className="text-lg">🐦</span>
               </button>
               <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                 <span className="sr-only">Share on Facebook</span>
-                📘
+                <span className="text-lg">📘</span>
               </button>
               <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                 <span className="sr-only">Copy link</span>
-                🔗
+                <span className="text-lg">🔗</span>
               </button>
             </div>
           </div>

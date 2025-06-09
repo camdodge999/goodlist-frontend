@@ -17,6 +17,7 @@ import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import BlogFormSkeleton from '@/components/blogs/BlogFormSkeleton';
 import StatusDialog from '@/components/common/StatusDialog';
 import useShowDialog from '@/hooks/useShowDialog';
+import CSRFInput from '@/components/ui/csrf-input';
 
 interface UploadedImage {
   fileName: string;
@@ -252,6 +253,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          <CSRFInput />
           {/* Basic Information */}
           <Card>
             <CardHeader>

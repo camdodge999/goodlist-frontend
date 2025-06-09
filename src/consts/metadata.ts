@@ -15,6 +15,13 @@ export const metadataPages = {
         robots: "index, follow",
         viewport: "width=device-width, initial-scale=1",
     },
+    profile:{
+        title: "โปรไฟล์ | Goodlistseller",
+        description: "โปรไฟล์ของคุณ",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
     stores:{
         title: 'ร้านค้าที่ผ่านการตรวจสอบ | Goodlistseller',  
         description: 'ค้นหาร้านค้าออนไลน์ที่ผ่านการตรวจสอบและเชื่อถือได้',

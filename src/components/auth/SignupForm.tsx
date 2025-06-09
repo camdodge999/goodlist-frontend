@@ -18,6 +18,7 @@ import useShowDialog from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
 import { signIn } from "next-auth/react";
 import { FormLabel } from "../ui/form-label";
+import CSRFInput from "@/components/ui/csrf-input";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -490,7 +491,8 @@ export default function SignupForm() {
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <CSRFInput />
           <div className="space-y-4">
             <div>
               <FormLabel htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">  

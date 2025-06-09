@@ -4,8 +4,8 @@ import StoreCard from "@/components/ui/StoreCard";
 import type { Store } from "@/types/stores";
 
 interface StoreGridProps {
-  stores: Store[];
-  error: string | null;
+  readonly stores: Store[];  
+  readonly error: string | null;
 }
 
 export default function StoreGrid({ stores, error }: StoreGridProps) {

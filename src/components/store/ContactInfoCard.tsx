@@ -6,8 +6,8 @@ import { ContactInfo } from "@/types/stores";
 import { isValidJSON } from "@/utils/valid-json";
 
 interface ContactInfoCardProps {
-  contactInfo: ContactInfo | string;
-  userEmail: string;
+  readonly contactInfo: ContactInfo | string;  
+  readonly userEmail: string;
 }
 
 export default function ContactInfoCard({ contactInfo, userEmail }: ContactInfoCardProps) {

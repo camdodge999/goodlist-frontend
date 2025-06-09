@@ -3,8 +3,8 @@
 import { motion } from "@/lib/motion";
 
 interface EmptyStoreStateProps {
-  message?: string;
-  className?: string;
+  readonly message?: string;
+  readonly className?: string;
 }
 
 export default function EmptyStoreState({
@@ -38,7 +38,7 @@ export default function EmptyStoreState({
             ✨ เป็นผู้นำแนวหน้า! ✨
           </h3>
           <motion.p
-            className="text-lg text-gray-600 font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-[length:200%_100%] bg-clip-text text-transparent"
+            className="text-lg font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-[length:200%_100%] bg-clip-text text-transparent"
             animate={{
               backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
             }}
@@ -61,7 +61,8 @@ export default function EmptyStoreState({
         >
           <p className="text-gray-500 text-base max-w-md mx-auto leading-relaxed">
             เริ่มต้นการเดินทางสู่การเป็นร้านค้าที่ผ่านการตรวจสอบและน่าเชื่อถือ
-            <span className="font-semibold text-blue-600"> เป็นคนแรก</span> ที่เข้าร่วมและได้รับการตรวจสอบ
+            <span className="font-semibold text-blue-600"> เป็นคนแรก</span> 
+            <span className="font-semibold text-blue-600"> ที่เข้าร่วมและได้รับการตรวจสอบ</span>
           </p>
         </motion.div>
 

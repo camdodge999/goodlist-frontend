@@ -17,7 +17,7 @@ import "highlight.js/styles/github.css";
 import dayjs from "dayjs";
 
 interface BlogPostClientProps {
-  blog: Blog;
+  readonly blog: Blog;
 }
 
 export default function BlogPostClient({ blog }: BlogPostClientProps) {

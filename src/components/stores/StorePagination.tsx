@@ -3,9 +3,9 @@
 import { Button } from "@/components/ui/button";
 
 interface StorePaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  readonly currentPage: number; 
+  readonly totalPages: number;
+  readonly onPageChange: (page: number) => void;
 }
 
 export default function StorePagination({

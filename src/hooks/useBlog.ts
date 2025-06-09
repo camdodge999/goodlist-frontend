@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Blog, BlogFormData, BlogsResponse, BlogSearchParams } from '@/types/blog';
+import { useCSRFForm } from '@/hooks/useCSRFToken';
 
 interface UseBlogOptions {
   requireAuth?: boolean;
@@ -46,6 +47,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<UseBlogReturn['pagination']>(null);
+  const { addCSRFToJSON } = useCSRFForm();
 
   const { requireAuth = false, adminOnly = false } = options;
 
@@ -193,7 +195,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
       const response = await fetch('/api/blogs', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify(blogData),
+        body: JSON.stringify(addCSRFToJSON({ ...blogData })),
       });
 
       if (!response.ok) {
@@ -211,7 +213,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     } finally {
       setLoading(false);
     }
-  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders]);
+  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, addCSRFToJSON]);
 
   // Update existing blog (admin only)
   const updateBlog = useCallback(async (id: string, blogData: Partial<BlogFormData>): Promise<Blog | null> => {
@@ -227,7 +229,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
       const response = await fetch(`/api/blogs/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
-        body: JSON.stringify(blogData),
+        body: JSON.stringify(addCSRFToJSON({ ...blogData })),
       });
 
       if (!response.ok) {
@@ -248,7 +250,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     } finally {
       setLoading(false);
     }
-  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, currentBlog]);
+  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, addCSRFToJSON, currentBlog]);
 
   // Delete blog (admin only)
   const deleteBlog = useCallback(async (id: string): Promise<boolean> => {

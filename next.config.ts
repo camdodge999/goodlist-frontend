@@ -101,9 +101,9 @@ const securityHeadersConfig = (phase: string) => {
       default-src 'self';
       script-src 'self' 'nonce-${nonce}' ${isDevelopment ? "'unsafe-inline' 'unsafe-eval'" : "'strict-dynamic'"};
       style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${isDevelopment ? "'unsafe-inline'" : ""};
-      img-src 'self' data: blob: https://api.goodlist2.chaninkrew.com https://images.unsplash.com;
-      font-src 'self' https://fonts.gstatic.com;
-      connect-src 'self' https://api.goodlist2.chaninkrew.com ${process.env.NEXT_PUBLIC_BACKEND_URL || ''} ${process.env.NEXTAUTH_URL || ''} ${isDevelopment ? 'ws://localhost:* http://localhost:* https://localhost:* ws://127.0.0.1:* http://127.0.0.1:* https://127.0.0.1:*' : ''};
+      img-src 'self' data: blob: ;
+      font-src 'self' ;
+      connect-src 'self' ${process.env.NEXT_PUBLIC_BACKEND_URL || ''} ${process.env.NEXTAUTH_URL || ''} ${isDevelopment ? 'ws://localhost:* http://localhost:* https://localhost:* ws://127.0.0.1:* http://127.0.0.1:* https://127.0.0.1:*' : ''};
       media-src 'self';
       object-src 'none';
       base-uri 'self';

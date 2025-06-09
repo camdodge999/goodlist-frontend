@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateEnvironmentURLs } from './lib/ssrf-protection';
+import { handleCSRFProtection } from './lib/csrf-utils';
 
 // Validate environment URLs on startup
 validateEnvironmentURLs();
@@ -49,7 +50,32 @@ function generateNonce(): string {
   return convert;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  // Handle CSRF protection first for API routes and form submissions
+  if (request.nextUrl.pathname.startsWith('/api/') || 
+      (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS')) {
+    
+    // Skip CSRF for certain API routes that don't need it
+    const skipCSRFPaths = [
+      '/api/csrf-token',
+      '/api/auth/session',
+      '/api/auth/providers',
+      '/api/auth/csrf',
+      '/api/csp-report'
+    ];
+    
+    const shouldSkipCSRF = skipCSRFPaths.some(path => 
+      request.nextUrl.pathname.startsWith(path)
+    );
+    
+    if (!shouldSkipCSRF) {
+      const csrfResponse = await handleCSRFProtection(request);
+      if (csrfResponse && csrfResponse.status === 403) {
+        return csrfResponse;
+      }
+    }
+  }
+
   // Generate nonce using Edge Runtime compatible method
   const nonce = generateNonce();
   

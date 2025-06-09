@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useRef } from "react"
-import ReactMarkdown from "react-markdown"
+import ReactMarkdown, { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import { cn } from "@/lib/utils"
@@ -32,12 +32,12 @@ interface UploadedImage {
 }
 
 interface MarkdownEditorProps {
-  value: string
-  onChange: (value: string) => void
-  onImageUpload?: (images: UploadedImage[]) => void
-  placeholder?: string
-  className?: string
-  minHeight?: string
+  readonly value: string
+  readonly onChange: (value: string) => void
+  readonly onImageUpload?: (images: UploadedImage[]) => void
+  readonly placeholder?: string
+  readonly className?: string
+  readonly minHeight?: string
 }
 
 export function MarkdownEditor({
@@ -53,6 +53,46 @@ export function MarkdownEditor({
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Memoize components to avoid recreation on every render
+  const markdownComponents = React.useMemo(() => ({
+    h1: ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
+    h2: ({ children }: { children: React.ReactNode }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
+    h3: ({ children }: { children: React.ReactNode }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+    p: ({ children }: { children: React.ReactNode }) => <p className="mb-3 leading-relaxed">{children}</p>,
+    ul: ({ children }: { children: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+    ol: ({ children }: { children: React.ReactNode }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+    blockquote: ({ children }: { children: React.ReactNode }) => (
+      <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3">
+        {children}
+      </blockquote>
+    ),
+    code: ({ children, className }: { children: React.ReactNode; className?: string }) => {
+      const isInline = !className
+      return isInline ? (
+        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+          {children}
+        </code>
+      ) : (
+        <code className={className}>{children}</code>
+      )
+    },
+    pre: ({ children }: { children: React.ReactNode }) => (
+      <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-3">
+        {children}
+      </pre>
+    ),
+    img: ({ src, alt }: { src?: string; alt?: string }) => (
+      <Image
+        src={src as string} 
+        alt={alt || ""} 
+        className="max-w-full h-auto rounded-lg shadow-sm mb-3"
+        loading="lazy"
+        width={800}
+        height={600}
+      />
+    ),
+  }), [])
 
   const insertText = (before: string, after: string = "", placeholder: string = "") => {
     const textarea = textareaRef.current
@@ -252,7 +292,6 @@ export function MarkdownEditor({
               "w-full resize-none border-0 bg-transparent p-4 text-sm outline-none focus:ring-0",
               `min-h-[${minHeight}]`
             )}
-            style={{ minHeight }}
           />
         </TabsContent>
 
@@ -262,49 +301,12 @@ export function MarkdownEditor({
               "prose prose-sm max-w-none p-4 dark:prose-invert",
               `min-h-[${minHeight}]`
             )}
-            style={{ minHeight }}
           >
             {value ? (
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeHighlight]}
-                components={{
-                  // Custom components for better styling
-                  h1: ({ children }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
-                  p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
-                  ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3">
-                      {children}
-                    </blockquote>
-                  ),
-                  code: ({ children, className }) => {
-                    const isInline = !className
-                    return isInline ? (
-                      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
-                        {children}
-                      </code>
-                    ) : (
-                      <code className={className}>{children}</code>
-                    )
-                  },
-                  pre: ({ children }) => (
-                    <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-3">
-                      {children}
-                    </pre>
-                  ),
-                  img: ({ src, alt }) => (
-                    <Image
-                      src={src as string} 
-                      alt={alt || ""} 
-                      className="max-w-full h-auto rounded-lg shadow-sm mb-3"
-                      loading="lazy"
-                    />
-                  ),
-                }}
+                components={markdownComponents as unknown as Components}
               >
                 {value}
               </ReactMarkdown>

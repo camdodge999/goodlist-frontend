@@ -47,6 +47,53 @@ declare module "next-auth" {
   }
 }
 
+// Helper functions to reduce cognitive complexity
+const validateCredentials = (credentials: Record<string, string> | undefined) => {
+  if (!credentials?.email || !credentials?.password || !credentials?.csrfToken) {
+    throw new Error("MISSING_CREDENTIALS");
+  }
+};
+
+const validateResponse = (result: { statusCode?: number }) => {
+  if (result.statusCode === 401) {
+    throw new Error("INVALID_CREDENTIALS");
+  }
+  if (result.statusCode === 500) {
+    throw new Error("SERVER_ERROR_500");
+  }
+  if (result.statusCode && result.statusCode !== 200) {
+    throw new Error(`SERVER_ERROR_${result.statusCode}`);
+  }
+};
+
+const validateUserData = (userData: { token?: string }) => {
+  if (!userData || !userData.token) {
+    throw new Error("INVALID_RESPONSE_FORMAT");
+  }
+  
+  const userDataDecoded = jwt.decode(userData.token) as JWTToken;
+  if (!userDataDecoded) {
+    throw new Error("INVALID_TOKEN_FORMAT");
+  }
+  
+  return userDataDecoded;
+};
+
+const handleAuthError = (error: unknown) => {
+  if (!(error instanceof Error)) {
+    throw new Error("UNKNOWN_ERROR");
+  }
+
+  const errorMappings = [
+    { pattern: 'fetch', code: 'NETWORK_ERROR' },
+    { pattern: 'ECONNREFUSED', code: 'CONNECTION_REFUSED' },
+    { pattern: 'timeout', code: 'TIMEOUT_ERROR' }
+  ];
+
+  const mapping = errorMappings.find(m => error.message.includes(m.pattern));
+  throw new Error(mapping ? mapping.code : error.message);
+};
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -58,14 +105,14 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          // Early validation of required fields
-          if (!credentials?.email || !credentials?.password || !credentials?.csrfToken) { 
-            throw new Error("MISSING_CREDENTIALS");
+          validateCredentials(credentials);
+          
+          if (!credentials) {
+            return null;
           }
 
-          // Proceed with authentication
           const response = await fetch(
-            `${process.env.NEXTAUTH_URL !}/api/auth/login`,
+            `${process.env.NEXTAUTH_URL!}/api/auth/login`,
             {
               method: "POST",
               headers: {
@@ -79,64 +126,30 @@ export const authOptions: NextAuthOptions = {
             }
           );
 
-          // Check if the response is ok (status 200-299)
           if (!response.ok) {
             throw new Error(`SERVER_ERROR_${response.status}`);
           }
           
           const result = await response.json();
+          validateResponse(result);
 
-          if (result.statusCode === 401) {
-            throw new Error("INVALID_CREDENTIALS");
-          } else if (result.statusCode === 500) {
-            throw new Error("SERVER_ERROR_500");
-          } else if (result.statusCode && result.statusCode !== 200) {
-            throw new Error(`SERVER_ERROR_${result.statusCode}`);
-          }
-
-          // Handle successful authentication
           const userData = result.data;
+          const userDataDecoded = validateUserData(userData);
 
-          if (!userData || !userData.token) {
-            throw new Error("INVALID_RESPONSE_FORMAT");
-          }
-
-          const userDataDecoded = jwt.decode(userData.token) as JWTToken;
-
-          if (!userDataDecoded) {
-            throw new Error("INVALID_TOKEN_FORMAT");
-          }
-
-          // Ensure the returned object matches the ExtendedUser type
           const user: ExtendedUser = {
-            id: userDataDecoded.id?.toString() || credentials.email, // Ensure id is always a string
+            id: userDataDecoded.id?.toString() || credentials.email,
             token: userData.token,
             email: credentials.email,
             role: userDataDecoded.role as UserRole,
-            displayName: userDataDecoded.displayName || undefined, // Optional name
+            displayName: userDataDecoded.displayName || undefined,
             logo_url: userDataDecoded.logo_url || undefined,
           };
 
           return user;
 
         } catch (error) {
-          
-          if (error instanceof Error) {
-            // Handle specific fetch/network errors
-            if (error.message.includes('fetch')) {
-              throw new Error("NETWORK_ERROR");
-            } else if (error.message.includes('ECONNREFUSED')) {
-              throw new Error("CONNECTION_REFUSED");
-            } else if (error.message.includes('timeout')) {
-              throw new Error("TIMEOUT_ERROR");
-            } else {
-              // Re-throw the error with the specific error code for NextAuth to handle
-              throw new Error(error.message);
-            }
-          } else {
-            // Handle unknown error types
-            throw new Error("UNKNOWN_ERROR");
-          }
+          handleAuthError(error);
+          return null;
         }
       },
     }),
@@ -155,13 +168,13 @@ export const authOptions: NextAuthOptions = {
         try {
           const decoded = jwt.decode(extendedUser.token) as JWTToken;
 
-          if (decoded && decoded.id) {
+          if (decoded?.id) {
             token.id = decoded.id;
           }
-          if (decoded && decoded.displayName) {
+          if (decoded?.displayName) {
             token.displayName = decoded.displayName;
           }
-          if (decoded && decoded.role) {
+          if (decoded?.role) {
             token.role = decoded.role;
           }
           

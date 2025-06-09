@@ -6,6 +6,7 @@ import { ReportFormSchema } from "@/validators/report.schema";
 import { useRouter } from "next/navigation";
 import { StoreReport, ReportReason } from "@/types/stores";
 import { Report } from "@/types/report";
+import { useCSRFForm } from "@/hooks/useCSRFToken";
 
 interface ReportContextProps {
   submitReport: (reportData: ReportFormSchema) => Promise<{ success: boolean; message: string; report?: Report }>;
@@ -32,6 +33,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
   const router = useRouter();
+  const { addCSRFToFormData } = useCSRFForm();
 
   // Clear error state
   const clearReportError = useCallback(() => {
@@ -50,6 +52,9 @@ export function ReportProvider({ children }: ReportProviderProps) {
       formData.append('reason', reportData.reason);
       formData.append('evidence', reportData.evidence);
 
+      // Add CSRF token to form data
+      const protectedFormData = addCSRFToFormData(formData);
+
       // Set up headers based on authentication status
       const headers: Record<string, string> = {};
       if (session?.user?.token) {
@@ -60,7 +65,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
       const response = await fetch(`${process.env.NEXT_PUBLIC_URL || ''}/api/report`, {
         method: 'POST',
         headers,
-        body: formData,
+        body: protectedFormData,
       });
 
       const data = await response.json();
@@ -120,7 +125,7 @@ export function ReportProvider({ children }: ReportProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.token, session?.user?.role, router]);
+  }, [session?.user?.token, session?.user?.role, router, addCSRFToFormData]);
 
   // Fetch reports submitted by the current user
   const fetchUserReports = useCallback(async (): Promise<StoreReport[]> => {

@@ -7,9 +7,9 @@ import dayjs from "dayjs";
 import 'dayjs/locale/th';
 
 interface AdditionalInfoCardProps {
-  createdAt: string;
-  bankAccount: string;
-  verificationAudit?: StoreAudit;
+  readonly createdAt: string;
+  readonly bankAccount: string;
+  readonly verificationAudit?: StoreAudit;
 }
 
 export default function AdditionalInfoCard({ 

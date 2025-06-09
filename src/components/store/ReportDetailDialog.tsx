@@ -23,12 +23,12 @@ dayjs.locale('th');
 dayjs.extend(buddhistEra);
 
 interface ReportDetailDialogProps {
-  report: Report | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onUpdateStatus?: (reportId: string, newStatus: "valid" | "invalid") => Promise<void>;
-  onBanStore?: (storeId: string) => void;
-  hideAdminActions?: boolean;
+  readonly report: Report | null;  
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onUpdateStatus?: (reportId: string, newStatus: "valid" | "invalid") => Promise<void>;
+  readonly onBanStore?: (storeId: string) => void;
+  readonly hideAdminActions?: boolean;
 }
 
 const ReportDetailDialog: React.FC<ReportDetailDialogProps> = ({ 

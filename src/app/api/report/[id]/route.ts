@@ -58,7 +58,7 @@ async function updateReportById(
 ): Promise<BodyResponse<{ reportDetail: Report }>> {
   const result = await fetchWithAuth<BodyResponse<{ reportDetail: Report }>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/report/reviewReport/${id}`,
+    url: `${process.env.NEXTAUTH_URL !}/api/report/reviewReport/${id}`,
     method: "POST",
     body: updates
   });

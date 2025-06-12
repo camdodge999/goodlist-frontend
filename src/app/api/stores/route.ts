@@ -101,7 +101,7 @@ async function createStore(request: NextRequest, body: FormData | object): Promi
   // For FormData, we use it directly - fetchWithAuth handles it correctly
   const result = await fetchWithAuth<BodyResponse<Store>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL}/api/store/createStore`,
+    url: `${process.env.NEXTAUTH_URL }/api/store/createStore`,
     method: 'POST',
     body: body
   });
@@ -118,7 +118,7 @@ async function fetchAllStores(
 ): Promise<BodyResponse<{storeDetail: Store[]}>> {
   const result = await fetchWithAuth<BodyResponse<{storeDetail: Store[]}>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/store/`,
+    url: `${process.env.NEXTAUTH_URL !}/api/store/`,
     method: "GET"
   });
   if (result.statusCode === 200) {

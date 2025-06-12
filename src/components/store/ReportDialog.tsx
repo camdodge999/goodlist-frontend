@@ -17,6 +17,7 @@ import FormSection from "@/components/report/FormSection";
 import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
 import Spinner from "@/components/ui/Spinner";
+import CSRFInput from "@/components/ui/csrf-input";
 
 // Validation and types
 import { reportFormSchema, ReportFormSchema } from "@/validators/report.schema";
@@ -25,9 +26,9 @@ import { reportFormSchema, ReportFormSchema } from "@/validators/report.schema";
 import { useReport } from "@/contexts/ReportContext";
 
 interface ReportDialogProps {
-  isOpen: boolean;
-  storeId: number;
-  onOpenChange: (open: boolean) => void;
+  readonly isOpen: boolean;
+  readonly storeId: number;
+  readonly onOpenChange: (open: boolean) => void;
 }
 
 export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDialogProps) {
@@ -35,10 +36,10 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
   const [formData, setFormData] = useState<Partial<ReportFormSchema>>({
     storeId: storeId
   });
-  
+
   // Use report context
   const { submitReport, isLoading: reportSubmitting, error: reportError } = useReport();
-  
+
   // Initialize dialog hooks
   const {
     showSuccessDialog,
@@ -119,7 +120,7 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
     try {
       // Use Zod schema to validate the form data
       reportFormSchema.parse(formData);
-      
+
       // If validation passes, clear any existing errors
       setValidationErrors({});
       return true;
@@ -148,16 +149,16 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate all fields using Zod
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       // Submit report using the context
       const result = await submitReport(formData as ReportFormSchema);
-      
+
       if (result.success) {
         // Show success dialog
         displaySuccessDialog({
@@ -178,7 +179,7 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
         }));
       }
     } catch {
-      
+
       // Show error in form
       setValidationErrors(prev => ({
         ...prev,
@@ -202,22 +203,23 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
               กรุณาระบุเหตุผลและรายละเอียดในการรายงานร้านค้านี้
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
+            <CSRFInput />
             {validationErrors.form && (
-              <div className="form-error-message p-3 bg-red-50 border border-red-200 rounded-md">
+              <div className="form-error-message mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="error-text text-sm text-red-600">{validationErrors.form}</p>
               </div>
             )}
 
             <div className="form-sections space-y-4">
-              <FormSection 
-                number={1} 
-                label="เหตุผล" 
+              <FormSection
+                number={1}
+                label="เหตุผล"
                 description="ระบุเหตุผลที่คุณต้องการรายงานร้านค้านี้"
               >
-                <ReasonTextarea 
-                  value={formData.reason || ''} 
+                <ReasonTextarea
+                  value={formData.reason || ''}
                   onChange={handleReasonChange}
                   validationError={validationErrors.reason}
                   schema={reportFormSchema.shape.reason}
@@ -226,12 +228,12 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
                 />
               </FormSection>
 
-              <FormSection 
-                number={2} 
-                label="หลักฐาน" 
+              <FormSection
+                number={2}
+                label="หลักฐาน"
                 description="อัพโหลดภาพหรือเอกสารเพื่อเป็นหลักฐานประกอบการรายงาน"
               >
-                <FileUpload 
+                <FileUpload
                   onFileChange={handleFileChange}
                   validationError={validationErrors.evidence}
                   fileSchema={reportFormSchema.shape.evidence}
@@ -254,7 +256,7 @@ export default function ReportDialog({ isOpen, storeId, onOpenChange }: ReportDi
               >
                 ยกเลิก
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 disabled={reportSubmitting || Object.keys(validationErrors).length > 0}
                 variant="primary"

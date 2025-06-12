@@ -8,8 +8,8 @@ import type { NavItem } from "@/types/navbar";
 
 
 interface NavItemsProps {
-  items: NavItem[];
-  isMobile?: boolean;
+  readonly items: NavItem[]; 
+  readonly isMobile?: boolean;
 }
 
 export default function NavItems({ items, isMobile = false }: NavItemsProps) {
@@ -34,13 +34,12 @@ export default function NavItems({ items, isMobile = false }: NavItemsProps) {
               key={item.name}
               href={item.href}
               className={cn(
-                "block rounded-lg px-4 py-3 text-base font-semibold text-gray-900 transition-colors",
+                "block rounded-lg px-4 py-3 text-base font-semibold text-gray-900 transition-colors flex items-center",
                 active 
                   ? "bg-blue-50 text-blue-600" 
                   : "hover:bg-blue-50 active:bg-blue-100"
               )}
             >
-              <div className="flex items-center">
                 <FontAwesomeIcon 
                   icon={item.icon} 
                   className={cn(
@@ -49,7 +48,6 @@ export default function NavItems({ items, isMobile = false }: NavItemsProps) {
                   )} 
                 />
                 <span>{item.name}</span>
-              </div>
             </Link>
           );
         })}
@@ -67,7 +65,7 @@ export default function NavItems({ items, isMobile = false }: NavItemsProps) {
             key={item.name}
             href={item.href}
             className={cn(
-              "text-sm font-semibold leading-6 transition-colors flex items-center gap-2 duration-200 relative py-4 group",
+              "text-sm font-semibold leading-6 transition-colors flex items-center gap-1 duration-200 relative py-4 group",
               active 
                 ? "text-blue-600" 
                 : "text-gray-900 group-hover:text-blue-600"

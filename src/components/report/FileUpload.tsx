@@ -199,6 +199,9 @@ export default function FileUpload({
                 alt="File preview"
                 fill
                 className="object-contain"
+                style={{
+                  color: undefined, // This is required to prevent the inline style of `next/image`
+                }}
               />
             </div>
           )}

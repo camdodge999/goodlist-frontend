@@ -12,6 +12,7 @@ import Spinner from "@/components/ui/Spinner";
 import { useUser } from "@/contexts/UserContext";
 import { emailChangeSchema, type EmailChangeSchema } from "@/validators/profile.schema";
 import { ZodError } from "zod";
+import CSRFInput from "@/components/ui/csrf-input";
 dayjs.extend(buddhistEra);
 dayjs.extend(duration);
 dayjs.locale('th');
@@ -167,8 +168,9 @@ export default function EmailForm({
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 gap-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <CSRFInput />
+                    <div className="space-y-4">
                         <div>
                             <FormLabel
                                 htmlFor="currentEmail"

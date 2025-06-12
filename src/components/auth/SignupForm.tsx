@@ -18,6 +18,7 @@ import useShowDialog from "@/hooks/useShowDialog";
 import StatusDialog from "@/components/common/StatusDialog";
 import { signIn } from "next-auth/react";
 import { FormLabel } from "../ui/form-label";
+import CSRFInput from "@/components/ui/csrf-input";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -133,7 +134,7 @@ export default function SignupForm() {
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
-        setError(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
+        setError(err.errors[0]?.message ?? "OTP ไม่ถูกต้อง");
       }
       return false;
     }
@@ -260,7 +261,7 @@ export default function SignupForm() {
         startCooldownTimer();
       } else {
         const errorData = await response.json();
-        displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
+        displayErrorDialog(errorData.message ?? "อีเมลนี้มีผู้ใช้งานแล้ว");
       }
     } catch {
       displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
@@ -325,7 +326,7 @@ export default function SignupForm() {
         }
       } else {
         const errorData = await response.json();
-        setError(errorData.message || "รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+        setError(errorData.message ?? "รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       }
     } catch {
       // Ignore the error variable name but handle the error
@@ -392,7 +393,7 @@ export default function SignupForm() {
         setOtpToken(data.otpToken); 
       } else {
         const errorData = await response.json();
-        setError(errorData.message || "เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+        setError(errorData.message ?? "เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
       }
     } catch {
       // Show error in modal instead of dialog
@@ -490,7 +491,8 @@ export default function SignupForm() {
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <CSRFInput />
           <div className="space-y-4">
             <div>
               <FormLabel htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">  

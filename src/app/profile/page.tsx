@@ -1,13 +1,16 @@
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import ProfileClient from "@/components/profile/ProfileClient";
 import { User } from "@/types/users";
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { metadataPages } from "@/consts/metadata";
+
 
 export const metadata: Metadata = {
-  title: 'โปรไฟล์ | Goodlistseller',
-  description: 'แพลตฟอร์มที่ช่วยให้คุณค้นหาร้านค้าออนไลน์ที่เชื่อถือได้ในประเทศไทย',
+  title: metadataPages.profile.title,
+  description: metadataPages.profile.description,
+  keywords: metadataPages.profile.keywords
 };
 
 
@@ -16,19 +19,19 @@ export default async function ProfilePage() {
   // Get session using server component
   const session = await getServerSession(authOptions);
 
-  // If no session exists, redirect to login
-  if (!session || !session.user) {
+  // If no session exists, return a minimal redirect response
+  if (!session?.user) {
     redirect("/login");
   }
 
   // Convert the session user to our User type for initial rendering
   // The full data will be fetched by the client-side UserContext
   const initialUser: User = {
-    id: session.user.id || session.user.email || "",
-    displayName: session.user.displayName || "",
-    email: session.user.email || "",
-    logo_url: session.user.logo_url || "",
-    role: session.user.role || "",
+    id: session?.user?.id ?? session?.user?.email ?? "",
+    displayName: session?.user?.displayName ?? "",
+    email: session?.user?.email ?? "",
+    logo_url: session?.user?.logo_url ?? "",
+    role: session?.user?.role ?? "",
     phoneNumber: "", // Session user may not have phoneNumber
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

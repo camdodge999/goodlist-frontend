@@ -10,22 +10,23 @@ import Spinner from "../ui/Spinner";
 import { UserResponse } from "@/types/users";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
+import CSRFInput from "@/components/ui/csrf-input";
 
 dayjs.extend(duration)
 
 interface PasswordFormProps {
-  isEditing: boolean;
-  email: string;
-  displayName: string;
-  passwordError: string;
-  isChangingPassword: boolean;
-  cooldownSeconds?: number;
-  onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onChangePassword: () => Promise<void>;
-  onPasswordChangeSuccess?: (responseData: { data: UserResponse }) => void;
-  onPasswordChangeError?: (error: string) => void;
-  initialData: PasswordFormSchema;
-  userId: string;
+  readonly isEditing: boolean;
+  readonly email: string;
+  readonly displayName: string;
+  readonly passwordError: string;
+  readonly isChangingPassword: boolean;
+  readonly cooldownSeconds?: number;
+  readonly onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readonly onChangePassword: () => Promise<void>;
+  readonly onPasswordChangeSuccess?: (responseData: { data: UserResponse }) => void;
+  readonly onPasswordChangeError?: (error: string) => void;
+  readonly initialData: PasswordFormSchema;
+  readonly userId: string;
 }
 
 export default function PasswordForm({
@@ -197,148 +198,151 @@ export default function PasswordForm({
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h3 className="text-lg font-medium text-gray-900 mb-4">เปลี่ยนรหัสผ่าน</h3>
-      <form onSubmit={handleFormSubmit}>
-        {passwordError && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-            <span className="block sm:inline">{passwordError}</span>
-          </div>
-        )}
-        <div className="grid grid-cols-1 gap-6">
-          <div>
-            <FormLabel
-              htmlFor="oldPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
-              รหัสผ่านปัจจุบัน
-            </FormLabel>
-            <Input
-              type="password"
-              id="oldPassword"
-              name="oldPassword"
-              className="mt-1"
-              value={formData.oldPassword}
-              onChange={handleInputChange}
-              placeholder="กรอกรหัสผ่านปัจจุบัน"
-            />
-            {validationErrors.oldPassword && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.oldPassword}</p>
-            )}
-          </div>
-
-          <div>
-            <FormLabel
-              htmlFor="newPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
-              รหัสผ่านใหม่
-            </FormLabel>
-            <div className="relative">
-              <Input
-                type={showNewPassword ? "text" : "password"}
-                id="newPassword"
-                name="newPassword"
-                className="mt-1 pr-10"
-                value={formData.newPassword}
-                onChange={handleInputChange}
-                placeholder="กรอกรหัสผ่านใหม่"
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                aria-label={showNewPassword ? "Hide password" : "Show password"}
+      <form onSubmit={handleFormSubmit} className="space-y-4">
+        <CSRFInput />
+        <div className="space-y-4">
+          {passwordError && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+              <span className="block sm:inline">{passwordError}</span>
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-6">
+            <div>
+              <FormLabel
+                htmlFor="oldPassword"
+                className="block text-sm font-medium text-gray-700"
               >
-                <FontAwesomeIcon icon={showNewPassword ? faEyeSlash : faEye} className="w-5 h-5" />
-              </button>
+                รหัสผ่านปัจจุบัน
+              </FormLabel>
+              <Input
+                type="password"
+                id="oldPassword"
+                name="oldPassword"
+                className="mt-1"
+                value={formData.oldPassword}
+                onChange={handleInputChange}
+                placeholder="กรอกรหัสผ่านปัจจุบัน"
+              />
+              {validationErrors.oldPassword && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.oldPassword}</p>
+              )}
             </div>
 
-            {/* Password requirements */}
-            {formData.newPassword && (
-              <div className="mt-2 mb-4 p-3 bg-gray-50 rounded-md border text-sm space-y-2">
-                <h4 className="font-medium text-gray-700">รหัสผ่านต้องประกอบด้วย :</h4>
-                <ul className="space-y-1">
-                  <li className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={passwordValidation.hasMinLength ? faCheck : faTimes}
-                      className={`mr-2 ${passwordValidation.hasMinLength ? "text-green-500" : "text-red-500"}`}
-                    />
-                    <span>อย่างน้อย 8 ตัวอักษร</span>
-                  </li>
-                  <li className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={passwordValidation.hasUppercase ? faCheck : faTimes}
-                      className={`mr-2 ${passwordValidation.hasUppercase ? "text-green-500" : "text-red-500"}`}
-                    />
-                    <span>ตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว</span>
-                  </li>
-                  <li className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={passwordValidation.hasLowercase ? faCheck : faTimes}
-                      className={`mr-2 ${passwordValidation.hasLowercase ? "text-green-500" : "text-red-500"}`}
-                    />
-                    <span>ตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว</span>
-                  </li>
-                  <li className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={passwordValidation.hasNumber ? faCheck : faTimes}
-                      className={`mr-2 ${passwordValidation.hasNumber ? "text-green-500" : "text-red-500"}`}
-                    />
-                    <span>ตัวเลขอย่างน้อย 1 ตัว</span>
-                  </li>
-                  <li className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={!passwordValidation.samePassword ? faCheck : faTimes}
-                      className={`mr-2 ${!passwordValidation.samePassword ? "text-green-500" : "text-red-500"}`}
-                    />
-                    <span>รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านปัจจุบัน</span>
-                  </li>
-                </ul>
+            <div>
+              <FormLabel
+                htmlFor="newPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
+                รหัสผ่านใหม่
+              </FormLabel>
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? "text" : "password"}
+                  id="newPassword"
+                  name="newPassword"
+                  className="mt-1 pr-10"
+                  value={formData.newPassword}
+                  onChange={handleInputChange}
+                  placeholder="กรอกรหัสผ่านใหม่"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                >
+                  <FontAwesomeIcon icon={showNewPassword ? faEyeSlash : faEye} className="w-5 h-5" />
+                </button>
               </div>
-            )}
 
-            {validationErrors.newPassword && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.newPassword}</p>
-            )}
+              {/* Password requirements */}
+              {formData.newPassword && (
+                <div className="mt-2 mb-4 p-3 bg-gray-50 rounded-md border text-sm space-y-2">
+                  <h4 className="font-medium text-gray-700">รหัสผ่านต้องประกอบด้วย :</h4>
+                  <ul className="space-y-1">
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasMinLength ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasMinLength ? "text-green-500" : "text-red-500"}`}
+                      />
+                      <span>อย่างน้อย 8 ตัวอักษร</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasUppercase ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasUppercase ? "text-green-500" : "text-red-500"}`}
+                      />
+                      <span>ตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasLowercase ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasLowercase ? "text-green-500" : "text-red-500"}`}
+                      />
+                      <span>ตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={passwordValidation.hasNumber ? faCheck : faTimes}
+                        className={`mr-2 ${passwordValidation.hasNumber ? "text-green-500" : "text-red-500"}`}
+                      />
+                      <span>ตัวเลขอย่างน้อย 1 ตัว</span>
+                    </li>
+                    <li className="flex items-center">
+                      <FontAwesomeIcon
+                        icon={!passwordValidation.samePassword ? faCheck : faTimes}
+                        className={`mr-2 ${!passwordValidation.samePassword ? "text-green-500" : "text-red-500"}`}
+                      />
+                      <span>รหัสผ่านต้องไม่ตรงกันกับรหัสผ่านปัจจุบัน</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {validationErrors.newPassword && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.newPassword}</p>
+              )}
+            </div>
+
+            <div>
+              <FormLabel
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
+                ยืนยันรหัสผ่านใหม่
+              </FormLabel>
+              <Input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                className="mt-1"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                placeholder="ยืนยันรหัสผ่านใหม่"
+              />
+              {validationErrors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
+              )}
+            </div>
           </div>
 
-          <div>
-            <FormLabel
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
+          <div className="mt-6 flex justify-end">
+            <Button
+              type="submit"
+              variant="primary"
+              className="flex items-center gap-2"
+              disabled={isChangingPassword || isSubmitting || (cooldownSeconds || 0) > 0}
             >
-              ยืนยันรหัสผ่านใหม่
-            </FormLabel>
-            <Input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              className="mt-1"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              placeholder="ยืนยันรหัสผ่านใหม่"
-            />
-            {validationErrors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
-            )}
+              {cooldownSeconds && cooldownSeconds > 0 ? (
+                <span>รอเปลี่ยนรหัสผ่าน... ({dayjs.duration(cooldownSeconds, 'seconds').format('mm:ss')})</span>
+              ) : (
+                <>
+                  {isSubmitting && <Spinner />}
+                  {isChangingPassword || isSubmitting ? "กำลังเปลี่ยนรหัสผ่าน..." : "เปลี่ยนรหัสผ่าน"}
+                </>
+              )}
+            </Button>
           </div>
-        </div>
-
-        <div className="mt-6 flex justify-end">
-          <Button
-            type="submit"
-            variant="primary"
-            className="flex items-center gap-2"
-            disabled={isChangingPassword || isSubmitting || (cooldownSeconds || 0) > 0}
-          >
-            {cooldownSeconds && cooldownSeconds > 0 ? (
-              <span>รอเปลี่ยนรหัสผ่าน... ({dayjs.duration(cooldownSeconds, 'seconds').format('mm:ss')})</span>
-            ) : (
-              <>
-                {isSubmitting && <Spinner />}
-                {isChangingPassword || isSubmitting ? "กำลังเปลี่ยนรหัสผ่าน..." : "เปลี่ยนรหัสผ่าน"}
-              </>
-            )}
-          </Button>
         </div>
       </form>
     </div>

@@ -4,10 +4,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import defaultImage from '@images/logo.webp';
 
 interface DocumentPreviewDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  imageUrl: string;
-  documentName?: string;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly imageUrl: string;
+  readonly documentName?: string;
 }
 
 const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
@@ -28,12 +28,15 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
         <div className="relative p-4">
           <div className="relative w-full h-[70vh]">
             <Image
+              style={{
+                color: undefined, // This is required to prevent the inline style of `next/image`
+              }}
               src={imageUrl || defaultImage.src}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.src = defaultImage.src;
               }}
-              alt={documentName || 'Document preview'}
+              alt={documentName ?? 'Document preview'}  
               fill
               className="object-contain max-h-[70vh]"
             />

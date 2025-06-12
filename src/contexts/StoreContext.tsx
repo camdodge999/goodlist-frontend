@@ -91,8 +91,10 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
 
       if (data.statusCode === 200 && data.data) {
         // Update both local state and global cache
-        setStores(data.data);
-        globalStoresCache = data.data;
+        const filteredStores = data.data?.filter((store: Store) => store.isVerified === true);
+
+        setStores(filteredStores);
+        globalStoresCache = filteredStores;
 
         // Reset fetch failure flag and retry count on success
         setFetchFailed(false);
@@ -100,7 +102,7 @@ export function StoreProvider({ children, initialStores = [] }: StoreProviderPro
         // Mark as successfully initialized
         setIsInitialized(true);
 
-        return data.data;
+        return filteredStores;
       } else {
         throw new Error(data.message || 'Failed to fetch stores');
       }

@@ -5,8 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
 interface StoreSearchProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  readonly searchQuery: string;
+  readonly setSearchQuery: (query: string) => void;
 }
 
 export default function StoreSearch({ searchQuery, setSearchQuery }: StoreSearchProps) {

@@ -1,10 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "@/lib/motion";
 
 interface EmptyStoreStateProps {
-  message?: string;
-  className?: string;
+  readonly message?: string;
+  readonly className?: string;
 }
 
 export default function EmptyStoreState({
@@ -38,7 +38,7 @@ export default function EmptyStoreState({
             ✨ เป็นผู้นำแนวหน้า! ✨
           </h3>
           <motion.p
-            className="text-lg text-gray-600 font-medium"
+            className="text-lg font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-[length:200%_100%] bg-clip-text text-transparent"
             animate={{
               backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
             }}
@@ -46,13 +46,6 @@ export default function EmptyStoreState({
               duration: 3,
               repeat: Infinity,
               ease: "easeInOut"
-            }}
-            style={{
-              background: "linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #6366f1)",
-              backgroundSize: "200% 100%",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent"
             }}
           >
             {message}
@@ -68,7 +61,8 @@ export default function EmptyStoreState({
         >
           <p className="text-gray-500 text-base max-w-md mx-auto leading-relaxed">
             เริ่มต้นการเดินทางสู่การเป็นร้านค้าที่ผ่านการตรวจสอบและน่าเชื่อถือ
-            <span className="font-semibold text-blue-600"> เป็นคนแรก</span> ที่เข้าร่วมและได้รับการตรวจสอบ
+            <span className="font-semibold text-blue-600"> เป็นคนแรก</span> 
+            <span className="font-semibold text-blue-600"> ที่เข้าร่วมและได้รับการตรวจสอบ</span>
           </p>
         </motion.div>
 
@@ -78,11 +72,7 @@ export default function EmptyStoreState({
           {[...Array(6)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-1 h-1 bg-yellow-400 rounded-full"
-              style={{
-                left: `${20 + (i * 12)}%`,
-                top: `${30 + (i % 2) * 20}%`,
-              }}
+              className={`absolute w-1 h-1 bg-yellow-400 rounded-full left-[${20 + (i * 12)}%] top-[${30 + (i % 2) * 20}%]`}
               animate={{
                 opacity: [0, 1, 0],
                 scale: [0, 1, 0],

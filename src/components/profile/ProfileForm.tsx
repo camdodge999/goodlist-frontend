@@ -11,20 +11,21 @@ import 'dayjs/locale/th';
 import buddhistEra from 'dayjs/plugin/buddhistEra';
 import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 import { User } from "@/types/users";
+import CSRFInput from "@/components/ui/csrf-input";
 
 dayjs.extend(buddhistEra);
 dayjs.locale('th');
 
 interface ProfileFormProps {
-  initialData: ProfileFormSchema;
-  isEditing: boolean;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSaveProfile: () => Promise<void>;
-  onEditToggle: () => void;
-  previewImage: string | null;
-  user: User;  
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  readonly initialData: ProfileFormSchema;
+  readonly isEditing: boolean;
+  readonly onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  readonly onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readonly onSaveProfile: () => Promise<void>;
+  readonly onEditToggle: () => void;
+  readonly previewImage: string | null;
+  readonly user: User;  
+  readonly fileInputRef: React.RefObject<HTMLInputElement>;
 }
 
 export default function ProfileForm({
@@ -54,6 +55,7 @@ export default function ProfileForm({
       >
         <h3 className="text-lg font-medium text-gray-900 mb-4">ข้อมูลส่วนตัว</h3>
         <form onSubmit={handleFormSubmit} encType="multipart/form-data">
+          <CSRFInput />
           <div className="mb-6">
             <div className="flex items-center">
               <div className="mr-4 relative">

@@ -6,8 +6,8 @@ import { faExclamationTriangle, faRedo, faHome, faQuestionCircle } from "@fortaw
 import Link from "next/link";
 
 interface StoreErrorProps {
-  message: string;
-  onRetry: () => void;
+  readonly message: string;
+  readonly onRetry: () => void;
 }
 
 export default function StoreError({ message, onRetry }: StoreErrorProps) {

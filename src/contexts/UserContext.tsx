@@ -392,9 +392,11 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
   // Add a new function to fetch stores for a user
   const fetchUserStores = async (userId: string) => {
     try {
-      // Use a global flag to prevent infinite loop
-      if (window.__fetchingStores) return;
-      window.__fetchingStores = true;
+      // Use a global flag to prevent infinite loop - only on client side
+      if (typeof window !== 'undefined') {
+        if (window.__fetchingStores) return;
+        window.__fetchingStores = true;
+      }
 
       // Set stores loading state to true
       setStoresLoading(true);
@@ -425,8 +427,10 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
     } catch {
       // Don't throw the error to prevent breaking the main user profile flow
     } finally {
-      // Reset the flag
-      window.__fetchingStores = false;
+      // Reset the flag - only on client side
+      if (typeof window !== 'undefined') {
+        window.__fetchingStores = false;
+      }
       // Set stores loading state to false
       setStoresLoading(false);
     }
@@ -475,8 +479,10 @@ export function UserProvider({ children, initialUser = null, initialSession = nu
           currentUserRef.current = { ...currentUserRef.current, ...responseData.data };
         }
 
-        // Update last email change time in localStorage
-        localStorage.setItem("lastEmailChange", new Date().toISOString());
+        // Update last email change time in localStorage - only on client side
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("lastEmailChange", new Date().toISOString());
+        }
 
         return responseData.data;
       } else {

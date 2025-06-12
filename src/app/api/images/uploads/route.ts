@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { validatePath, secureFetch, SSRFProtectionError } from "@/lib/ssrf-protection";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,11 +16,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: 'error', message: 'Image path not provided' }, { status: 400 });
     }
 
-    // Fetch the image with authentication
-    const imageResponse = await fetch(`${process.env.NEXTAUTH_BACKEND_URL!}/${path}`, {
+    // Validate and sanitize the path parameter
+    const pathValidation = validatePath(path);
+    if (!pathValidation.isValid) {
+      console.warn(`🚨 SSRF attempt blocked: ${pathValidation.error} - Path: ${path}`);
+      return NextResponse.json({ 
+        status: 'error', 
+        message: 'Invalid path parameter' 
+      }, { status: 400 });
+    }
+
+    // Construct the full URL with the backend base URL
+    const backendUrl = process.env.NEXTAUTH_URL ;
+    if (!backendUrl) {
+      return NextResponse.json({ 
+        status: 'error', 
+        message: 'Backend URL not configured' 
+      }, { status: 500 });
+    }
+
+    const fullUrl = `${backendUrl}/${pathValidation.sanitizedPath}`;
+
+    // Use secure fetch with SSRF protection
+    const imageResponse = await secureFetch(fullUrl, {
       headers: {
         Authorization: `Bearer ${headerToken}`,
       },
+      allowLocalhost: process.env.NODE_ENV === 'development', // Only allow localhost in development
+      timeout: 30000, // 30 second timeout
+      maxRedirects: 0, // No redirects for security
     });
 
     if (!imageResponse.ok) {
@@ -35,9 +60,19 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': imageResponse.headers.get('Content-Type') || 'image/jpeg',
         'Cache-Control': 'public, max-age=86400', // Cache for 1 day
+        'X-Content-Type-Options': 'nosniff', // Security header
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof SSRFProtectionError) {
+      console.error(`🚨 SSRF Protection triggered: ${error.message} - Reason: ${error.reason}`);
+      return NextResponse.json({ 
+        status: 'error', 
+        message: 'Request blocked for security reasons' 
+      }, { status: 403 });
+    }
+    
+    console.error('Image fetch error:', error);
     return NextResponse.json({ status: 'error', message: 'Failed to fetch image' }, { status: 500 });
   }
 } 

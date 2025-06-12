@@ -15,6 +15,13 @@ export const metadataPages = {
         robots: "index, follow",
         viewport: "width=device-width, initial-scale=1",
     },
+    profile:{
+        title: "โปรไฟล์ | Goodlistseller",
+        description: "โปรไฟล์ของคุณ",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
     stores:{
         title: 'ร้านค้าที่ผ่านการตรวจสอบ | Goodlistseller',  
         description: 'ค้นหาร้านค้าออนไลน์ที่ผ่านการตรวจสอบและเชื่อถือได้',
@@ -60,6 +67,27 @@ export const metadataPages = {
     contact:{  
         title: 'ติดต่อเรา | Goodlistseller',
         description: 'ติดต่อทีมงาน Goodlistseller - แพลตฟอร์มร้านค้าออนไลน์ที่น่าเชื่อถือในประเทศไทย',
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    "blog-management":{
+        title: "จัดการบทความ | Goodlistseller",
+        description: "จัดการบทความ",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    "new-blog":{
+        title: "สร้างบทความใหม่ | Goodlistseller",
+        description: "สร้างบทความใหม่",
+        keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
+        author: "Goodlist Seller",
+        robots: "index, follow",
+    },
+    "edit-blog":{
+        title: "แก้ไขบทความ | Goodlistseller",
+        description: "แก้ไขบทความ",
         keywords: ["Goodlist Seller", "Goodlist Seller", "Goodlist Seller"],
         author: "Goodlist Seller",
         robots: "index, follow",

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StoreLoadingSkeletonProps {
-  count?: number;
+  readonly count?: number;
 }
 
 export default function StoreLoadingSkeleton({ 

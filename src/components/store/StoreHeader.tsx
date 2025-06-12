@@ -22,6 +22,9 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
               className="object-cover"
               sizes="(max-width: 96px) 100vw, 96px"
               fallbackSrc={defaultLogo.src}
+              style={{
+                color: undefined, // This is required to prevent the inline style of `next/image`
+              }}
             />
           </div>
           <div>

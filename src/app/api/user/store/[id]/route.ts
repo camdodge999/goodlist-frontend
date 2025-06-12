@@ -49,7 +49,7 @@ async function fetchUserStores(
   // Use fetchWithAuth to handle token extraction and API call
   const result = await fetchWithAuth<BodyResponse<{storeDetail: Store[]}>>({
     request,
-    url: `${process.env.NEXTAUTH_BACKEND_URL!}/api/store/userStore/${userId}`,
+    url: `${process.env.NEXTAUTH_URL !}/api/store/userStore/${userId}`,
     method: "GET"
   });
   

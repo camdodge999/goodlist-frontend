@@ -17,6 +17,7 @@ import FileUpload from "@/components/report/FileUpload";
 import FormSection from "@/components/report/FormSection";
 import StatusDialog from "@/components/common/StatusDialog";
 import useShowDialog from "@/hooks/useShowDialog";
+import CSRFInput from "@/components/ui/csrf-input";
 
 // Contexts
 import { useStore } from "@/contexts/StoreContext";
@@ -97,6 +98,10 @@ export default function ReportPage() {
   // Handle reason change
   const handleReasonChange = (value: string) => {
     updateFormData('reason', value);
+  };
+
+  const handleRouteBack = () => {
+    router.back();
   };
 
   // Handle file change
@@ -218,6 +223,7 @@ export default function ReportPage() {
               className="report-form"
               onSubmit={handleSubmit}
             >
+            <CSRFInput />
             {validationErrors.form && (
               <div className="form-error-message mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="error-text text-sm text-red-600">{validationErrors.form}</p>
@@ -272,7 +278,7 @@ export default function ReportPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={handleRouteBack}
                 disabled={reportSubmitting}
                 className="cancel-button"
               >

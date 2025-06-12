@@ -60,6 +60,9 @@ const StoreItem: React.FC<StoreItemProps> = ({ store, onOpenStoreDetails }) => {
                 className="object-cover"
                 sizes="64px"
                 fallbackSrc={defaultImage.src}
+                style={{
+                  color: undefined, // This is required to prevent the inline style of `next/image`
+                }}
               />
             </div>
             <div className="ml-4 flex flex-col">

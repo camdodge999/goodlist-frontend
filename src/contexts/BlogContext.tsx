@@ -1,8 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect } from 'react';
 import { Blog, BlogsResponse, BlogSearchParams } from '@/types/blog';
 import { getBlogs, getBlogBySlug } from '@/lib/blog-service';
+
+// Global cache to track if blogs have been fetched globally
+let globalBlogsCache: Blog[] = [];
+let globalPaginationCache: BlogsResponse['pagination'] | null = null;
 
 // Types
 interface BlogState {
@@ -22,6 +26,11 @@ interface BlogState {
     status?: string;
     featured?: boolean;
   };
+  // Add retry and initialization states
+  fetchFailed: boolean;
+  retryCount: number;
+  isInitialized: boolean;
+  refreshing: boolean;
 }
 
 type BlogAction =
@@ -31,27 +40,39 @@ type BlogAction =
   | { type: 'SET_CURRENT_BLOG'; payload: Blog | null }
   | { type: 'SET_SEARCH_QUERY'; payload: string }
   | { type: 'SET_FILTERS'; payload: Partial<BlogState['filters']> }
+  | { type: 'SET_FETCH_FAILED'; payload: boolean }
+  | { type: 'SET_RETRY_COUNT'; payload: number }
+  | { type: 'SET_INITIALIZED'; payload: boolean }
+  | { type: 'SET_REFRESHING'; payload: boolean }
   | { type: 'RESET_STATE' };
 
 interface BlogContextType extends BlogState {
   // Actions
-  fetchBlogs: (params?: BlogSearchParams) => Promise<void>;
+  fetchBlogs: (params?: BlogSearchParams, force?: boolean) => Promise<BlogsResponse | null>;
   fetchBlogBySlug: (slug: string) => Promise<Blog | null>;
   setSearchQuery: (query: string) => void;
   setFilters: (filters: Partial<BlogState['filters']>) => void;
   resetState: () => void;
-  refreshBlogs: () => Promise<void>;
+  refreshBlogs: () => Promise<BlogsResponse | null>;
+  getFeaturedBlogs: (limit?: number) => Blog[];
 }
+
+// Constants
+const MAX_RETRY_ATTEMPTS = 3;
 
 // Initial state
 const initialState: BlogState = {
   blogs: [],
   currentBlog: null,
-  loading: false,
+  loading: true,
   error: null,
   pagination: null,
   searchQuery: '',
   filters: {},
+  fetchFailed: false,
+  retryCount: 0,
+  isInitialized: false,
+  refreshing: false,
 };
 
 // Reducer
@@ -68,6 +89,8 @@ function blogReducer(state: BlogState, action: BlogAction): BlogState {
         pagination: action.payload.pagination,
         loading: false,
         error: null,
+        fetchFailed: false,
+        retryCount: 0,
       };
     case 'SET_CURRENT_BLOG':
       return { ...state, currentBlog: action.payload, loading: false, error: null };
@@ -75,6 +98,14 @@ function blogReducer(state: BlogState, action: BlogAction): BlogState {
       return { ...state, searchQuery: action.payload };
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.payload } };
+    case 'SET_FETCH_FAILED':
+      return { ...state, fetchFailed: action.payload };
+    case 'SET_RETRY_COUNT':
+      return { ...state, retryCount: action.payload };
+    case 'SET_INITIALIZED':
+      return { ...state, isInitialized: action.payload };
+    case 'SET_REFRESHING':
+      return { ...state, refreshing: action.payload };
     case 'RESET_STATE':
       return initialState;
     default:
@@ -98,15 +129,51 @@ export function BlogProvider({
   initialData,
   initialSearchQuery = '' 
 }: BlogProviderProps) {
+  // Initialize blogs from global cache if available, otherwise use initialData
   const [state, dispatch] = useReducer(blogReducer, {
     ...initialState,
-    blogs: initialData?.blogs || [],
-    pagination: initialData?.pagination || null,
+    blogs: globalBlogsCache.length > 0 ? globalBlogsCache : (initialData?.blogs || []),
+    pagination: globalPaginationCache || initialData?.pagination || null,
     searchQuery: initialSearchQuery,
   });
 
-  // Fetch blogs with parameters
-  const fetchBlogs = useCallback(async (params: BlogSearchParams = {}) => {
+  // Fetch blogs with parameters and retry logic
+  const fetchBlogs = useCallback(async (params: BlogSearchParams = {}, force = false): Promise<BlogsResponse | null> => {
+    // If we already have blogs and it's not a forced refresh, return existing blogs
+    if (!force && (globalBlogsCache.length > 0 || state.blogs.length > 0) && !params.search && !params.page) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return { blogs: state.blogs.length > 0 ? state.blogs : globalBlogsCache, pagination: state.pagination ?? {
+        currentPage: 1,
+        totalPages: 1,
+        totalBlogs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } };  
+    }
+
+    // If we have reached max retry attempts and it's not a forced refresh, don't retry
+    if (state.retryCount >= MAX_RETRY_ATTEMPTS && !force) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return { blogs: state.blogs, pagination: state.pagination ?? {
+        currentPage: 1,
+        totalPages: 1,
+        totalBlogs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } };    
+    }
+
+    // If we have a previous fetch failure and it's not a forced refresh, don't retry
+    if (state.fetchFailed && !force) {
+      return { blogs: state.blogs, pagination: state.pagination ?? {
+        currentPage: 1,
+        totalPages: 1,
+        totalBlogs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } };    
+    }
+
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -120,12 +187,39 @@ export function BlogProvider({
       };
 
       const response = await getBlogs(searchParams);
+
+      // Update both local state and global cache
       dispatch({ type: 'SET_BLOGS', payload: response });
+      
+      // Update global cache only if no search/filter is active (base data)
+      if (!searchParams.search && searchParams.page === 1 && searchParams.status === 'published') {
+        globalBlogsCache = response.blogs;
+        globalPaginationCache = response.pagination;
+      }
+
+      // Mark as successfully initialized
+      dispatch({ type: 'SET_INITIALIZED', payload: true });
+
+      return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch blogs';
       dispatch({ type: 'SET_ERROR', payload: errorMessage });
+
+      // Increment retry count and set fetch failed flag
+      dispatch({ type: 'SET_RETRY_COUNT', payload: state.retryCount + 1 });
+      dispatch({ type: 'SET_FETCH_FAILED', payload: true });
+
+      return { blogs: state.blogs, pagination: state.pagination ?? {
+        currentPage: 1,
+        totalPages: 1,
+        totalBlogs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } };
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.searchQuery, state.filters.status]);
+  }, [state.searchQuery, state.filters.status, state.retryCount, state.fetchFailed, state.blogs]);
 
   // Fetch single blog by slug
   const fetchBlogBySlug = useCallback(async (slug: string): Promise<Blog | null> => {
@@ -159,13 +253,79 @@ export function BlogProvider({
   }, []);
 
   // Refresh blogs with current parameters
-  const refreshBlogs = useCallback(async () => {
-    await fetchBlogs({
-      search: state.searchQuery,
-      status: state.filters.status,
-      page: state.pagination?.currentPage || 1,
-    });
-  }, [fetchBlogs, state.searchQuery, state.filters.status, state.pagination?.currentPage]);
+  const refreshBlogs = useCallback(async (): Promise<BlogsResponse | null> => {
+    dispatch({ type: 'SET_REFRESHING', payload: true });
+    try {
+      const result = await fetchBlogs({
+        search: state.searchQuery,
+        status: state.filters.status,
+        page: state.pagination?.currentPage || 1,
+      }, true); // Force refresh
+      return result;
+    } catch {
+      return { blogs: state.blogs, pagination: state.pagination ?? {
+        currentPage: 1,
+        totalPages: 1,
+        totalBlogs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } };
+    } finally {
+      dispatch({ type: 'SET_REFRESHING', payload: false });
+    }
+  }, [fetchBlogs, state.searchQuery, state.filters.status, state.pagination?.currentPage, state.blogs]);
+
+  // Get featured blogs
+  const getFeaturedBlogs = useCallback((limit = 3): Blog[] => {
+    return state.blogs
+      .filter(blog => blog.featured || blog.status === 'published')
+      .slice(0, limit);
+  }, [state.blogs]);
+
+  // Initialize with API data only if no initialData were provided and global cache is empty
+  useEffect(() => {
+    // Don't fetch if already successfully initialized
+    if (state.isInitialized) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
+
+    // Don't fetch if we've reached max retry attempts
+    if (state.retryCount >= MAX_RETRY_ATTEMPTS) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
+
+    // Don't fetch if blogs exist unless both caches are empty
+    if (state.blogs.length > 0 && globalBlogsCache.length > 0) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: 'SET_INITIALIZED', payload: true });
+      return;
+    }
+
+    if (globalBlogsCache.length === 0 && (!initialData || initialData.blogs.length === 0)) {
+      fetchBlogs();
+    } else if (initialData && initialData.blogs.length > 0 && globalBlogsCache.length === 0) {
+      // If we have initialData but no global cache, update the global cache
+      globalBlogsCache = initialData.blogs;
+      globalPaginationCache = initialData.pagination;
+      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: 'SET_INITIALIZED', payload: true });
+    }
+  }, [fetchBlogs, initialData, state.retryCount, state.blogs.length, state.isInitialized]);
+
+  // Update local blogs when global cache changes
+  useEffect(() => {
+    if (globalBlogsCache.length > 0 && JSON.stringify(state.blogs) !== JSON.stringify(globalBlogsCache)) {
+      dispatch({ type: 'SET_BLOGS', payload: { blogs: globalBlogsCache, pagination: globalPaginationCache ?? {
+        currentPage: 1,
+        totalPages: 1,
+        totalBlogs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } } });
+    }
+  }, []);
 
   const contextValue: BlogContextType = {
     ...state,
@@ -175,6 +335,7 @@ export function BlogProvider({
     setFilters,
     resetState,
     refreshBlogs,
+    getFeaturedBlogs,
   };
 
   return (

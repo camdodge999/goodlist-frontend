@@ -44,9 +44,7 @@ function generateNonce(): string {
     binary += String.fromCharCode(data[i]);
   }
 
-  const convert = btoa(binary);
-
-  console.log(convert)
+  const convert = btoa(binary)
   
   return convert;
 }

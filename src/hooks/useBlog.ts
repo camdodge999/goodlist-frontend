@@ -99,6 +99,9 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
         cache: 'no-store',
       });
 
+
+      console.log()
+
       if (!response.ok) {
         throw new Error(`Failed to fetch blogs: ${response.status}`);
       }

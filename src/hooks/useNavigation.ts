@@ -3,13 +3,14 @@
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { User } from "@/types/users";
-import { NavItem } from "@/types/navbar";
+import type { NavItem } from "@/types/navbar";
 import { 
   faHome, 
   faStore, 
   faExclamation,
   faChartBar,
   faCheck,
+  faNewspaper,
 } from '@fortawesome/free-solid-svg-icons';
 import { useUser } from "@/contexts/UserContext";
 
@@ -24,6 +25,7 @@ export default function useNavigation() {
       { name: "หน้าแรก", href: "/", icon: faHome },
       { name: "ร้านค้า", href: "/stores", icon: faStore },
       { name: "รายงานร้านค้า", href: "/report", icon: faExclamation },
+      { name: "บทความ", href: "/blogs", icon: faNewspaper },
     ];
 
     // Use currentUser from UserContext if available, otherwise fall back to session
@@ -35,6 +37,7 @@ export default function useNavigation() {
       ];
 
       if (user.role === "admin") {
+        userItems.push({ name: "จัดการบทความ", href: "/blog-management", icon: faNewspaper });
         userItems.push({ name: "แดชบอร์ดแอดมิน", href: "/admin", icon: faChartBar });
       }
 

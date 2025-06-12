@@ -17,19 +17,24 @@ export function useCSRFToken(): UseCSRFTokenReturn {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchToken = async (): Promise<void> => {
+  const fetchToken = async () => {
     try {
       setIsLoading(true);
       
-      // First try to get from existing cookies
-      const existingToken = getCSRFTokenFromBrowser();
-      if (existingToken) {
-        setToken(existingToken);
-        setIsLoading(false);
+      // Only run on client side to prevent hydration mismatch
+      if (typeof window === 'undefined') {
+        setToken(null);
         return;
       }
 
-      // If no token exists, fetch from API to generate one
+      // Try to get token from browser cookies first
+      const browserToken = getCSRFTokenFromBrowser();
+      if (browserToken) {
+        setToken(browserToken);
+        return;
+      }
+
+      // If no token in cookies, fetch from API to generate one
       const response = await fetch('/api/csrf-token', {
         method: 'GET',
         credentials: 'include',
@@ -39,28 +44,28 @@ export function useCSRFToken(): UseCSRFTokenReturn {
         const data = await response.json();
         setToken(data.token);
       } else {
-        console.warn('Failed to fetch CSRF token');
         setToken(null);
       }
     } catch (error) {
-      console.error('Error fetching CSRF token:', error);
+      console.error('Failed to fetch CSRF token:', error);
       setToken(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const refreshToken = async (): Promise<void> => {
-    await fetchToken();
-  };
-
-  const getTokenForRequest = (): string | undefined => {
-    return token ?? getCSRFTokenFromBrowser();
-  };
-
+  // Use useEffect to prevent hydration mismatch
   useEffect(() => {
     fetchToken();
   }, []);
+
+  const refreshToken = async () => {
+    await fetchToken();
+  };
+
+  const getTokenForRequest = () => {
+    return token || undefined;
+  };
 
   return {
     token,

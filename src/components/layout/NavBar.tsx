@@ -10,7 +10,11 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Session } from "next-auth";
 
-export default function NavBar({ session }: { session: Session | null }) {
+interface NavBarProps {   
+  readonly session: Session | null;
+}
+
+export default function NavBar({ session }: NavBarProps) {
   const router = useRouter();
   const { navItems } = useNavigation();
   const { currentUser, isLoading } = useUser();  

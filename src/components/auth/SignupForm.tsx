@@ -134,7 +134,7 @@ export default function SignupForm() {
       return true;
     } catch (err) {
       if (err instanceof ZodError) {
-        setError(err.errors[0]?.message || "OTP ไม่ถูกต้อง");
+        setError(err.errors[0]?.message ?? "OTP ไม่ถูกต้อง");
       }
       return false;
     }
@@ -261,7 +261,7 @@ export default function SignupForm() {
         startCooldownTimer();
       } else {
         const errorData = await response.json();
-        displayErrorDialog(errorData.message || "อีเมลนี้มีผู้ใช้งานแล้ว");
+        displayErrorDialog(errorData.message ?? "อีเมลนี้มีผู้ใช้งานแล้ว");
       }
     } catch {
       displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
@@ -326,7 +326,7 @@ export default function SignupForm() {
         }
       } else {
         const errorData = await response.json();
-        setError(errorData.message || "รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+        setError(errorData.message ?? "รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       }
     } catch {
       // Ignore the error variable name but handle the error
@@ -393,7 +393,7 @@ export default function SignupForm() {
         setOtpToken(data.otpToken); 
       } else {
         const errorData = await response.json();
-        setError(errorData.message || "เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
+        setError(errorData.message ?? "เกิดข้อผิดพลาดในการส่ง OTP กรุณาลองใหม่อีกครั้ง");
       }
     } catch {
       // Show error in modal instead of dialog

@@ -13,6 +13,7 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import { MotionCSPProvider } from "@/lib/motion";
 import { getNonce } from "@/lib/nonce";
+import CSPDebug from "@/components/debug/CSPDebug";
 config.autoAddCss = false;
 
 const prompt = localFont({
@@ -110,22 +111,7 @@ export default async function RootLayout({
             dangerouslySetInnerHTML={{
               __html: `window.__webpack_nonce__ = "${nonce}"`
             }}
-          />
-        )}
-        {/* Development debug information */}
-        {process.env.NODE_ENV === 'development' && nonce && (
-          <script
-            nonce={nonce}
-            dangerouslySetInnerHTML={{
-              __html: `
-                console.log('🔒 CSP Status:', {
-                  nonce: '${nonce.substring(0, 8)}...',
-                  webpackNonce: !!window.__webpack_nonce__,
-                  criticalCSS: 'loaded',
-                  middleware: 'active'
-                });
-              `
-            }}
+            suppressHydrationWarning={true}
           />
         )}
       </head>
@@ -137,6 +123,7 @@ export default async function RootLayout({
               <NavBar session={session as unknown as Session} />
               <main className="min-h-[calc(100vh-64px)] pt-20">{children}</main>
               <ToastProvider />
+              <CSPDebug />
             </AppProviders>
           </NextAuthProvider>
         </MotionCSPProvider>

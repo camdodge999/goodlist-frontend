@@ -1,17 +1,16 @@
-import { Blog, BlogsResponse } from "@/types/blog";
+import { Blog, BlogsResponse, BlogSearchParams } from "@/types/blog";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 
-export async function getBlogs(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<BlogsResponse> {
+// Enhanced blog service with better error handling and caching
+export async function getBlogs(params?: BlogSearchParams): Promise<BlogsResponse> {
   const searchParams = new URLSearchParams();
   
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit) searchParams.set('limit', params.limit.toString());
   if (params?.search) searchParams.set('search', params.search);
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.featured !== undefined) searchParams.set('featured', params.featured.toString());
 
   const url = `${API_BASE_URL}/api/blogs?${searchParams.toString()}`;
   
@@ -31,8 +30,8 @@ export async function getBlogs(params?: {
     
     // Ensure the response matches the expected BlogsResponse format
     return {
-      blogs: data.blogs || [],
-      pagination: data.pagination || {
+      blogs: data.blogs ?? [],
+      pagination: data.pagination ?? {
         currentPage: 1,
         totalPages: 0,
         totalBlogs: 0,

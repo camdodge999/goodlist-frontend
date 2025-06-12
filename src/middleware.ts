@@ -19,6 +19,7 @@ const STATIC_STYLE_HASHES = [
   "'sha256-dz0IlE6Ej+Pf9WeZ57sEyXgzZOvzM4Agzl2f0gpN7fs='", // additional utility styles 
   "'sha256-F2FphXOLeRXcUSI4c0ybgkNqofQaEHWI1kHbjr9RHxw='", // critical CSS from document head
   "'sha256-fFiwGJFfGZ3i0Vt+xXYQgf88NKsgAfBwvY2aBowdoj4='", // critical CSS from document head
+  "'sha256-sHwQzC2ZsVrt1faUYCjF/eo8aIoBlQbGjVstzanL9CU='", // critical CSS from document head
 ];
 
 const STATIC_SCRIPT_HASHES = [
@@ -82,8 +83,8 @@ export async function middleware(request: NextRequest) {
   // Build CSP header with both nonces and SHA256 hashes
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${STATIC_SCRIPT_HASHES.join(' ')};
-    style-src 'self' 'nonce-${nonce}' 'unsafe-hashes'  ${STATIC_STYLE_HASHES.join(' ')};
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ${STATIC_SCRIPT_HASHES.join(' ')};
+    style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ""} ${STATIC_STYLE_HASHES.join(' ')};
     img-src 'self' blob: data:;
     font-src 'self';
     connect-src 'self';

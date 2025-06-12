@@ -37,7 +37,7 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
   className = "",
   sizes,
   fallbackSrc = "/images/logo.webp",
-  placeholder = "blur",   
+  placeholder,   
   onError,
   width,
   height,

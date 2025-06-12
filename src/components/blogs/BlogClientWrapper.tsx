@@ -3,29 +3,42 @@
 import { useState, useEffect } from "react";
 import { BlogsResponse } from "@/types/blog";   
 import { useBlog } from "@/hooks/useBlog";
+import { useBlogContextSafe } from "@/contexts/BlogContext";
 import BlogHeader from "./BlogHeader";
 import BlogGrid from "./BlogGrid";
 
 interface BlogClientWrapperProps {
-  initialData: BlogsResponse;
-  initialSearchQuery: string;
-  nonce?: string | null;
+  readonly initialData: BlogsResponse; 
+  readonly initialSearchQuery: string;
+  readonly useContext?: boolean; // Option to use context or hook
 }
 
 export default function BlogClientWrapper({ 
   initialData, 
-  initialSearchQuery 
+  initialSearchQuery,
+  useContext = true, // Default to using context
 }: BlogClientWrapperProps) {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [currentPage, setCurrentPage] = useState(1);
   
+  // Always call both hooks to avoid conditional hook usage
+  const contextData = useBlogContextSafe();
+  const hookData = useBlog();
+  
+  // Choose data source based on useContext prop and context availability
   const {
     blogs,
     loading,
     error,
     pagination,
     fetchBlogs
-  } = useBlog();
+  } = (useContext && contextData) ? contextData : hookData;
+  
+  // Get context-specific methods if using context and context is available
+  const contextMethods = (useContext && contextData) ? {
+    setSearchQuery: contextData.setSearchQuery,
+    refreshBlogs: contextData.refreshBlogs,
+  } : null;
 
   // Initialize with server-side data
   useEffect(() => {
@@ -34,7 +47,8 @@ export default function BlogClientWrapper({
       fetchBlogs({
         page: currentPage,
         limit: 6,
-        search: searchQuery
+        search: searchQuery,
+        status: 'published'
       });
     }
   }, [searchQuery, currentPage, fetchBlogs, initialData.blogs.length, initialSearchQuery]);
@@ -42,6 +56,11 @@ export default function BlogClientWrapper({
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1); // Reset to first page when searching
+    
+    // Update context search query if using context
+    if (contextMethods) {
+      contextMethods.setSearchQuery(query);
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -63,7 +82,13 @@ export default function BlogClientWrapper({
         <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Blogs</h2>
         <p className="text-gray-600 mb-4">{error}</p>
         <button
-          onClick={() => fetchBlogs({ page: currentPage, limit: 6, search: searchQuery })}
+          onClick={() => {
+            if (contextMethods) {
+              contextMethods.refreshBlogs();
+            } else {
+              fetchBlogs({ page: currentPage, limit: 6, search: searchQuery });
+            }
+          }}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Try Again
@@ -81,13 +106,19 @@ export default function BlogClientWrapper({
           onSearchChange={handleSearch}
           isLoading={loading}
           isRefreshing={false}
-          onRefresh={() => fetchBlogs({ page: currentPage, limit: 6, search: searchQuery })}
+          onRefresh={() => {
+            if (contextMethods) {
+              contextMethods.refreshBlogs();
+            } else {
+              fetchBlogs({ page: currentPage, limit: 6, search: searchQuery });
+            }
+          }}
         />
 
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading blogs...</p>
+            <p className="mt-4 text-gray-600">กำลังโหลดบทความ...</p>
           </div>
         ) : (
           <>

@@ -1,7 +1,7 @@
 import BlogsPage from "@/components/pages/BlogsPage";
 
 interface PageProps {
-  searchParams?: Promise<{
+  readonly searchParams?: Promise<{
     page?: string;
     search?: string;
   }>;

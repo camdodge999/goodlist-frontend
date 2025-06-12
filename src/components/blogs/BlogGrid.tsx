@@ -7,12 +7,12 @@ import { getFirstImageFromMarkdown, generateExcerptFromMarkdown } from "@/utils/
 import dayjs from "dayjs";
 
 interface BlogGridProps {
-  blogs: Blog[];
-  searchQuery?: string;
-  isLoading?: boolean;
+  readonly blogs: Blog[];
+  readonly searchQuery?: string;
+  readonly isLoading?: boolean;
 }
 
-export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProps) {
+export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProps) {  
   const formatDate = (dateString?: string) => {
     if (!dateString) return "No date";
     return dayjs(dateString).format("MMMM D, YYYY");

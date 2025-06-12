@@ -74,4 +74,6 @@ export interface BlogSearchParams {
   page?: number;
   limit?: number;
   search?: string;
+  status?: string;
+  featured?: boolean;
 } 

@@ -10,6 +10,7 @@ import { getAllStyleHashes, getAllScriptHashes } from './sha256-utils';
  * Hook for getting basic CSP information in Client Components
  */
 export function useCSP() {
+  // Ensure all DOM access is client-side only to prevent hydration mismatch
   const hasNonce = typeof window !== 'undefined' && 
     document.querySelector('script[nonce]') !== null;
   
@@ -34,6 +35,7 @@ export function injectCSPHashes(
   styleElement: HTMLStyleElement, 
   hashes: string[]
 ): void {
+  // Guard against SSR to prevent hydration mismatch
   if (typeof window === 'undefined') return;
 
   // Add hash information as data attributes

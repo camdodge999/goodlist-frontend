@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { getToken } from "next-auth/jwt";
-import { BlogFormData } from "@/types/blog";
+import { BlogFormData, Blog } from "@/types/blog";
+
 
 // Helper function to read markdown content
 const getMarkdownContent = (filename: string): string => {
@@ -19,7 +20,7 @@ const getMarkdownContent = (filename: string): string => {
 async function checkAdminAuth(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return { isAuthenticated: false, isAdmin: false, error: 'No authorization header' };
   }
 
@@ -41,39 +42,8 @@ async function checkAdminAuth(request: NextRequest) {
   }
 }
 
-// Updated Blog interface to match the schema
-interface BlogData {
-  id: string;
-  title: string;
-  slug: string;
-  content?: string;
-  excerpt?: string;
-  linkPath?: string;
-  fileMarkdownPath?: string;
-  status: 'draft' | 'published' | 'archived' | 'deleted';
-  publishedAt?: string;
-  userId: number;
-  createdById: number;
-  updatedById: number;
-  createdAt: string;
-  updatedAt: string;
-  viewCount: number;
-  likeCount: number;
-  shareCount: number;
-  commentCount: number;
-  tags?: string;
-  metaDescription?: string;
-  featured: boolean;
-  author: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  readTime?: number; // Computed field
-}
-
 // Updated mock blogs with store verification content
-const mockBlogs: BlogData[] = [
+const mockBlogs: Blog[] = [
   {
     id: "550e8400-e29b-41d4-a716-446655440001",
     title: "How to Verify Amazon Stores: Complete Safety Guide",
@@ -165,11 +135,11 @@ const mockBlogs: BlogData[] = [
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const search = searchParams.get('search') || '';
-  const status = searchParams.get('status');
-  const featured = searchParams.get('featured');
+  const page = parseInt(searchParams.get('page') ?? '1');
+  const limit = parseInt(searchParams.get('limit') ?? '10');
+  const search = searchParams.get('search') ?? '';
+  const status = searchParams.get('status') ?? '';
+  const featured = searchParams.get('featured') ?? '';
 
   // Filter blogs based on query parameters
   const filteredBlogs = mockBlogs.filter(blog => {
@@ -183,7 +153,7 @@ export async function GET(request: NextRequest) {
       return (
         blog.title.toLowerCase().includes(searchLower) ||
         blog.excerpt?.toLowerCase().includes(searchLower) ||
-        blog.tags?.toLowerCase().includes(searchLower)
+        (typeof blog.tags === 'string' && blog.tags.toLowerCase().includes(searchLower))
       );
     }
     
@@ -200,7 +170,7 @@ export async function GET(request: NextRequest) {
   // Convert tags string to array for consistency
   const blogsWithArrayTags = paginatedBlogs.map(blog => ({
     ...blog,
-    tags: blog.tags ? blog.tags.split(',').map(tag => tag.trim()) : []
+    tags: blog.tags ? (typeof blog.tags === 'string' ? blog.tags.split(',').map(tag => tag.trim()) : blog.tags) : []
   }));
 
   return NextResponse.json({
@@ -233,7 +203,7 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
 
     // Create new blog object
-    const newBlog: BlogData = {
+    const newBlog: Blog = {
       id: newId,
       title: blogData.title,
       slug: blogData.slug,
@@ -269,7 +239,7 @@ export async function POST(request: NextRequest) {
     // Return the created blog with tags as array
     const responseBlogs = {
       ...newBlog,
-      tags: newBlog.tags ? newBlog.tags.split(',').map(tag => tag.trim()) : []
+      tags: newBlog.tags ? (typeof newBlog.tags === 'string' ? newBlog.tags.split(',').map(tag => tag.trim()) : newBlog.tags) : []
     };
 
     return NextResponse.json(responseBlogs, { status: 201 });

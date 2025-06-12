@@ -37,6 +37,11 @@ const nextConfig = (phase: string): NextConfig => {
           protocol: "https",
           hostname: "api.goodlist2.chaninkrew.com",
           pathname: "/**",
+        },
+        {
+          protocol: "https",
+          hostname: "images.unsplash.com",
+          pathname: "/**",
         }
       ],
     },
@@ -99,8 +104,8 @@ const securityHeadersConfig = (phase: string) => {
     // Following Next.js documentation recommendations
     const cspDirectives = `
       default-src 'self';
-      script-src 'self' 'nonce-${nonce}' ${isDevelopment ? "'unsafe-inline' 'unsafe-eval'" : "'strict-dynamic'"};
-      style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${isDevelopment ? "'unsafe-inline'" : ""};
+      script-src 'self' 'nonce-${nonce}' ${isDevelopment ? "'unsafe-inline' 'unsafe-eval'" : "'strict-dynamic'"}; 
+      style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${isDevelopment ? "'unsafe-eval'" : ""};
       img-src 'self' data: blob: ;
       font-src 'self' ;
       connect-src 'self' ${process.env.NEXT_PUBLIC_BACKEND_URL || ''} ${process.env.NEXTAUTH_URL || ''} ${isDevelopment ? 'ws://localhost:* http://localhost:* https://localhost:* ws://127.0.0.1:* http://127.0.0.1:* https://127.0.0.1:*' : ''};

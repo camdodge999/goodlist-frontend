@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelopeOpen } from '@fortawesome/free-solid-svg-icons';
 
 interface ResetPasswordSuccessProps {
-  onBackToLogin: () => void;
+  readonly onBackToLogin: () => void;  
 }
 
 export default function ResetPasswordSuccess({ onBackToLogin }: ResetPasswordSuccessProps) {

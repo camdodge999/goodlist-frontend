@@ -11,17 +11,17 @@ import { X } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
 
 interface OtpModalProps {
-  email: string;
-  otpValue: string;
-  error: string;
-  isVerifying: boolean;
-  isSendingOtp: boolean;
-  refNumber: string;
-  cooldownSeconds: number;
-  onOtpChange: (value: string) => void;
-  onVerify: () => Promise<void>;
-  onClose: () => void;
-  onSendOtp: () => Promise<void>;
+  readonly email: string;
+  readonly otpValue: string;
+  readonly error: string;
+  readonly isVerifying: boolean;
+  readonly isSendingOtp: boolean;
+  readonly refNumber?: string;
+  readonly cooldownSeconds: number;
+  readonly onOtpChange: (value: string) => void; 
+  readonly onVerify: () => Promise<void>;
+  readonly onClose: () => void;
+  readonly onSendOtp: () => Promise<void>;
 }
 
 export default function OtpModal({
@@ -100,7 +100,7 @@ export default function OtpModal({
             >
               <InputOTPGroup>
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <InputOTPSlot key={index} index={index} />
+                  <InputOTPSlot key={Math.random()} index={index} />
                 ))}
               </InputOTPGroup>
             </InputOTP>
@@ -136,11 +136,11 @@ export default function OtpModal({
               className="w-full cursor-pointer flex justify-center items-center gap-2"
             >
               {isSendingOtp && <Spinner className="mr-2" />}
-              {isSendingOtp
-                ? "กำลังส่ง..."
-                : cooldownSeconds > 0
-                  ? `รอ ${formatTime(cooldownSeconds)} เพื่อส่งใหม่`
-                  : "ส่งรหัส OTP อีกครั้ง"}
+              {(() => {
+                if (isSendingOtp) return "กำลังส่ง...";
+                if (cooldownSeconds > 0) return `รอ ${formatTime(cooldownSeconds)} เพื่อส่งใหม่`;
+                return "ส่งรหัส OTP อีกครั้ง";
+              })()}
             </Button>
           </div>
 

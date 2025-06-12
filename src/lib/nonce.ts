@@ -64,6 +64,7 @@ export async function hasNonce(): Promise<boolean> {
  * Client-side hook to check if nonces are available in DOM
  */
 export function useNonceAvailable(): boolean {
+  // Guard against SSR to prevent hydration mismatch
   if (typeof window !== 'undefined') {
     const scripts = document.querySelectorAll('script[nonce]');
     const styles = document.querySelectorAll('style[nonce]');

@@ -183,6 +183,7 @@ export const buildCSPDirectives = (config: CSPConfig = {}): Record<string, strin
   const scriptSrc = ["'self'"];
   if (isDevelopment) {
     scriptSrc.push("'unsafe-inline'");
+    scriptSrc.push("'unsafe-eval'");
   } else {
     // In production, use nonce-based approach when available
     if (nonce) {
@@ -197,6 +198,7 @@ export const buildCSPDirectives = (config: CSPConfig = {}): Record<string, strin
   const styleSrc = ["'self'"];
   if (isDevelopment) {
     styleSrc.push("'unsafe-inline'");
+    styleSrc.push("'unsafe-eval'");
   } else {
     // Production approach: nonce-first with hash fallbacks
     if (nonce) {

@@ -36,9 +36,7 @@ export interface Blog {
 
   // Author information (populated from User relation)
   author: {
-    id: number;
-    name: string;
-    email: string;
+    displayName: string;
   };
 
   // Legacy fields for backward compatibility (can be computed)

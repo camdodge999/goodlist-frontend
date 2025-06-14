@@ -17,7 +17,7 @@ import {
 import "highlight.js/styles/github.css";
 import dayjs from "dayjs";
 import * as React from "react";
-
+import AuthenticatedImage from "../ui/AuthenticatedImage";
 interface BlogPostClientProps {
   readonly blog: Blog;
 }
@@ -48,7 +48,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
 
   const tagsArray = getTagsArray(blog?.tags);
   const readTime = calculateReadTime(blog?.content, blog?.readTime);
-  const authorName = typeof blog?.author === 'string' ? blog?.author : blog?.author?.name || 'Unknown Author';
+  const authorName = typeof blog?.author === 'string' ? blog?.author : blog?.author?.displayName || 'Unknown Author';
 
   // Memoize components to avoid recreation on every render
   const markdownComponents = React.useMemo(() => ({
@@ -79,7 +79,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
       </pre>
     ),
     img: ({ src, alt }: { src?: string; alt?: string }) => (
-      <Image
+      <AuthenticatedImage 
         src={src as string} 
         alt={alt || ""} 
         className="max-w-full h-auto rounded-lg shadow-sm mb-3"
@@ -92,7 +92,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto min-h-[calc(100vh-521px)]">
         {/* Breadcrumb Navigation */}
         <div className="mb-8">
           <Breadcrumb>

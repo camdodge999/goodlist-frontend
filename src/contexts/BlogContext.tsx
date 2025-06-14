@@ -87,7 +87,7 @@ function blogReducer(state: BlogState, action: BlogAction): BlogState {
         ...state,
         blogs: action.payload.blogs,
         pagination: action.payload.pagination,
-        loading: false,
+        loading: true,
         error: null,
         fetchFailed: false,
         retryCount: 0,

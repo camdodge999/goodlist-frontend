@@ -101,7 +101,7 @@ export default function BlogClientWrapper({
   };
 
   // Show loading skeleton during initial load or when not hydrated
-  if (!isHydrated || loading) {
+  if (loading) {
     return (
       <div className="blogs-page min-h-[calc(100vh-521px)]">
         <BlogHeader

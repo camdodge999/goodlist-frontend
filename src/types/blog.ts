@@ -1,3 +1,18 @@
+// Asset interface for blog assets
+export interface BlogAsset {
+  originalName: string;
+  fileName: string;
+  filePath: string;
+  blogId: string;
+  altText?: string;
+  caption?: string;
+}
+
+// User interface for createdBy relationship
+export interface BlogCreatedBy {
+  displayName: string;
+}
+
 export interface Blog {
   // Primary Key
   id: string;
@@ -12,7 +27,7 @@ export interface Blog {
 
   // Metadata
   status: 'draft' | 'published' | 'archived' | 'deleted';
-  publishedAt?: string;
+  createdAt?: string;
 
   // User Relationships
   userId: number;
@@ -25,17 +40,21 @@ export interface Blog {
 
   // Engagement Metrics
   viewCount: number;
-  likeCount: number;
-  shareCount: number;
-  commentCount: number;
+  likeCount?: number;
+  shareCount?: number;
+  commentCount?: number;
 
   // SEO and Discovery
   tags?: string | string[];
   metaDescription?: string;
   featured: boolean;
 
-  // Author information (populated from User relation)
-  author: {
+  // Relationships
+  assets?: BlogAsset[];
+  createdBy?: BlogCreatedBy;
+
+  // Author information (populated from User relation) - keeping for backward compatibility
+  author?: {
     displayName: string;
   };
 

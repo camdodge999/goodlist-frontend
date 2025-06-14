@@ -35,7 +35,7 @@ interface BlogData {
   linkPath?: string;
   fileMarkdownPath?: string;
   status: 'draft' | 'published' | 'archived' | 'deleted';
-  publishedAt?: string;
+  createdAt?: string;
   userId: number;
   createdById: number;
   updatedById: number;
@@ -67,7 +67,7 @@ const mockBlogs: BlogData[] = [
     linkPath: "/blogs/amazon-store-verification",
     fileMarkdownPath: "/content/blogs/amazon-store-verification.md",
     status: "published",
-    publishedAt: "2024-01-15T10:00:00Z",
+    createdAt: "2024-01-15T10:00:00Z",
     userId: 1,
     createdById: 1,
     updatedById: 1,
@@ -96,7 +96,7 @@ const mockBlogs: BlogData[] = [
     linkPath: "/blogs/ebay-seller-verification",
     fileMarkdownPath: "/content/blogs/ebay-seller-verification.md",
     status: "published",
-    publishedAt: "2024-01-10T14:30:00Z",
+    createdAt: "2024-01-10T14:30:00Z",
     userId: 2,
     createdById: 2,
     updatedById: 2,
@@ -125,7 +125,7 @@ const mockBlogs: BlogData[] = [
     linkPath: "/blogs/shopify-store-safety",
     fileMarkdownPath: "/content/blogs/shopify-store-safety.md",
     status: "published",
-    publishedAt: "2024-01-05T09:15:00Z",
+    createdAt: "2024-01-05T09:15:00Z",
     userId: 3,
     createdById: 3,
     updatedById: 3,
@@ -162,13 +162,38 @@ export async function GET(
     );
   }
 
-  // Return blog with tags as array for consistency
-  const blogWithArrayTags = {
-    ...blog,
-    tags: blog.tags ? blog.tags.split(',').map(tag => tag.trim()) : []
+  // Return blog with complete structure including assets and createdBy
+  const blogWithCompleteStructure = {
+    id: blog.id,
+    title: blog.title,
+    slug: blog.slug,
+    content: blog.content,
+    excerpt: blog.excerpt,
+    linkPath: blog.linkPath,
+    fileMarkdownPath: blog.fileMarkdownPath,
+    status: blog.status,
+    createdAt: blog.createdAt,
+    userId: blog.userId,
+    createdById: blog.createdById,
+    updatedById: blog.updatedById,
+    createdAt: blog.createdAt,
+    updatedAt: blog.updatedAt,
+    viewCount: blog.viewCount,
+    tags: blog.tags ? blog.tags.split(',').map(tag => tag.trim()) : [],
+    metaDescription: blog.metaDescription,
+    featured: blog.featured,
+    assets: [], // Mock empty assets array for now
+    createdBy: { displayName: blog.author?.name || 'Unknown Author' },
+    // Keep author for backward compatibility
+    author: blog.author,
+    // Include optional fields
+    likeCount: blog.likeCount,
+    shareCount: blog.shareCount,
+    commentCount: blog.commentCount,
+    readTime: blog.readTime
   };
 
-  return NextResponse.json(blogWithArrayTags);
+  return NextResponse.json(blogWithCompleteStructure);
 }
 
 export async function PUT(
@@ -237,17 +262,42 @@ export async function PUT(
       ...updateData,
       updatedAt: now,
       updatedById: 1, // Mock admin user ID
-      publishedAt: updateData.status === 'published' && !existingBlog.publishedAt ? now : existingBlog.publishedAt,
+      createdAt: updateData.status === 'published' && !existingBlog.createdAt ? now : existingBlog.createdAt,
       readTime: updateData.content ? Math.ceil(updateData.content.length / 200) : existingBlog.readTime
     };
 
     // Update in mock blogs array
     mockBlogs[blogIndex] = updatedBlog;
 
-    // Return the updated blog with tags as array
+    // Return the updated blog with complete structure
     const responseBlog = {
-      ...updatedBlog,
-      tags: updatedBlog.tags ? updatedBlog.tags.split(',').map(tag => tag.trim()) : []
+      id: updatedBlog.id,
+      title: updatedBlog.title,
+      slug: updatedBlog.slug,
+      content: updatedBlog.content,
+      excerpt: updatedBlog.excerpt,
+      linkPath: updatedBlog.linkPath,
+      fileMarkdownPath: updatedBlog.fileMarkdownPath,
+      status: updatedBlog.status,
+      createdAt: updatedBlog.createdAt,
+      userId: updatedBlog.userId,
+      createdById: updatedBlog.createdById,
+      updatedById: updatedBlog.updatedById,
+      createdAt: updatedBlog.createdAt,
+      updatedAt: updatedBlog.updatedAt,
+      viewCount: updatedBlog.viewCount,
+      tags: updatedBlog.tags ? updatedBlog.tags.split(',').map(tag => tag.trim()) : [],
+      metaDescription: updatedBlog.metaDescription,
+      featured: updatedBlog.featured,
+      assets: [], // Mock empty assets array for now
+      createdBy: { displayName: updatedBlog.author?.name || 'Unknown Author' },
+      // Keep author for backward compatibility
+      author: updatedBlog.author,
+      // Include optional fields
+      likeCount: updatedBlog.likeCount,
+      shareCount: updatedBlog.shareCount,
+      commentCount: updatedBlog.commentCount,
+      readTime: updatedBlog.readTime
     };
 
     return NextResponse.json(responseBlog);

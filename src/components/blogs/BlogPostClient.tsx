@@ -48,7 +48,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
 
   const tagsArray = getTagsArray(blog?.tags);
   const readTime = calculateReadTime(blog?.content, blog?.readTime);
-  const authorName = typeof blog?.author === 'string' ? blog?.author : blog?.author?.displayName || 'Unknown Author';
+  const authorName = blog?.createdBy?.displayName || blog?.author?.displayName || 'Unknown Author';
 
   // Memoize components to avoid recreation on every render
   const markdownComponents = React.useMemo(() => ({
@@ -134,7 +134,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
           <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
             <span>By {authorName}</span>
             <span>•</span>
-            <span>{formatDate(blog.publishedAt)}</span>
+            <span>{formatDate(blog.createdAt)}</span>
             <span>•</span>
             <span>{readTime} min read</span>
             {blog.viewCount > 0 && (
@@ -160,21 +160,21 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
           )}
 
           {/* Engagement metrics */}
-          {(blog.likeCount > 0 || blog.shareCount > 0 || blog.commentCount > 0) && (
+          {((blog.likeCount ?? 0) > 0 || (blog.shareCount ?? 0) > 0 || (blog.commentCount ?? 0) > 0) && (
             <div className="flex items-center gap-6 text-sm text-gray-500 mb-6 p-4 bg-gray-50 rounded-lg">
-              {blog.likeCount > 0 && (
+              {(blog.likeCount ?? 0) > 0 && (
                 <span className="flex items-center gap-1">
                   <span>👍</span>
                   <span>{blog.likeCount} likes</span>
                 </span>
               )}
-              {blog.shareCount > 0 && (
+              {(blog.shareCount ?? 0) > 0 && (
                 <span className="flex items-center gap-1">
                   <span>📤</span>
                   <span>{blog.shareCount} shares</span>
                 </span>
               )}
-              {blog.commentCount > 0 && (
+              {(blog.commentCount ?? 0) > 0 && (
                 <span className="flex items-center gap-1">
                   <span>💬</span>
                   <span>{blog.commentCount} comments</span>

@@ -105,14 +105,39 @@ export async function GET(
         );
       }
 
-      // Return blog with tags as array for consistency
+      // Return blog with complete structure including assets and createdBy
       const blog = result.data.blogDetail;
-      const blogWithArrayTags = {
-        ...blog,
-        tags: typeof blog.tags === 'string' ? blog.tags.split(',').map(tag => tag.trim()) : blog.tags || []
+      const blogWithCompleteStructure = {
+        id: blog.id,
+        title: blog.title,
+        slug: blog.slug,
+        content: blog.content,
+        excerpt: blog.excerpt,
+        linkPath: blog.linkPath,
+        fileMarkdownPath: blog.fileMarkdownPath,
+        status: blog.status,
+        createdAt: blog.createdAt,
+        userId: blog.userId,
+        createdById: blog.createdById,
+        updatedById: blog.updatedById,
+        updatedAt: blog.updatedAt,
+        viewCount: blog.viewCount,
+        tags: typeof blog.tags === 'string' ? blog.tags.split(',').map(tag => tag.trim()) : blog.tags || [],
+        metaDescription: blog.metaDescription,
+        featured: blog.featured,
+        assets: blog.assets || [],
+        createdBy: blog.createdBy || { displayName: blog.author?.displayName || 'Unknown Author' },
+        // Keep author for backward compatibility
+        author: blog.author,
+        // Include optional fields if they exist
+        ...(blog.createdAt && { createdAt: blog.createdAt }),
+        ...(blog.likeCount !== undefined && { likeCount: blog.likeCount }),
+        ...(blog.shareCount !== undefined && { shareCount: blog.shareCount }),
+        ...(blog.commentCount !== undefined && { commentCount: blog.commentCount }),
+        ...(blog.readTime !== undefined && { readTime: blog.readTime })
       };
 
-      return NextResponse.json(blogWithArrayTags);
+      return NextResponse.json(blogWithCompleteStructure);
     }
 
     return NextResponse.json(
@@ -198,8 +223,33 @@ export async function PUT(
     if (result.statusCode === 200) {
       const blog = result.data?.blogDetail;
       const responseBlog = {
-        ...blog,
-        tags: typeof blog?.tags === 'string' ? blog.tags.split(',').map(tag => tag.trim()) : blog?.tags || []
+        id: blog?.id,
+        title: blog?.title,
+        slug: blog?.slug,
+        content: blog?.content,
+        excerpt: blog?.excerpt,
+        linkPath: blog?.linkPath,
+        fileMarkdownPath: blog?.fileMarkdownPath,
+        status: blog?.status,
+        createdAt: blog?.createdAt,
+        userId: blog?.userId,
+        createdById: blog?.createdById,
+        updatedById: blog?.updatedById,
+        updatedAt: blog?.updatedAt,
+        viewCount: blog?.viewCount,
+        tags: typeof blog?.tags === 'string' ? blog.tags.split(',').map(tag => tag.trim()) : blog?.tags || [],
+        metaDescription: blog?.metaDescription,
+        featured: blog?.featured,
+        assets: blog?.assets || [],
+        createdBy: blog?.createdBy || { displayName: blog?.author?.displayName || 'Unknown Author' },
+        // Keep author for backward compatibility
+        author: blog?.author,
+        // Include optional fields if they exist
+        ...(blog?.createdAt && { createdAt: blog.createdAt }),
+        ...(blog?.likeCount !== undefined && { likeCount: blog.likeCount }),
+        ...(blog?.shareCount !== undefined && { shareCount: blog.shareCount }),
+        ...(blog?.commentCount !== undefined && { commentCount: blog.commentCount }),
+        ...(blog?.readTime !== undefined && { readTime: blog.readTime })
       };
 
       return NextResponse.json(responseBlog);

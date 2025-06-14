@@ -174,7 +174,7 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
       {blogs.map((blog) => {
         const tagsArray = getTagsArray(blog.tags);
         const readTime = calculateReadTime(blog.content, blog.readTime);
-        const authorName = typeof blog.author === 'string' ? blog.author : blog.author?.name || 'Unknown Author';
+        const authorName = blog.createdBy?.displayName || blog.author?.displayName || blog.author?.name || 'Unknown Author';
         
         // Extract hero image from markdown content
         const heroImage = blog.content ? getFirstImageFromMarkdown(blog.content) : null;
@@ -262,7 +262,7 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
                     </div>
                     
                     <div className="text-sm text-gray-500">
-                      {formatDate(blog.publishedAt)}
+                      {formatDate(blog.createdAt)}
                     </div>
                   </div>
 

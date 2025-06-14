@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { BodyResponse } from "@/types/response";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Report } from "@/types/report";
+import { reportFormSchema } from "@/validators/report.schema";
 
 export async function GET(request: NextRequest): Promise<NextResponse<BodyResponse<Report[]>>> {
   try {
@@ -45,12 +46,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<BodyRespon
 export async function POST(request: NextRequest): Promise<NextResponse<BodyResponse<Report>>> {
   try {
     const body = await request.formData();
-    // Validate request body
-    if (!body.get('storeId') || !body.get('reason') || !body.get('evidence')) {
+    // Convert FormData to plain object for validation
+    const data = {
+      storeId: Number(body.get('storeId')),
+      reason: body.get('reason'),
+      evidence: body.get('evidence'),
+    };
+    // Zod validation
+    const resultZod = reportFormSchema.safeParse(data);
+    if (!resultZod.success) {
       return NextResponse.json(
         {
           statusCode: 400,
-          message: "Store ID, reason, and evidence are required",
+          message: resultZod.error.errors[0]?.message || "Invalid data",
           data: undefined
         },
         { status: 400 }
@@ -74,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       return NextResponse.json(
         {
           statusCode: 400,
-          message: result.message || "Failed to create report",
+          message: result?.message ?? "Failed to create report",
           data: undefined
         },
         { status: 400 }
@@ -102,7 +110,7 @@ async function fetchAllReports(request: NextRequest): Promise<BodyResponse<{ rep
   if (result.statusCode === 200) {
     return result;
   } else {
-    throw new Error(result.message || "Failed to fetch all reports");
+    throw new Error(result?.message ?? "Failed to fetch all reports");
   }
 }
 
@@ -118,6 +126,6 @@ async function createReport(request: NextRequest, body: FormData): Promise<BodyR
   if (result.statusCode === 200) {
     return result;
   } else {
-    throw new Error(result.message || "Failed to create store");
+    throw new Error(result?.message ?? "Failed to create store");
   }
 }

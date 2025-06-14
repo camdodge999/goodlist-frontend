@@ -69,7 +69,7 @@ export default function StatusDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange} >
-      <DialogContent className="sm:max-w-xl p-8">
+      <DialogContent className="sm:max-w-xl p-8" aria-describedby={undefined}>
         <DialogHeader className="space-y-6">
           <div className={`flex justify-center mb-6 ${iconColor}`}>
             <FontAwesomeIcon icon={icon} className="text-6xl" />

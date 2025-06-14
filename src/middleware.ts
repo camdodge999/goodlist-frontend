@@ -8,18 +8,18 @@ validateEnvironmentURLs();
 
 // Pre-computed SHA256 hashes for static inline content
 const STATIC_STYLE_HASHES = [
-  "'sha256-ZDrxqUOB4m/L0JWL/+gS52g1CRH0l/qwMhjTw5Z/Fsc='", // display: none;
-  "'sha256-8ilcya6PJ2mDcuNFfcZaaOL85o/T7b8cPlsalzaJVOs='", // empty style
-  "'sha256-t4I2teZN5ZH+VM+XOiWlaPbsjQHe+k9d6viXPpKpNWA='", // common utility styles
-  "'sha256-PhrR5O1xWiklTp5YfH8xWeig83Y/rhbrdb5whLn1pSg='", // additional utility styles
-  "'sha256-MtxTLcyxVEJFNLEIqbVTaqR4WWr0+lYSZ78AzGmNsuA='", // additional utility styles
-  "'sha256-1OjyRYLAOH1vhXLUN4bBHal0rWxuwBDBP220NNc0CNU='", // additional utility styles
-  "'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='", // additional utility styles 
-  "'sha256-68ahHyH65aqS202beKyu22MkdAEr0fBCN3eHnbYX+wg='", // additional utility styles 
-  "'sha256-dz0IlE6Ej+Pf9WeZ57sEyXgzZOvzM4Agzl2f0gpN7fs='", // additional utility styles 
-  "'sha256-F2FphXOLeRXcUSI4c0ybgkNqofQaEHWI1kHbjr9RHxw='", // critical CSS from document head
-  "'sha256-fFiwGJFfGZ3i0Vt+xXYQgf88NKsgAfBwvY2aBowdoj4='", // critical CSS from document head
-  "'sha256-sHwQzC2ZsVrt1faUYCjF/eo8aIoBlQbGjVstzanL9CU='", // critical CSS from document head
+  "'sha256-Ylx4sWaDgn6RRamxe7jevX4yDhNtiSG3CQWrPAdPh6A='", // display: none;
+  "'sha256-TkUgajJ946/xb1R0Vfeuzb73k2VAKoEIF3sRGeX4aBU='",
+  "'sha256-rZot9UVcdtXL99KiVSLfpDfxS3VtOsOY1PXjNX1ntxg='",
+  "'sha256-k1m9MgjuV56OVgoQq43A5vLIpdJFJrlq/3ANCGJD4es='",
+  "'sha256-m8dEh7VmKFRCO8jEWPbmkeO1mq4SIx8omtyx50rrS/M='",
+  "'sha256-fNQvmabDUct/Q8bVROR2oAMzjWD2CYHGuJj7V7Sxgfc='",
+  "'sha256-t4I2teZN5ZH+VM+XOiWlaPbsjQHe+k9d6viXPpKpNWA='",
+  "'sha256-sHwQzC2ZsVrt1faUYCjF/eo8aIoBlQbGjVstzanL9CU='",
+  "'sha256-68ahHyH65aqS202beKyu22MkdAEr0fBCN3eHnbYX+wg='",
+  "'sha256-uHMRMH/uk4ERGIkgk2bUAqw+i1tFFbeiOQTApmnK3t4='", // critical CSS from document head
+  "'sha256-2cnE1GtP/E924RqY1dke4GjgMTwo242VoJSnZn4Jdcw='", // critical CSS from document head
+  "'sha256-1OjyRYLAOH1vhXLUN4bBHal0rWxuwBDBP220NNc0CNU='",
 ];
 
 const STATIC_SCRIPT_HASHES = [
@@ -130,6 +130,19 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // Enhanced security headers for authentication-related pages
+  const authPages = ['/login', '/register', '/logout', '/verify', '/blog-management', '/blog-management/new', '/blog-management/edit'];
+  const isAuthPage = authPages.some(page => request.nextUrl.pathname.startsWith(page));
+  
+  if (isAuthPage) {
+    // Additional security for auth pages to prevent information leakage
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('X-Redirect-Security', 'minimal-response');
+    response.headers.set('X-Auth-Page', 'true');
+  }
   
   // CSP Reporting (enhanced)
   response.headers.set('Report-To', JSON.stringify({

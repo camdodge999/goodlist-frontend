@@ -15,30 +15,14 @@ const getMarkdownContent = (filename: string): string => {
   }
 };
 
-// Helper function to check admin authentication
+// Admin authentication check
 async function checkAdminAuth(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { isAuthenticated: false, isAdmin: false, error: 'No authorization header' };
-  }
-
-  try {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET
-    });
-
-    if (!token) {
-      return { isAuthenticated: false, isAdmin: false, error: 'Invalid token' };
-    }
-
-    const isAdmin = token.role === 'admin';
-    return { isAuthenticated: true, isAdmin, error: null };
-  } catch (error) {
-    console.error('Auth check error:', error);
-    return { isAuthenticated: false, isAdmin: false, error: 'Auth verification failed' };
-  }
+  const token = await getToken({ req: request });
+  return {
+    isAuthenticated: !!token,
+    isAdmin: token?.role === 'admin' || token?.isAdmin === true,
+    user: token
+  };
 }
 
 // Updated Blog interface to match the schema
@@ -165,11 +149,11 @@ const mockBlogs: BlogData[] = [
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { slug } = await context.params;
+  const { id } = await context.params;
 
-  const blog = mockBlogs.find(blog => blog.slug === slug);
+  const blog = mockBlogs.find(blog => blog.id === id);
 
   if (!blog) {
     return NextResponse.json(
@@ -189,10 +173,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { slug } = await context.params;
+    const { id } = await context.params;
 
     // Check admin authentication
     const authCheck = await checkAdminAuth(request);
@@ -235,8 +219,8 @@ export async function PUT(
       updateData = await request.json();
     }
 
-    // Find blog by slug
-    const blogIndex = mockBlogs.findIndex(blog => blog.slug === slug);
+    // Find blog by ID
+    const blogIndex = mockBlogs.findIndex(blog => blog.id === id);
     if (blogIndex === -1) {
       return NextResponse.json(
         { error: "Blog post not found" },
@@ -278,10 +262,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { slug } = await context.params;
+    const { id } = await context.params;
+    
     // Check admin authentication
     const authCheck = await checkAdminAuth(request);
     if (!authCheck.isAuthenticated || !authCheck.isAdmin) {
@@ -291,8 +276,8 @@ export async function DELETE(
       );
     }
 
-    // Find blog by slug
-    const blogIndex = mockBlogs.findIndex(blog => blog.slug === slug);
+    // Find blog by ID
+    const blogIndex = mockBlogs.findIndex(blog => blog.id === id);
     if (blogIndex === -1) {
       return NextResponse.json(
         { error: "Blog post not found" },

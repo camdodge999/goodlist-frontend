@@ -69,7 +69,6 @@ export async function middleware(request: NextRequest) {
       '/api/auth/session',
       '/api/auth/providers',
       '/api/auth/csrf',
-      '/api/csp-report'
     ];
 
     const shouldSkipCSRF = skipCSRFPaths.some(path =>
@@ -151,13 +150,6 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Redirect-Security', 'minimal-response');
     response.headers.set('X-Auth-Page', 'true');
   }
-
-  // CSP Reporting (enhanced)
-  response.headers.set('Report-To', JSON.stringify({
-    group: 'csp-endpoint',
-    max_age: 86400,
-    endpoints: [{ url: '/api/csp-report' }]
-  }));
 
   // Development logging with hash information
   if (process.env.NODE_ENV === 'development') {

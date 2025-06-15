@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useAuthenticatedImage } from '@/hooks/useAuthenticatedImage';
+import defaultLogo from "@images/logo.webp";
 
 // Define specific image formats
 type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'gif' | 'webp' | 'svg+xml' | 'bmp' | 'tiff';
@@ -59,7 +60,7 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.currentTarget as HTMLImageElement;
-    target.srcset = fallbackSrc;
+    target.srcset = defaultLogo.src;
   };
 
   const imageProps = {

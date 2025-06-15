@@ -34,6 +34,11 @@ const nextConfig = (phase: string): NextConfig => {
         },
         {
           protocol: "https",
+          hostname: "goodlist2.chaninkrew.com",
+          pathname: "/**",
+        },
+        {
+          protocol: "https",
           hostname: "localhost",
           pathname: "/**",
         },

@@ -222,7 +222,7 @@ export default function BlogManagementClient() {
         <BlogTable 
           blogs={filteredBlogs}
           onEdit={handleEditBlog}
-          onDelete={handleDeleteBlog}
+          // onDelete={handleDeleteBlog}
         />
 
         {/* Confirmation Dialog */}

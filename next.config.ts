@@ -144,19 +144,6 @@ const securityHeadersConfig = (phase: string) => {
 
   const headers = [
     ...extraSecurityHeaders,
-    // Report-To header for modern CSP reporting
-    {
-      key: 'Report-To',
-      value: JSON.stringify({
-        group: 'csp-endpoint',
-        max_age: 86400, // 24 hours
-        endpoints: [
-          {
-            url: '/api/csp-report'
-          }
-        ]
-      })
-    },
     // Content Security Policy (fallback configuration)
     {
       key: isDevelopment ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy',

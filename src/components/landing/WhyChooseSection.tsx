@@ -15,7 +15,7 @@ export function WhyChooseSection() {
                         <span className="text-sm font-medium text-gray-600">ปลอดภัย เชื่อถือได้</span>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                        ทำไมต้องเลือก Goodlist Seller?
+                        ทำไมต้องเลือก Goodlistseller?
                     </h2>
                     <p className="text-lg text-gray-600 max-w-2xl">
                         เรามุ่งมั่นที่จะสร้างแพลตฟอร์มที่เชื่อถือได้สำหรับการซื้อขายออนไลน์ในประเทศไทย

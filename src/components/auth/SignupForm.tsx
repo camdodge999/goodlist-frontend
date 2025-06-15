@@ -260,8 +260,7 @@ export default function SignupForm() {
         // Start cooldown timer since OTP was just sent
         startCooldownTimer();
       } else {
-        const errorData = await response.json();
-        displayErrorDialog(errorData.message ?? "อีเมลนี้มีผู้ใช้งานแล้ว");
+        displayErrorDialog("ลงทะเบียนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
       }
     } catch {
       displayErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");

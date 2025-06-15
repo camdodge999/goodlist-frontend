@@ -114,8 +114,7 @@ export default function LoginForm(): JSX.Element {
         });
         
       } else if (result?.error) {
-        const errorMessage = getErrorMessage(result.error);
-        displayErrorDialog(errorMessage);
+        displayErrorDialog("ไม่สามารถเข้าสู่ระบบได้ กรุณาลองอีกครั้ง");
       } else {
         // Handle unexpected result format
         displayErrorDialog("เกิดข้อผิดพลาดที่ไม่สามารถระบุได้ กรุณาลองอีกครั้ง");

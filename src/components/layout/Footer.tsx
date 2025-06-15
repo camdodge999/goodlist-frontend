@@ -1,21 +1,14 @@
 import React from 'react';
 import Link from "next/link";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faFacebook, 
-  faLine, 
-  faInstagram 
+import {
+  faFacebook,
 } from '@fortawesome/free-brands-svg-icons';
-import { 
-  faEnvelope, 
-  faMapMarkerAlt, 
-  faPhone 
-} from '@fortawesome/free-solid-svg-icons';
 import ContentWidth from "@/components/layout/ContentWidth";
 import Logo from "@/components/layout/Logo";
 export function Footer() {
   const currentYear = new Date().getFullYear();
-  
+
   return (
     <footer className="bg-gray-900 text-white pt-16 pb-8">
       <ContentWidth>
@@ -23,7 +16,7 @@ export function Footer() {
           {/* Logo and About */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <div className="flex items-center justify-center w-12 h-12 mr-2">
+              <div className="flex items-center justify-center w-12 h-12 mr-2 mb-2">
                 <Logo />
               </div>
               <h3 className="text-xl font-bold">Goodlistseller</h3>
@@ -31,17 +24,6 @@ export function Footer() {
             <p className="text-gray-400 text-sm">
               แพลตฟอร์มที่ช่วยให้คุณค้นหาร้านค้าออนไลน์ที่เชื่อถือได้ในประเทศไทย
             </p>
-            <div className="flex space-x-4">
-              <Link href="https://facebook.com" className="text-gray-400 hover:text-white transition-colors">
-                <FontAwesomeIcon icon={faFacebook} className="h-5 w-5" />
-              </Link>
-              <Link href="https://line.me" className="text-gray-400 hover:text-white transition-colors">
-                <FontAwesomeIcon icon={faLine} className="h-5 w-5" />
-              </Link>
-              <Link href="https://instagram.com" className="text-gray-400 hover:text-white transition-colors">
-                <FontAwesomeIcon icon={faInstagram} className="h-5 w-5" />
-              </Link>
-            </div>
           </div>
 
           {/* Quick Links */}
@@ -96,24 +78,10 @@ export function Footer() {
           {/* Contact */}
           <div>
             <h4 className="text-lg font-semibold mb-4">ติดต่อเรา</h4>
-            <ul className="space-y-3">
-              <li className="flex items-start">
-                <FontAwesomeIcon icon={faMapMarkerAlt} className="h-5 w-5 text-blue-400 mt-0.5 mr-3" />
-                <span className="text-gray-400">
-                  123 ถนนสุขุมวิท แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพฯ 10110
-                </span>
-              </li>
-              <li className="flex items-center">
-                <FontAwesomeIcon icon={faPhone} className="h-5 w-5 text-blue-400 mr-3" />
-                <span className="text-gray-400">02-123-4567</span>
-              </li>
-              <li className="flex items-center">
-                <FontAwesomeIcon icon={faEnvelope} className="h-5 w-5 text-blue-400 mr-3" />
-                <a href="mailto:contact@goodlistseller.com" className="text-gray-400 hover:text-white transition-colors">
-                  contact@goodlistseller.com
-                </a>
-              </li>
-            </ul>
+            <Link href="https://www.facebook.com/goodlistseller" className="text-gray-400 hover:text-white transition-colors flex items-center">
+              <FontAwesomeIcon icon={faFacebook} className="text-blue-400 mr-3 text-4xl" />
+              <span>  Goodlistseller</span>
+            </Link>
           </div>
         </div>
 

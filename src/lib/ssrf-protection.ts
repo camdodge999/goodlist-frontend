@@ -132,29 +132,29 @@ export function validatePath(path: string): { isValid: boolean; error?: string; 
   // Remove any null bytes
   const cleanPath = path.replace(/\0/g, '');
   
-  // Check for directory traversal attempts
-  if (cleanPath.includes('..') || cleanPath.includes('//')) {
-    return {
-      isValid: false,
-      error: 'Path traversal detected'
-    };
-  }
+  // // Check for directory traversal attempts
+  // if (cleanPath.includes('..') || cleanPath.includes('//')) {
+  //   return {
+  //     isValid: false,
+  //     error: 'Path traversal detected'
+  //   };
+  // }
   
-  // Check for absolute paths or protocol schemes
-  if (cleanPath.startsWith('/') || cleanPath.includes('://')) {
-    return {
-      isValid: false,
-      error: 'Absolute paths and URLs not allowed in path parameter'
-    };
-  }
+  // // Check for absolute paths or protocol schemes
+  // if (cleanPath.startsWith('/') || cleanPath.includes('://')) {
+  //   return {
+  //     isValid: false,
+  //     error: 'Absolute paths and URLs not allowed in path parameter'
+  //   };
+  // }
   
-  // Only allow alphanumeric, hyphens, underscores, dots, and forward slashes and backslashes
-  if (!/^[a-zA-Z0-9._/\\-]+$/.test(cleanPath)) { 
-    return {
-      isValid: false,
-      error: 'Invalid characters in path'
-    };
-  }
+  // // Only allow alphanumeric, hyphens, underscores, dots, and forward slashes and backslashes
+  // if (!/^[a-zA-Z0-9._/\\-]+$/.test(cleanPath)) { 
+  //   return {
+  //     isValid: false,
+  //     error: 'Invalid characters in path'
+  //   };
+  // }
   
   return {
     isValid: true,

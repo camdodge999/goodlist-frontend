@@ -49,17 +49,17 @@ config.autoAddCss = false;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://goodlist.com"),
-  title: "Goodlist Seller",
+  title: "Goodlistseller",
   description: "Platform for verified online stores",
   openGraph: {
-    title: "Goodlist Seller",
+    title: "Goodlistseller",
     description: "Platform for verified online stores",
     images: [
       {
         url: "/images/logo.webp",
         width: 800,
         height: 600,
-        alt: "Goodlist Seller Logo",
+        alt: "Goodlistseller Logo",
       },
     ],
   },

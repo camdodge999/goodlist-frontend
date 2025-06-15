@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import {
   faUser,
   faSignOutAlt,
   faUserPlus,
@@ -17,9 +17,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/types/users";
 import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserMenuProps {
   user?: User;
@@ -28,11 +28,11 @@ interface UserMenuProps {
   resetUserState?: () => Promise<void>;
 }
 
-export default function UserMenu({ 
-  user, 
-  isAuthenticated, 
-  isMobile = false, 
-  resetUserState 
+export default function UserMenu({
+  user,
+  isAuthenticated,
+  isMobile = false,
+  resetUserState
 }: UserMenuProps) {
   const { authenticatedUrl: imageUrl } = useAuthenticatedImage(user?.logo_url);
 
@@ -121,7 +121,7 @@ export default function UserMenu({
             <DropdownMenuLabel className="font-normal p-3 flex items-center gap-3">
               <Avatar className="h-9 w-9 transition-transform duration-300 group-hover:scale-110 cursor-pointer">
                 <AvatarImage
-                  src={imageUrl || undefined}  
+                  src={imageUrl || undefined}
                   alt={user.displayName || "User"}
                   className="transition-opacity duration-300"
                 />

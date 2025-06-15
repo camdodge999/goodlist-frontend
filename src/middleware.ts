@@ -90,7 +90,7 @@ export async function middleware(request: NextRequest) {
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic'  ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ${STATIC_SCRIPT_HASHES.join(' ')};
     style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ""} ${STATIC_STYLE_HASHES.join(' ')};
     img-src 'self' blob: data:;
-    'script-src-elem'
+    script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'  ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ${STATIC_SCRIPT_HASHES.join(' ')};
     font-src 'self';
     connect-src 'self';
     object-src 'none';

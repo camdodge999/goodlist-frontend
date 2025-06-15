@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faSave, faEye } from '@fortawesome/free-solid-svg-icons';
-import { Blog, BlogFormData } from '@/types/blog';
+import { Blog, BlogFormData, BlogAsset } from '@/types/blog';
 import { useBlog } from '@/hooks/useBlog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,8 @@ import BlogFormSkeleton from '@/components/blogs/BlogFormSkeleton';
 import StatusDialog from '@/components/common/StatusDialog';
 import useShowDialog from '@/hooks/useShowDialog';
 import CSRFInput from '@/components/ui/csrf-input';
+import { BlogFormInput, validateBlogForm } from '@/validators/blog.schema';
+import { extractImagesFromMarkdown } from '@/utils/markdown-utils';
 
 interface UploadedImage {
   fileName: string;
@@ -25,10 +27,33 @@ interface UploadedImage {
   url: string;
   size: number;
   type: string;
+  file?: File; // Add optional File object for MIME handling
 }
 
 interface BlogFormClientProps {
   readonly blogId?: string;
+}
+
+// Validation error type
+interface ValidationErrors {
+  [key: string]: string;
+}
+
+// Custom debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 export default function BlogFormClient({ blogId }: BlogFormClientProps) {
@@ -37,8 +62,9 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     loading,
     createBlog,
     updateBlog,
-    getBlogById,
-    canManageBlogs
+    fetchBlogById,
+    canManageBlogs,
+    cleanupDraftImages
   } = useBlog({ adminOnly: true });
 
   // Dialog hooks
@@ -59,30 +85,197 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     handleErrorClose,
   } = useShowDialog();
 
-  const [formData, setFormData] = useState<BlogFormData>({
+  const [formData, setFormData] = useState<BlogFormInput>({
     title: '',
     slug: '',
     content: '',
     excerpt: '',
-    linkPath: '',
-    fileMarkdownPath: '',
     status: 'draft',
     tags: '',
     metaDescription: '',
-    featured: false
+    featured: false,
+    uploadedImages: [] // Keep as string[] for validation
   });
 
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(!!blogId);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // Separate state for File objects
+  const [draftImages, setDraftImages] = useState<string[]>([]); // Track draft images for cleanup
+  
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  // Add ref to track if component has been initialized
+  const hasInitialized = useRef(false);
+  const isPageRefresh = useRef(false);
 
   const isEditing = !!blogId;
+  
+  // Helper to determine the route context
+  const getRouteContext = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      if (pathname.includes('/blog-management/new')) {
+        return 'new';
+      } else if (pathname.includes('/blog-management/edit/')) {
+        return 'edit';
+      }
+    }
+    return isEditing ? 'edit' : 'new';
+  }, [isEditing]);
 
-  // Handle uploaded images from markdown editor
-  const handleImageUpload = (images: UploadedImage[]) => {
+  // Validation helper function - memoized to prevent recreation
+  const validateForm = useCallback((data: BlogFormInput): ValidationErrors => {
+    const result = validateBlogForm(data);
+    const errors: ValidationErrors = {};
+
+    if (!result.success) {
+      result.error.errors.forEach((error) => {
+        const field = error.path[0] as string;
+        errors[field] = error.message;
+      });
+    }
+
+    return errors;
+  }, []);
+
+  // Clear individual field error when user starts typing - optimized
+  const clearFieldError = useCallback((fieldName: string) => {
+    if (hasSubmitted && validationErrors[fieldName]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+  }, [hasSubmitted, validationErrors]);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Cleanup draft images when component unmounts (user navigates away without saving)
+  useEffect(() => {
+    return () => {
+      // Only cleanup if there are unsaved draft images and the form wasn't submitted successfully
+      if (draftImages.length > 0 && !hasSubmitted) {
+        const routeContext = getRouteContext();
+        
+        // Different cleanup behavior based on route context:
+        // - For new blog creation (blog-management/new): cleanup unused draft images
+        // - For editing existing blog (blog-management/edit/[id]): be more conservative
+        let shouldCleanup = false;
+        
+        if (routeContext === 'new') {
+          // Always cleanup draft images when abandoning new blog creation
+          shouldCleanup = true;
+        } else if (routeContext === 'edit') {
+          // Only cleanup if we don't have an existing blog loaded (safety check)
+          shouldCleanup = !editingBlog;
+        }
+        
+        if (shouldCleanup) {
+          // Use a timeout to allow for navigation to complete
+          setTimeout(() => {
+            fetch('/api/blogs/cleanup-draft-images', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                imagePaths: draftImages,
+                action: 'cleanup'
+              }),
+            }).catch(error => {
+              console.error('Error cleaning up draft images on unmount:', error);
+            });
+          }, 1000);
+        }
+      }
+    };
+  }, [draftImages, hasSubmitted, getRouteContext, editingBlog]);
+
+  // Convert blog assets to UploadedImage format - memoized
+  const convertAssetsToUploadedImages = useCallback((assets: BlogAsset[]): UploadedImage[] => {
+    return assets.map(asset => ({
+      fileName: asset.fileName || asset.originalName || 'unknown',
+      path: asset.filePath,
+      url: asset.filePath.startsWith('/') ? asset.filePath : `/${asset.filePath}`,
+      size: 0, // Size not available from assets
+      type: 'image/jpeg' // Default type, could be improved
+    }));
+  }, []);
+
+  // Extract images from markdown content and convert to File objects
+  const extractImagesFromMarkdownContent = useCallback(async (content: string): Promise<UploadedImage[]> => {
+    const markdownImages = extractImagesFromMarkdown(content);
+    const uploadedImages: UploadedImage[] = [];
+
+    for (const markdownImage of markdownImages) {
+      try {
+        // Check if the image is a local uploaded image (starts with /uploads/)
+        if (markdownImage.src.startsWith('/uploads/')) {
+          // Fetch the image and convert to File object
+          const response = await fetch(markdownImage.src);
+          if (response.ok) {
+            const blob = await response.blob();
+            const fileName = markdownImage.src.split('/').pop() || 'image';
+            const file = new File([blob], fileName, { type: blob.type });
+            
+            uploadedImages.push({
+              fileName: fileName,
+              path: markdownImage.src.replace('/uploads/', 'uploads/'),
+              url: markdownImage.src,
+              size: file.size,
+              type: file.type,
+              file: file
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch image from markdown:', markdownImage.src, error);
+      }
+    }
+
+    return uploadedImages;
+  }, []);
+
+  // Handle uploaded images from markdown editor - memoized
+  const handleImageUpload = useCallback((images: UploadedImage[]) => {
     setUploadedImages(images);
-  };
+    // Update formData.uploadedImages with paths for validation
+    setFormData(prev => ({
+      ...prev,
+      uploadedImages: images.map(img => img.path)
+    }));
+    // Update uploadedFiles with File objects when available
+    setUploadedFiles(images.map(img => img.file).filter((file): file is File => file !== undefined));
+    
+    // Track draft images (only new uploads from uploads/blog directory)
+    const newDraftImages = images
+      .filter(img => img.url.startsWith('/uploads/blog/'))
+      .map(img => img.url);
+    setDraftImages(prev => {
+      const combined = [...prev, ...newDraftImages];
+      return [...new Set(combined)]; // Remove duplicates
+    });
+  }, []);
+
+  // Helper function to cleanup draft images and update state
+  const handleCleanupDraftImages = useCallback(async (action: 'cleanup' | 'preserve' = 'cleanup') => {
+    if (draftImages.length === 0) return;
+
+    const success = await cleanupDraftImages(draftImages, action);
+    
+    if (success && action === 'cleanup') {
+      // Clear draft images list after successful cleanup
+      setDraftImages([]);
+    }
+  }, [draftImages, cleanupDraftImages]);
 
   // Check authentication and redirect if not admin
   useEffect(() => {
@@ -91,52 +284,101 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     }
   }, [loading, canManageBlogs, router]);
 
-  // Fetch blog data if editing
+  // Check if this is a page refresh vs navigation
   useEffect(() => {
-    if (blogId && canManageBlogs) {
-      const fetchBlog = async () => {
-        setIsFetching(true);
-        try {
-          const blog = await getBlogById(blogId);
-          if (blog) {
-            setEditingBlog(blog);
-            setFormData({
-              title: blog.title,
-              slug: blog.slug,
-              content: blog.content ?? '',
-              excerpt: blog.excerpt ?? '',
-              linkPath: blog.linkPath ?? '',
-              fileMarkdownPath: blog.fileMarkdownPath ?? '',
-              status: blog.status,
-              tags: typeof blog.tags === 'string' ? blog.tags : blog.tags?.join(',') ?? '',
-              metaDescription: blog.metaDescription ?? '',
-              featured: blog.featured
-            });
-          } else {
+    // Check if this is a page refresh by looking at navigation type
+    if (typeof window !== 'undefined' && window.performance) {
+      const navigation = window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      isPageRefresh.current = navigation.type === 'reload';
+    }
+  }, []);
+
+  // Fetch blog data if editing - ONLY on page refresh
+  useEffect(() => {
+    if (blogId && canManageBlogs && !hasInitialized.current) {
+      // Only fetch if this is a page refresh or first load
+      if (isPageRefresh.current || !hasInitialized.current) {
+        const fetchBlog = async () => {
+          setIsFetching(true);
+          try {
+            const blog = await fetchBlogById(blogId);
+            if (blog) {
+              setEditingBlog(blog);
+              const existingAssets = blog.assets ?? [];
+              const existingUploadedImages = convertAssetsToUploadedImages(existingAssets);
+              
+              setFormData({
+                title: blog.title,
+                slug: blog.slug,
+                content: blog.content ?? '',
+                excerpt: blog.excerpt ?? '',  
+                status: blog.status,
+                tags: typeof blog.tags === 'string' ? blog.tags : blog.tags?.join(',') ?? '',
+                metaDescription: blog.metaDescription ?? '',
+                featured: blog.featured,
+                uploadedImages: existingAssets.map(asset => asset.filePath)
+              });
+              
+              // Extract images from markdown content first
+              const markdownImages = await extractImagesFromMarkdownContent(blog.content ?? '');
+              
+              // Combine existing assets with markdown images, prioritizing markdown images
+              const allImages = [...markdownImages];
+              
+              // Add any existing assets that aren't already in markdown
+              existingUploadedImages.forEach(existingImg => {
+                const alreadyExists = markdownImages.some(mdImg => mdImg.path === existingImg.path);
+                if (!alreadyExists) {
+                  allImages.push(existingImg);
+                }
+              });
+              
+              // Set the uploaded images for the markdown editor
+              setUploadedImages(allImages);
+              
+              // Set uploaded files from markdown images
+              setUploadedFiles(allImages.map(img => img.file).filter((file): file is File => file !== undefined));
+              
+              // Track existing draft images (only from uploads/blog directory)
+              const existingDraftImages = allImages
+                .filter(img => img.url.startsWith('/uploads/blog/'))
+                .map(img => img.url);
+              setDraftImages(existingDraftImages);
+            } else {
+              displayErrorDialog({
+                title: "เกิดข้อผิดพลาด",
+                message: "ไม่พบบทความที่ต้องการแก้ไข",
+                buttonText: "กลับไปจัดการบทความ",
+                onButtonClick: () => router.push('/blog-management')
+              });
+            }
+          } catch {
             displayErrorDialog({
               title: "เกิดข้อผิดพลาด",
-              message: "ไม่พบบทความที่ต้องการแก้ไข",
+              message: "ไม่สามารถโหลดข้อมูลบทความได้",
               buttonText: "กลับไปจัดการบทความ",
               onButtonClick: () => router.push('/blog-management')
             });
+          } finally {
+            setIsFetching(false);
+            hasInitialized.current = true;
           }
-        } catch {
-          displayErrorDialog({
-            title: "เกิดข้อผิดพลาด",
-            message: "ไม่สามารถโหลดข้อมูลบทความได้",
-            buttonText: "กลับไปจัดการบทความ",
-            onButtonClick: () => router.push('/blog-management')
-          });
-        } finally {
-          setIsFetching(false);
-        }
-      };
+        };
 
-      fetchBlog();
+        fetchBlog();
+      } else {
+        hasInitialized.current = true;
+      }
+    } else if (!blogId) {
+      // For new blog creation, mark as initialized immediately
+      hasInitialized.current = true;
     }
-  }, [blogId, canManageBlogs, getBlogById, router, displayErrorDialog]);
+  }, [blogId, canManageBlogs, fetchBlogById, router, displayErrorDialog, convertAssetsToUploadedImages, extractImagesFromMarkdownContent]);
 
-  // Auto-generate slug from title
+  // Debounce slug input for better performance
+  const debouncedSlug = useDebounce(formData.slug, 300);
+
+  // Auto-generate slug from title (immediate, not debounced)
   useEffect(() => {
     if (formData.title && !isEditing) {
       const slug = formData.title
@@ -147,36 +389,135 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     }
   }, [formData.title, isEditing]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Optimized input handlers using useCallback
+  const handleInputChange = useCallback((field: keyof BlogFormData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, [field]: value }));
+    clearFieldError(field);
+  }, [clearFieldError]);
+
+  const handleSelectChange = useCallback((field: keyof BlogFormData) => (
+    value: string
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    clearFieldError(field);
+  }, [clearFieldError]);
+
+  const handleCheckboxChange = useCallback((field: keyof BlogFormData) => (
+    checked: boolean
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: checked }));
+    clearFieldError(field);
+  }, [clearFieldError]);
+
+  const handleContentChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, content: value }));
+    clearFieldError('content');
+  }, [clearFieldError]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Mark that form has been submitted
+    setHasSubmitted(true);
+    
+    // Validate form before submission (use current formData, not debounced)
+    const errors = validateForm(formData);
+    setValidationErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Create form data with uploaded images
-      const blogDataWithImages = {
-        ...formData,
-        uploadedImages: uploadedImages.map(img => img.path) // Include image paths
-      };
+      // Create FormData instance
+      const formDataToSubmit = new FormData();
+      
+      // Create markdown file from content
+      const markdownContent = formData.content;
+      const markdownFileName = `${formData.slug || 'blog'}.md`;
+      const markdownFile = new File([markdownContent], markdownFileName, {
+        type: 'text/markdown'
+      });
+      
+      // Add all form fields to FormData
+      formDataToSubmit.append('title', formData.title);
+      formDataToSubmit.append('slug', formData.slug);
+      formDataToSubmit.append('content', formData.content);
+      formDataToSubmit.append('excerpt', formData.excerpt || '');
+      formDataToSubmit.append('status', formData.status);
+      formDataToSubmit.append('tags', formData.tags || '');
+      formDataToSubmit.append('metaDescription', formData.metaDescription || '');
+      formDataToSubmit.append('featured', formData.featured.toString());
+      
+      // Add the markdown file
+      formDataToSubmit.append('markdownFile', markdownFile);
+      
+      // Handle uploaded images - append File objects as an array
+      uploadedFiles.forEach((file, index) => {
+        formDataToSubmit.append(`markdownImage[${index}]`, file);
+      });
+      
+      // Also append image paths for server processing
+      formData.uploadedImages.forEach((imagePath, index) => {
+        formDataToSubmit.append(`imagePath[${index}]`, imagePath);
+      });
 
       if (isEditing && editingBlog) {
-        const updated = await updateBlog(editingBlog.id, blogDataWithImages);
+        // For updates (blog-management/edit/[id])
+        const updated = await updateBlog(editingBlog.id, formDataToSubmit);
         if (updated) {
+          // Handle draft image cleanup for EDITING existing blog
+          if (formData.status === 'published' || formData.status === 'archived') {
+            // If blog is published or archived, preserve the images (they're now permanent)
+            await handleCleanupDraftImages('preserve');
+          } else if (formData.status === 'deleted') {
+            // If blog is deleted, cleanup the draft images
+            await handleCleanupDraftImages('cleanup');
+          } else if (formData.status === 'draft') {
+            // For editing existing draft, preserve images for continued editing
+            await handleCleanupDraftImages('preserve');
+          }
+          
           displaySuccessDialog({
             title: "สำเร็จ",
             message: "อัพเดตบทความเรียบร้อยแล้ว",
             buttonText: "กลับไปจัดการบทความ",
             onButtonClick: () => router.push('/blog-management')
           });
+          setTimeout(() => {
+            router.push('/blog-management');
+          }, 1000);
         }
       } else {
-        const created = await createBlog(blogDataWithImages);
+        // For creation (blog-management/new)
+        const created = await createBlog(formDataToSubmit);
         if (created) {
+          // Handle draft image cleanup for CREATING new blog
+          if (formData.status === 'published' || formData.status === 'archived') {
+            // If new blog is published or archived, preserve the images (they're now permanent)
+            await handleCleanupDraftImages('preserve');
+          } else if (formData.status === 'deleted') {
+            // If new blog is deleted, cleanup the draft images
+            await handleCleanupDraftImages('cleanup');
+          } else if (formData.status === 'draft') {
+            // For new draft blog, preserve images for future editing
+            await handleCleanupDraftImages('preserve');
+          }
+          
           displaySuccessDialog({
             title: "สำเร็จ",
             message: "สร้างบทความเรียบร้อยแล้ว",
             buttonText: "กลับไปจัดการบทความ",
             onButtonClick: () => router.push('/blog-management')
           });
+          setTimeout(() => {
+            router.push('/blog-management');
+          }, 1000);
         }
       }
     } catch {
@@ -188,11 +529,11 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [formData, hasSubmitted, validateForm, displayErrorDialog, isEditing, editingBlog, updateBlog, createBlog, displaySuccessDialog, router, uploadedFiles, handleCleanupDraftImages]);
 
-  const handlePreview = () => {
-    if (formData.slug) {
-      window.open(`/blogs/${formData.slug}`, '_blank');
+  const handlePreview = useCallback(() => {
+    if (debouncedSlug) {
+      window.open(`/blogs/${debouncedSlug}`, '_blank');
     } else {
       displayErrorDialog({
         title: "คำเตือน",
@@ -200,7 +541,17 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
         buttonText: "ตกลง"
       });
     }
-  };
+  }, [debouncedSlug, displayErrorDialog]);
+
+  // Helper function to get error message for a field (only show if submitted) - memoized
+  const getFieldError = useCallback((fieldName: string): string | undefined => {
+    return hasSubmitted ? validationErrors[fieldName] : undefined;
+  }, [hasSubmitted, validationErrors]);
+
+  // Helper function to check if field has error (only show if submitted) - memoized
+  const hasFieldError = useCallback((fieldName: string): boolean => {
+    return hasSubmitted && !!validationErrors[fieldName];
+  }, [hasSubmitted, validationErrors]);
 
   // Show loading state while fetching blog data
   if (isFetching) {
@@ -256,7 +607,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>ข้อมูลพื้นฐาน</CardTitle>
+              <CardTitle>ข้อมูลบทความ</CardTitle>  
               <CardDescription>
                 รายละเอียดสำคัญเกี่ยวกับบทความของคุณ
               </CardDescription>
@@ -268,20 +619,26 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={handleInputChange('title')}
                     placeholder="ใส่หัวข้อบทความ"
-                    required
+                    className={hasFieldError('title') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('title') && (
+                    <p className="text-sm text-red-500">{getFieldError('title')}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug *</Label>
                   <Input
                     id="slug"
                     value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="url-ของ-บทความ"
-                    required
+                    onChange={handleInputChange('slug')}
+                    placeholder="url-ของ-บทความ"  
+                    className={hasFieldError('slug') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('slug') && (
+                    <p className="text-sm text-red-500">{getFieldError('slug')}</p>
+                  )}
                 </div>
               </div>
 
@@ -290,10 +647,14 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                 <Textarea
                   id="excerpt"
                   value={formData.excerpt}
-                  onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                  onChange={handleInputChange('excerpt')}
                   placeholder="คำอธิบายสั้นๆ เกี่ยวกับบทความของคุณ..."
                   rows={3}
+                  className={hasFieldError('excerpt') ? 'border-red-500' : ''}
                 />
+                {getFieldError('excerpt') && (
+                  <p className="text-sm text-red-500">{getFieldError('excerpt')}</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -307,13 +668,18 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MarkdownEditor
-                value={formData.content}
-                onChange={(value) => setFormData({ ...formData, content: value })}
-                placeholder="เขียนเนื้อหาบทความของคุณในรูปแบบ Markdown..."
-                minHeight="500px"
-                onImageUpload={handleImageUpload}
-              />
+              <div className="space-y-2">
+                <MarkdownEditor
+                  value={formData.content}
+                  onChange={handleContentChange}
+                  placeholder="เขียนเนื้อหาบทความของคุณในรูปแบบ Markdown..."
+                  onImageUpload={handleImageUpload}
+                  initialUploadedImages={uploadedImages}
+                />
+                {getFieldError('content') && (
+                  <p className="text-sm text-red-500">{getFieldError('content')}</p>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -331,7 +697,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                   <Label htmlFor="status">สถานะ</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value as "draft" | "published" | "archived" | "deleted" })}
+                    onValueChange={handleSelectChange('status')}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกสถานะ" />
@@ -349,46 +715,34 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                   <Input
                     id="tags"
                     value={formData.tags}
-                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                    onChange={handleInputChange('tags')}
                     placeholder="react, nextjs, javascript"
+                    className={hasFieldError('tags') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('tags') && (
+                    <p className="text-sm text-red-500">{getFieldError('tags')}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">แยกแท็กด้วยเครื่องหมาย ,</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="linkPath">ลิงก์บทความ</Label>
-                  <Input
-                    id="linkPath"
-                    value={formData.linkPath}
-                    onChange={(e) => setFormData({ ...formData, linkPath: e.target.value })}
-                    placeholder="/blogs/slug-of-blog-post"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fileMarkdownPath">เส้นทางไฟล์ Markdown</Label>
-                  <Input
-                    id="fileMarkdownPath"
-                    value={formData.fileMarkdownPath}
-                    onChange={(e) => setFormData({ ...formData, fileMarkdownPath: e.target.value })}
-                    placeholder="/content/blogs/your-post.md"
-                  />
-                </div>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="metaDescription">คำอธิบายอื่นๆ</Label>
                 <Textarea
                   id="metaDescription"
                   value={formData.metaDescription}
-                  onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                  onChange={handleInputChange('metaDescription')}
                   placeholder="คำอธิบายอื่นๆ สำหรับ SEO (สูงสุด 160 ตัวอักษร)"
                   maxLength={160}
                   rows={2}
+                  className={hasFieldError('metaDescription') ? 'border-red-500' : ''}
                 />
+                {getFieldError('metaDescription') && (
+                  <p className="text-sm text-red-500">{getFieldError('metaDescription')}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  {formData.metaDescription.length}/160 ตัวอักษร
+                  {formData.metaDescription?.length ?? 0}/160 ตัวอักษร
                 </p>
               </div>
 
@@ -396,9 +750,9 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                 <Checkbox
                   id="featured"
                   checked={formData.featured}
-                  onCheckedChange={(checked) => setFormData({ ...formData, featured: !!checked })}
+                  onCheckedChange={handleCheckboxChange('featured')}
                 />
-                <Label htmlFor="featured">บทความแนะนำ</Label>
+                <Label htmlFor="featured" className="cursor-pointer">บทความแนะนำ</Label>
               </div>
             </CardContent>
           </Card>
@@ -409,7 +763,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
               type="button"
               variant="outline"
               onClick={handlePreview}
-              disabled={!formData.slug}
+              disabled={!debouncedSlug}
               className="flex items-center gap-2"
             >
               <FontAwesomeIcon icon={faEye} className="h-4 w-4" />

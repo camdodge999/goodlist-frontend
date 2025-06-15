@@ -87,7 +87,7 @@ function blogReducer(state: BlogState, action: BlogAction): BlogState {
         ...state,
         blogs: action.payload.blogs,
         pagination: action.payload.pagination,
-        loading: false,
+        loading: true,
         error: null,
         fetchFailed: false,
         retryCount: 0,
@@ -219,7 +219,7 @@ export function BlogProvider({
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.searchQuery, state.filters.status, state.retryCount, state.fetchFailed, state.blogs]);
+  }, [state.searchQuery, state.filters.status, state.retryCount, state.fetchFailed]); // Removed state.blogs to reduce function re-creation
 
   // Fetch single blog by slug
   const fetchBlogBySlug = useCallback(async (slug: string): Promise<Blog | null> => {
@@ -273,7 +273,7 @@ export function BlogProvider({
     } finally {
       dispatch({ type: 'SET_REFRESHING', payload: false });
     }
-  }, [fetchBlogs, state.searchQuery, state.filters.status, state.pagination?.currentPage, state.blogs]);
+  }, [fetchBlogs, state.searchQuery, state.filters.status, state.pagination?.currentPage]); // Removed state.blogs to reduce function re-creation
 
   // Get featured blogs
   const getFeaturedBlogs = useCallback((limit = 3): Blog[] => {
@@ -312,7 +312,7 @@ export function BlogProvider({
       dispatch({ type: 'SET_LOADING', payload: false });
       dispatch({ type: 'SET_INITIALIZED', payload: true });
     }
-  }, [fetchBlogs, initialData, state.retryCount, state.blogs.length, state.isInitialized]);
+  }, [initialData, state.retryCount, state.blogs.length, state.isInitialized]); // Removed fetchBlogs to prevent re-initialization on function changes
 
   // Update local blogs when global cache changes
   useEffect(() => {

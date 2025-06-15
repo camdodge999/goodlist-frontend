@@ -11,37 +11,32 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
+import { faCircleExclamation } from '@fortawesome/free-solid-svg-icons';
 
-interface StatusDialogProps {
+interface ConfirmDialogProps {
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
-  type: 'success' | 'error' | null;
   message: string;
   title?: string;
-  buttonText?: string;
-  onButtonClick?: () => void;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
 
-export default function StatusDialog({
+export default function ConfirmDialog({
   isOpen,
   setIsOpen,
-  type,
   message,
-  title,
-  buttonText = "ตกลง",
-  onButtonClick,
-}: StatusDialogProps) {
+  title = "ยืนยัน",
+  confirmText = "ใช่",
+  cancelText = "ไม่",
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
   const isHandlingClick = useRef(false);
 
-  if (!type) return null;
-
-  const isSuccess = type === 'success';
-  const dialogTitle = title || (isSuccess ? "สำเร็จ" : "เกิดข้อผิดพลาด");
-  const iconColor = isSuccess ? "text-green-500" : "text-red-500";
-  const icon = isSuccess ? faCheckCircle : faExclamationCircle;
-
-  const handleButtonClick = () => {
+  const handleConfirm = () => {
     if (isHandlingClick.current) return;
     isHandlingClick.current = true;
 
@@ -49,9 +44,29 @@ export default function StatusDialog({
 
     // Use setTimeout to ensure the dialog closing animation completes
     // before executing the callback to prevent UI glitches
-    if (onButtonClick) {
+    if (onConfirm) {
       setTimeout(() => {
-        onButtonClick();
+        onConfirm();
+        isHandlingClick.current = false;
+      }, 100);
+    } else {
+      setTimeout(() => {
+        isHandlingClick.current = false;
+      }, 100);
+    }
+  };
+
+  const handleCancel = () => {
+    if (isHandlingClick.current) return;
+    isHandlingClick.current = true;
+
+    setIsOpen(false);
+
+    // Use setTimeout to ensure the dialog closing animation completes
+    // before executing the callback to prevent UI glitches
+    if (onCancel) {
+      setTimeout(() => {
+        onCancel();
         isHandlingClick.current = false;
       }, 100);
     } else {
@@ -64,30 +79,41 @@ export default function StatusDialog({
   // Handle dialog close from outside (like clicking backdrop)
   const handleOpenChange = (open: boolean) => {
     if (isHandlingClick.current) return;
-    setIsOpen(open);
+    if (!open && onCancel) {
+      handleCancel();
+    } else {
+      setIsOpen(open);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange} >
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-xl p-8" aria-describedby={undefined}>
         <DialogHeader className="space-y-6">
-          <div className={`flex justify-center mb-6 ${iconColor}`}>
-            <FontAwesomeIcon icon={icon} className="text-6xl" />
+          <div className="flex justify-center mb-6 text-amber-500">
+            <FontAwesomeIcon icon={faCircleExclamation} className="text-6xl" />
           </div>
           <DialogTitle className="text-3xl font-bold text-center">
-            {dialogTitle}
+            {title}
           </DialogTitle>
           <DialogDescription id="dialog-description" className="text-center pt-4 text-lg">
             {message}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="sm:justify-center mt-8">
+        <DialogFooter className="sm:justify-center mt-8 gap-4">
           <Button
-            variant="primary"
-            onClick={handleButtonClick}
+            variant="outline"
+            onClick={handleCancel}
             className="min-w-[120px] text-lg py-6 cursor-pointer"
           >
-            {buttonText}
+            {cancelText}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            className="min-w-[120px] text-lg py-6 cursor-pointer"
+          >
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -21,6 +21,7 @@ interface AuthenticatedImageProps {
   className?: string;
   sizes?: string;
   fallbackSrc?: string;
+  loading?: "lazy" | "eager";
   onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   width?: number;
   height?: number;
@@ -38,6 +39,7 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
   sizes,
   fallbackSrc = "/images/logo.webp",
   placeholder,   
+  loading = "lazy",
   onError,
   width,
   height,
@@ -65,7 +67,7 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
     alt,
     className,
     onError: onError || handleImageError,
-    priority,
+    ...(priority ? { priority: true } : { loading }),
     placeholder,
     ...(fill ? { fill: true } : { width, height }),
     ...(sizes && { sizes }),

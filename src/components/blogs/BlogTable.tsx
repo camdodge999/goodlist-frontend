@@ -3,9 +3,9 @@ import { faEye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { Blog } from '@/types/blog';
 
 interface BlogTableProps {
-  blogs: Blog[];
-  onEdit: (blog: Blog) => void;
-  onDelete: (blogId: string) => void;
+  readonly blogs: Blog[];
+  readonly onEdit: (blog: Blog) => void;
+  readonly onDelete: (blogId: string) => void;
 }
 
 export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
@@ -28,8 +28,6 @@ export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
     };  
     return statusBlog[status as keyof typeof statusBlog] || statusBlog.draft;
   };
-
-
 
 
   if (blogs.length === 0) {
@@ -80,7 +78,7 @@ export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500">{blog.excerpt}</div>
+                      <div className="text-sm text-gray-500">{blog.excerpt?.slice(0, 50)}{blog?.excerpt?.length && blog?.excerpt?.length > 50 ? '...' : ''}</div>
                       {blog.tags && (
                         <div className="mt-1">
                           {(typeof blog.tags === 'string' ? blog.tags.split(',') : blog.tags).map((tag: string, index: number) => (
@@ -97,8 +95,7 @@ export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{blog.author.name}</div>
-                  <div className="text-sm text-gray-500">{blog.author.email}</div>
+                  <div className="text-sm text-gray-900">{blog.createdBy?.displayName || 'Unknown Author'}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(blog.status)}`}>
@@ -109,7 +106,7 @@ export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
                   <div>Views: {blog.viewCount.toLocaleString()}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(blog.createdAt).toLocaleDateString()}
+                  {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : 'Unknown Date'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">

@@ -1,10 +1,8 @@
 import AdminPage from "@/components/pages/AdminPage";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Store } from "@/types/stores";
 import { Metadata } from "next";
 import { metadataPages } from "@/consts/metadata";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/auth-utils";
 
 export const metadata: Metadata = {
   title: metadataPages.admin.title,
@@ -25,8 +23,6 @@ async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
       }
     );
 
-
-
     if (!response.ok) {
       return [];
     }
@@ -44,15 +40,12 @@ async function fetchAdminStoresServerSide(token: string): Promise<Store[]> {
 }
 
 export default async function Page() {
-  const session = await getServerSession(authOptions);
-  
-  if (!session || session.user.role !== "admin") {
-    redirect("/login");
-  }
+  // Use the new auth utility - automatically redirects if not admin
+  const session = await requireAdmin();
 
   // Fetch stores data server-side
-  const initialStores = session.user.token 
-    ? await fetchAdminStoresServerSide(session.user.token)
+  const initialStores = session?.user?.token 
+    ? await fetchAdminStoresServerSide(session?.user?.token)
     : [];
 
   return <AdminPage initialStores={initialStores} />;

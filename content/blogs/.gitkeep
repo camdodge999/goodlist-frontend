@@ -1,0 +1,2 @@
+# This file ensures the content/blogs directory is tracked in git
+# Markdown files uploaded through the blog form will be stored here 

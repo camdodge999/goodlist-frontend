@@ -44,13 +44,6 @@ export default function BlogNotFound({ slug }: BlogNotFoundProps) {
         {/* Not Found Content */}
         <div className="bg-white rounded-lg shadow-sm p-8">
           <div className="text-center py-16">
-            {/* 404 Icon */}
-            <div className="mx-auto w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-8">
-              <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.562M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </div>
-
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               ไม่พบบทความที่ต้องการ
             </h1>

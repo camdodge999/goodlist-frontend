@@ -2,8 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Blog, BlogFormData, BlogsResponse, BlogSearchParams } from '@/types/blog';
+import { Blog, BlogsResponse, BlogSearchParams } from '@/types/blog';
 import { useCSRFForm } from '@/hooks/useCSRFToken';
+import { BlogFormInput } from '@/validators/blog.schema';
 
 interface UseBlogOptions {
   requireAuth?: boolean;
@@ -29,10 +30,11 @@ interface UseBlogReturn {
   // Actions
   fetchBlogs: (params?: BlogSearchParams) => Promise<void>;
   fetchBlogBySlug: (slug: string) => Promise<Blog | null>;
-  getBlogById: (id: string) => Promise<Blog | null>;
-  createBlog: (blogData: BlogFormData) => Promise<Blog | null>;
-  updateBlog: (id: string, blogData: Partial<BlogFormData>) => Promise<Blog | null>;
+  fetchBlogById: (id: string) => Promise<Blog | null>;
+  createBlog: (blogData: BlogFormInput | FormData) => Promise<Blog | null>;
+  updateBlog: (id: string, blogData: Partial<BlogFormInput> | FormData) => Promise<Blog | null>;
   deleteBlog: (id: string) => Promise<boolean>;
+  cleanupDraftImages: (imagePaths: string[], action?: 'cleanup' | 'preserve') => Promise<boolean>;
   
   // Auth helpers
   isAuthenticated: boolean;
@@ -47,7 +49,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<UseBlogReturn['pagination']>(null);
-  const { addCSRFToJSON } = useCSRFForm();
+  const { addCSRFToJSON, addCSRFToFormData } = useCSRFForm();
 
   const { requireAuth = false, adminOnly = false } = options;
 
@@ -56,11 +58,22 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
   const isAdmin = session?.user?.role === 'admin';
   const canManageBlogs = isAuthenticated && isAdmin;
 
-  // Helper function to get auth headers
+  // Helper function to get auth headers for JSON requests
   const getAuthHeaders = useCallback(() => {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
+
+    if (session?.user?.token) {
+      headers.Authorization = `Bearer ${session.user.token}`;
+    }
+
+    return headers;
+  }, [session]);
+
+  // Helper function to get auth headers for GET requests (no Content-Type needed)
+  const getAuthHeadersForGet = useCallback(() => {
+    const headers: HeadersInit = {};
 
     if (session?.user?.token) {
       headers.Authorization = `Bearer ${session.user.token}`;
@@ -91,7 +104,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
       if (params.search) searchParams.set('search', params.search);
 
       const url = `/api/blogs?${searchParams.toString()}`;
-      const headers = requireAuth || adminOnly ? getAuthHeaders() : {};
+      const headers = requireAuth || adminOnly ? getAuthHeadersForGet() : {};
 
       const response = await fetch(url, {
         method: 'GET',
@@ -114,7 +127,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     } finally {
       setLoading(false);
     }
-  }, [requireAuth, adminOnly, getAuthHeaders]);
+  }, [requireAuth, adminOnly, getAuthHeadersForGet]);
 
   // Fetch single blog by slug
   const fetchBlogBySlug = useCallback(async (slug: string): Promise<Blog | null> => {
@@ -122,7 +135,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
       setLoading(true);
       setError(null);
 
-      const headers = requireAuth || adminOnly ? getAuthHeaders() : {};
+      const headers = requireAuth || adminOnly ? getAuthHeadersForGet() : {};
       const response = await fetch(`/api/blogs/${slug}`, {
         method: 'GET',
         headers,
@@ -147,15 +160,15 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     } finally {
       setLoading(false);
     }
-  }, [requireAuth, adminOnly, getAuthHeaders]);
+  }, [requireAuth, adminOnly, getAuthHeadersForGet]);
 
   // Fetch single blog by ID
-  const getBlogById = useCallback(async (id: string): Promise<Blog | null> => {
+  const fetchBlogById = useCallback(async (id: string): Promise<Blog | null> => {
     try {
       setLoading(true);
       setError(null);
 
-      const headers = requireAuth || adminOnly ? getAuthHeaders() : {};
+      const headers = requireAuth || adminOnly ? getAuthHeadersForGet() : {};
       const response = await fetch(`/api/blogs/id/${id}`, {
         method: 'GET',
         headers,
@@ -180,10 +193,10 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     } finally {
       setLoading(false);
     }
-  }, [requireAuth, adminOnly, getAuthHeaders]);
+  }, [requireAuth, adminOnly, getAuthHeadersForGet]);
 
   // Create new blog (admin only)
-  const createBlog = useCallback(async (blogData: BlogFormData): Promise<Blog | null> => {
+  const createBlog = useCallback(async (blogData: BlogFormInput | FormData): Promise<Blog | null> => {
     try {
       checkAuthRequirements();
       if (!canManageBlogs) {
@@ -193,10 +206,27 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
       setLoading(true);
       setError(null);
 
+      let requestBody: string | FormData;
+      let headers: HeadersInit;
+
+      if (blogData instanceof FormData) {
+        // Handle FormData - add CSRF token but don't set Content-Type (browser will set it with boundary)
+        requestBody = addCSRFToFormData(blogData);
+        headers = {};
+        if (session?.user?.token) {
+          headers.Authorization = `Bearer ${session.user.token}`;
+          requestBody.append('userId', session.user.id ?? '');
+        }
+      } else {
+        // Handle regular object - use JSON with CSRF token
+        requestBody = JSON.stringify(addCSRFToJSON({ ...blogData }));
+        headers = getAuthHeaders();
+      }
+
       const response = await fetch('/api/blogs', {
         method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(addCSRFToJSON({ ...blogData })),
+        headers,
+        body: requestBody,
       });
 
       if (!response.ok) {
@@ -214,10 +244,10 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     } finally {
       setLoading(false);
     }
-  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, addCSRFToJSON]);
+  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, addCSRFToJSON, addCSRFToFormData, session]);
 
   // Update existing blog (admin only)
-  const updateBlog = useCallback(async (id: string, blogData: Partial<BlogFormData>): Promise<Blog | null> => {
+  const updateBlog = useCallback(async (id: string, blogData: Partial<BlogFormInput> | FormData): Promise<Blog | null> => {
     try {
       checkAuthRequirements();
       if (!canManageBlogs) {
@@ -227,10 +257,27 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/blogs/${id}`, {
+      let requestBody: string | FormData;
+      let headers: HeadersInit;
+
+      if (blogData instanceof FormData) {
+        // Handle FormData - add CSRF token but don't set Content-Type (browser will set it with boundary)
+        requestBody = addCSRFToFormData(blogData);
+        headers = {};
+        if (session?.user?.token) {
+          headers.Authorization = `Bearer ${session.user.token}`;
+          requestBody.append('userId', session.user.id ?? '');
+        }
+      } else {
+        // Handle regular object - use JSON with CSRF token
+        requestBody = JSON.stringify(addCSRFToJSON({ ...blogData }));
+        headers = getAuthHeaders();
+      }
+
+      const response = await fetch(`/api/blogs/id/${id}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(addCSRFToJSON({ ...blogData })),
+        headers,
+        body: requestBody,
       });
 
       if (!response.ok) {
@@ -251,7 +298,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     } finally {
       setLoading(false);
     }
-  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, addCSRFToJSON, currentBlog]);
+  }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, addCSRFToJSON, addCSRFToFormData, session, currentBlog]);
 
   // Delete blog (admin only)
   const deleteBlog = useCallback(async (id: string): Promise<boolean> => {
@@ -288,6 +335,36 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     }
   }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, currentBlog]);
 
+  // Cleanup draft images
+  const cleanupDraftImages = useCallback(async (imagePaths: string[], action: 'cleanup' | 'preserve' = 'cleanup'): Promise<boolean> => {
+    if (imagePaths.length === 0) return true;
+
+    try {
+      const response = await fetch('/api/blogs/cleanup-draft-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imagePaths,
+          action
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Draft images cleanup result:', result);
+        return true;
+      } else {
+        console.error('Failed to cleanup draft images:', response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error cleaning up draft images:', error);
+      return false;
+    }
+  }, []);
+
   return {
     // Data
     blogs,
@@ -299,10 +376,11 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     // Actions
     fetchBlogs,
     fetchBlogBySlug,
-    getBlogById,
+    fetchBlogById,
     createBlog,
     updateBlog,
     deleteBlog,
+    cleanupDraftImages,
     
     // Auth helpers
     isAuthenticated,

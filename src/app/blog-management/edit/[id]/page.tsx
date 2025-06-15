@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import BlogFormClient from '@/components/blogs/BlogFormClient';
 import BlogFormSkeleton from '@/components/blogs/BlogFormSkeleton';
 import { metadataPages } from '@/consts/metadata';
+import { requireAdmin } from '@/lib/auth-utils';
 
 export const metadata: Metadata = {
   title: metadataPages['edit-blog'].title,
@@ -16,6 +17,9 @@ interface EditBlogPageProps {
 }
 
 export default async function EditBlogPage({ params }: EditBlogPageProps) {
+  // Server-side admin check - automatically redirects if not admin
+  await requireAdmin();
+  
   const { id } = await params;
   
   return (

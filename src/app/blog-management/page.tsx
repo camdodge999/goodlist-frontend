@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import BlogManagementClient from '@/components/blogs/BlogManagementClient';
 import BlogManagementSkeleton from '@/components/blogs/BlogManagementSkeleton';
 import { metadataPages } from '@/consts/metadata';
+import { requireAdmin } from '@/lib/auth-utils';
 
 export const metadata: Metadata = {
   title: metadataPages['blog-management'].title,
@@ -29,6 +30,9 @@ export const metadata: Metadata = {
 // }
 
 export default async function BlogManagementPage() {
+  // Server-side admin check - automatically redirects if not admin
+  await requireAdmin();
+
   // Fetch initial data server-side (optional)
   // const initialBlogs = await getInitialBlogs();
 
@@ -38,3 +42,4 @@ export default async function BlogManagementPage() {
     </Suspense>
   );
 }
+  

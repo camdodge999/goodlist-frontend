@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import ReactMarkdown, { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
@@ -35,24 +35,29 @@ interface MarkdownEditorProps {
   readonly value: string
   readonly onChange: (value: string) => void
   readonly onImageUpload?: (images: UploadedImage[]) => void
+  readonly initialUploadedImages?: UploadedImage[]
   readonly placeholder?: string
   readonly className?: string
-  readonly minHeight?: string
 }
 
 export function MarkdownEditor({
   value,
   onChange,
   onImageUpload,
+  initialUploadedImages = [],
   placeholder = "Write your content in Markdown...",
   className,
-  minHeight = "400px"
 }: MarkdownEditorProps) {
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write")
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>(initialUploadedImages)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Update uploadedImages when initialUploadedImages changes
+  useEffect(() => {
+    setUploadedImages(initialUploadedImages)
+  }, [initialUploadedImages])
 
   // Memoize components to avoid recreation on every render
   const markdownComponents = React.useMemo(() => ({
@@ -114,7 +119,7 @@ export function MarkdownEditor({
     }, 0)
   }
 
-  const handleImageUpload = async (file: File) => {
+    const handleImageUpload = async (file: File) => {
     setIsUploading(true)
     
     try {
@@ -268,6 +273,7 @@ export function MarkdownEditor({
               {toolbarButtons.map((button, index) => (
                 <Button
                   key={index}
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={button.action}
@@ -289,8 +295,8 @@ export function MarkdownEditor({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             className={cn(
-              "w-full resize-none border-0 bg-transparent p-4 text-sm outline-none focus:ring-0",
-              `min-h-[${minHeight}]`
+              "w-full resize-none border-0 bg-transparent p-4 text-md outline-none focus:ring-0 break-words",
+              `min-h-[600px]`
             )}
           />
         </TabsContent>
@@ -298,8 +304,8 @@ export function MarkdownEditor({
         <TabsContent value="preview" className="m-0">
           <div 
             className={cn(
-              "prose prose-sm max-w-none p-4 dark:prose-invert",
-              `min-h-[${minHeight}]`
+              "prose prose-sm max-w-none break-words overflow-wrap-anywhere p-4 dark:prose-invert",
+              `min-h-[600px]`
             )}
           >
             {value ? (

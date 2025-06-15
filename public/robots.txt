@@ -6,8 +6,11 @@ Disallow: /api/
 Disallow: /_next/
 Disallow: /admin/
 
-# Allow crawling of important pages
+# Allow crawling of important pages from sitemap
 Allow: /
+Allow: /stores
+Allow: /verify
+Allow: /blogs
 
 # Sitemap location (you can update this URL when you have a sitemap)
 # Sitemap: https://yourdomain.com/sitemap.xml

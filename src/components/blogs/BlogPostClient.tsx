@@ -48,14 +48,14 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
 
   const tagsArray = getTagsArray(blog?.tags);
   const readTime = calculateReadTime(blog?.content, blog?.readTime);
-  const authorName = typeof blog?.author === 'string' ? blog?.author : blog?.author?.name || 'Unknown Author';
+  const authorName = blog?.createdBy?.displayName || blog?.author?.displayName || 'Unknown Author';
 
   // Memoize components to avoid recreation on every render
   const markdownComponents = React.useMemo(() => ({
     h1: ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
     h2: ({ children }: { children: React.ReactNode }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
     h3: ({ children }: { children: React.ReactNode }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
-    p: ({ children }: { children: React.ReactNode }) => <p className="mb-3 leading-relaxed">{children}</p>,
+    p: ({ children }: { children: React.ReactNode }) => <div className="mb-3 leading-relaxed break-words hyphens-auto">{children}</div>,
     ul: ({ children }: { children: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
     ol: ({ children }: { children: React.ReactNode }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
     blockquote: ({ children }: { children: React.ReactNode }) => (
@@ -71,15 +71,15 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
         </code>
       ) : (
         <code className={className}>{children}</code>
-      )
+      ) 
     },
     pre: ({ children }: { children: React.ReactNode }) => (
-      <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-3">
+      <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-3 whitespace-pre-wrap break-all">
         {children}
       </pre>
     ),
     img: ({ src, alt }: { src?: string; alt?: string }) => (
-      <Image
+      <Image 
         src={src as string} 
         alt={alt || ""} 
         className="max-w-full h-auto rounded-lg shadow-sm mb-3"
@@ -92,7 +92,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto min-h-[calc(100vh-521px)]">
         {/* Breadcrumb Navigation */}
         <div className="mb-8">
           <Breadcrumb>
@@ -134,7 +134,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
           <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
             <span>By {authorName}</span>
             <span>•</span>
-            <span>{formatDate(blog.publishedAt)}</span>
+            <span>{formatDate(blog.createdAt)}</span>
             <span>•</span>
             <span>{readTime} min read</span>
             {blog.viewCount > 0 && (
@@ -158,35 +158,11 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
               ))}
             </div>
           )}
-
-          {/* Engagement metrics */}
-          {(blog.likeCount > 0 || blog.shareCount > 0 || blog.commentCount > 0) && (
-            <div className="flex items-center gap-6 text-sm text-gray-500 mb-6 p-4 bg-gray-50 rounded-lg">
-              {blog.likeCount > 0 && (
-                <span className="flex items-center gap-1">
-                  <span>👍</span>
-                  <span>{blog.likeCount} likes</span>
-                </span>
-              )}
-              {blog.shareCount > 0 && (
-                <span className="flex items-center gap-1">
-                  <span>📤</span>
-                  <span>{blog.shareCount} shares</span>
-                </span>
-              )}
-              {blog.commentCount > 0 && (
-                <span className="flex items-center gap-1">
-                  <span>💬</span>
-                  <span>{blog.commentCount} comments</span>
-                </span>
-              )}
-            </div>
-          )}
         </header>
 
         {/* Blog Content */}
         <article className="mb-8">
-          <div className="prose prose-lg max-w-none">
+          <div className="prose prose-lg max-w-none break-words overflow-wrap-anywhere">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeHighlight]}
@@ -199,7 +175,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
 
         {/* Blog metadata */}
         {blog.metaDescription && (
-          <div className="mb-8 p-4 bg-blue-50 rounded-lg">
+          <div className="mb-8 p-4 bg-blue-50 rounded-lg text-wrap">
             <h3 className="text-sm font-semibold text-blue-900 mb-2">Summary</h3>
             <p className="text-blue-800 text-sm">{blog.metaDescription}</p>
           </div>
@@ -218,7 +194,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
               <span>กลับไปยังบทความทั้งหมด</span>
             </Link>
             
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">Share:</span>
               <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                 <span className="sr-only">Share on Twitter</span>
@@ -232,7 +208,7 @@ export default function BlogPostClient({ blog }: BlogPostClientProps) {
                 <span className="sr-only">Copy link</span>
                 <span className="text-lg">🔗</span>
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

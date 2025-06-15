@@ -17,7 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import BlogManagementSkeleton from '@/components/blogs/BlogManagementSkeleton';
 import BlogStatsCards from '@/components/blogs/BlogStatsCards';
 import BlogTable from '@/components/blogs/BlogTable';
-
+import useShowDialog from '@/hooks/useShowDialog';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 
 export default function BlogManagementClient() {
   const router = useRouter();
@@ -30,8 +31,21 @@ export default function BlogManagementClient() {
     canManageBlogs
   } = useBlog({ adminOnly: true });
 
+  const {
+    displayConfirmDialog,
+    showConfirmDialog,
+    setShowConfirmDialog,
+    confirmTitle,
+    confirmMessage,
+    confirmButtonText,
+    cancelButtonText,
+    onConfirmButtonClick,
+    onCancelButtonClick
+  } = useShowDialog();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Check authentication and redirect if not admin
   useEffect(() => {
@@ -43,12 +57,13 @@ export default function BlogManagementClient() {
 
   // Fetch blogs on component mount and when filters change
   useEffect(() => {
-    if (canManageBlogs) {
+    if (canManageBlogs && (!isInitialized || searchTerm)) {
       const params: BlogSearchParams = {};
       if (searchTerm) params.search = searchTerm;
       fetchBlogs(params);
+      if (!isInitialized) setIsInitialized(true);
     }
-  }, [canManageBlogs, searchTerm, fetchBlogs]);
+  }, [canManageBlogs, searchTerm, isInitialized]); // Removed fetchBlogs from dependencies to prevent auto-refetch on window focus
 
   // Filter blogs based on status (client-side filtering for status)
   const filteredBlogs = blogs.filter(blog => {
@@ -65,13 +80,19 @@ export default function BlogManagementClient() {
   };
 
   const handleDeleteBlog = async (blogId: string) => {
-    if (confirm('คุณแน่ใจหรือไม่ที่จะลบบทความนี้?')) {
-      const success = await deleteBlog(blogId);
-      if (success) {
-        // Refresh the blogs list
-        fetchBlogs({ search: searchTerm });
+    displayConfirmDialog({
+      title: 'ยืนยันการลบบทความ',
+      message: 'คุณแน่ใจหรือไม่ที่จะลบบทความนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้',
+      confirmText: 'ลบ',
+      cancelText: 'ยกเลิก',
+      onConfirm: async () => {
+        const success = await deleteBlog(blogId);
+        if (success) {
+          // Refresh the blogs list
+          fetchBlogs({ search: searchTerm });
+        }
       }
-    }
+    });
   };
 
   const handleRefresh = () => {
@@ -202,6 +223,18 @@ export default function BlogManagementClient() {
           blogs={filteredBlogs}
           onEdit={handleEditBlog}
           onDelete={handleDeleteBlog}
+        />
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showConfirmDialog}
+          setIsOpen={setShowConfirmDialog}
+          title={confirmTitle}
+          message={confirmMessage}
+          confirmText={confirmButtonText}
+          cancelText={cancelButtonText}
+          onConfirm={onConfirmButtonClick}
+          onCancel={onCancelButtonClick}
         />
       </div>
     </div>

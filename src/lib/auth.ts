@@ -1,5 +1,7 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions, User } from "next-auth";
+import { getToken } from "next-auth/jwt";
+import { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 import { UserRole } from "@/types/users";
 // Properly extend the User type to include token and role
@@ -314,3 +316,29 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === "development",
   useSecureCookies: process.env.NODE_ENV === "production",
 };
+
+// Helper function to check admin authentication
+export async function checkAdminAuth(request: NextRequest) {
+  const authHeader = request.headers.get('Authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { isAuthenticated: false, isAdmin: false, error: 'No authorization header' };
+  }
+
+  try {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET
+    });
+
+    if (!token) {
+      return { isAuthenticated: false, isAdmin: false, error: 'Invalid token' };
+    }
+
+    const isAdmin = token.role === 'admin';
+    return { isAuthenticated: true, isAdmin, error: null };
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return { isAuthenticated: false, isAdmin: false, error: 'Auth verification failed' };
+  }
+}

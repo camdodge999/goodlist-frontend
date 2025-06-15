@@ -1,2 +1,0 @@
-[some text](javascript:alert('xss'))
-hello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kubhello world kub

@@ -151,62 +151,6 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.formData();
     
-    // First, fetch the existing blog to get current markdown file path
-    let existingBlog: Blog | null = null;
-    try {
-      const existingResult = await fetchBlogById(request, id);
-      if (existingResult.statusCode === 200 && existingResult.data?.blogDetail) {
-        existingBlog = existingResult.data.blogDetail;
-      }
-    } catch (error) {
-      console.log('Could not fetch existing blog for cleanup:', error);
-    }
-    
-    // Handle markdown file if provided
-    const markdownFile = body.get('markdownFile') as File | null;
-    // let fileMarkdownPath = '';
-    
-    if (markdownFile) {
-      // Save the markdown file to the content/blogs directory
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      const contentDir = path.join(process.cwd(), 'content', 'blogs');
-      
-      // Ensure directory exists
-      try {
-        await fs.access(contentDir);
-      } catch {
-        await fs.mkdir(contentDir, { recursive: true });
-      }
-      
-      // Remove old markdown file if it exists and is different from the new one
-      if (existingBlog?.fileMarkdownPath) {
-        try {
-          const oldFileName = existingBlog.fileMarkdownPath.replace('/content/blogs/', '');
-          const newFileName = markdownFile.name;
-          
-          // Only remove if the file names are different
-          if (oldFileName !== newFileName) {
-            const oldFilePath = path.join(contentDir, oldFileName);
-            await fs.unlink(oldFilePath);
-            console.log(`Removed old markdown file: ${oldFileName}`);
-          }
-        } catch (error) {
-          console.log('Could not remove old markdown file:', error);
-          // Continue with the process even if cleanup fails
-        }
-      }
-      
-      // Save the new file
-      const fileName = markdownFile.name;
-      const filePath = path.join(contentDir, fileName);
-      const buffer = Buffer.from(await markdownFile.arrayBuffer());
-      await fs.writeFile(filePath, buffer);
-      
-      // fileMarkdownPath = `/content/blogs/${fileName}`;
-    }
-    
     // Convert FormData to plain object for validation
     const data = {
       title: body.get('title'),
@@ -247,7 +191,8 @@ export async function PUT(
     submitBody.append('featured', body.get('featured') === 'true' ? 'true' : 'false');
     submitBody.append('uploadedImages', body.get('uploadedImages') as string || '');
     
-    // Append the actual markdown file if it exists, otherwise append empty string
+    // Handle markdown file if provided
+    const markdownFile = body.get('markdownFile') as File | null;
     if (markdownFile) {
       submitBody.append('markdownFile', markdownFile);
     } else {
@@ -302,38 +247,9 @@ export async function DELETE(
       );
     }
 
-    // First, fetch the existing blog to get markdown file path for cleanup
-    let existingBlog: Blog | null = null;
-    try {
-      const existingResult = await fetchBlogById(request, id);
-      if (existingResult.statusCode === 200 && existingResult.data?.blogDetail) {
-        existingBlog = existingResult.data.blogDetail;
-      }
-    } catch (error) {
-      console.log('Could not fetch existing blog for cleanup:', error);
-    }
-
     const result = await deleteBlogById(request, id);
 
     if (result.statusCode === 200) {
-      // Clean up markdown file if it exists
-      if (existingBlog?.fileMarkdownPath) {
-        try {
-          const fs = await import('fs/promises');
-          const path = await import('path');
-          
-          const fileName = existingBlog.fileMarkdownPath.replace('/content/blogs/', '');
-          const contentDir = path.join(process.cwd(), 'content', 'blogs');
-          const filePath = path.join(contentDir, fileName);
-          
-          await fs.unlink(filePath);
-          console.log(`Removed markdown file after blog deletion: ${fileName}`);
-        } catch (error) {
-          console.log('Could not remove markdown file after deletion:', error);
-          // Continue with success response even if cleanup fails
-        }
-      }
-
       return NextResponse.json(
         { message: 'Blog post deleted successfully' },
         { status: 200 }

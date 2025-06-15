@@ -126,14 +126,14 @@ export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
                     >
                       <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => onDelete(blog.id)}
                       className="text-red-600 hover:text-red-900 cursor-pointer px-2 py-1 rounded hover:bg-red-50 transition-colors"
                       title="Delete blog post"
                       aria-label={`Delete blog post: ${blog.title}`}
                     >
                       <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>

@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error("Error fetching blogs:", error);
     return NextResponse.json(
       { statusCode: 500, message: "Internal server error", data: undefined },
       { status: 500 }
@@ -107,7 +106,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     }
 
   } catch (error) {
-    console.error("Error creating blog", error);
     return NextResponse.json(
       {
         statusCode: 500,

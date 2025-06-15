@@ -134,9 +134,9 @@ export default function TermsModal({
             <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
               การติดต่อ / ร้องเรียน
             </h3>
-            <p className="leading-relaxed">
-              สามารถติดต่อแอดมินได้ที่ช่องทาง &quot;Adminchat&quot; บนเว็บไซต์ หรืออีเมล goodlistseller@gmail.com
-            </p>
+            <span className="leading-relaxed">
+              สามารถติดต่อแอดมินได้ที่ช่องทาง &quot;ติดต่อเรา&quot; บนเว็บไซต์
+            </span>
             <p className="leading-relaxed">
               ทุกคำร้องเรียนจะได้รับการพิจารณาโดยเร็วที่สุด
             </p>

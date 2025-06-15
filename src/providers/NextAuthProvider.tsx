@@ -18,7 +18,6 @@ export function NextAuthProvider({ children, session }: NextAuthProviderProps) {
 
       // Check if token is expired
       if (tokenPayload.exp && tokenPayload.exp < currentTime) {
-        console.log('Token expired, signing out...');
         signOut({ callbackUrl: '/login' });
       }
     } catch (error) {

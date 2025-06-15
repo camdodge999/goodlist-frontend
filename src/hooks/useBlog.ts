@@ -353,7 +353,6 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Draft images cleanup result:', result);
         return true;
       } else {
         console.error('Failed to cleanup draft images:', response.statusText);

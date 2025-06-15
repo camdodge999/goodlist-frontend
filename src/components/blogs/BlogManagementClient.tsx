@@ -79,21 +79,21 @@ export default function BlogManagementClient() {
     router.push(`/blog-management/edit/${blog.id}`);
   };
 
-  const handleDeleteBlog = async (blogId: string) => {
-    displayConfirmDialog({
-      title: 'ยืนยันการลบบทความ',
-      message: 'คุณแน่ใจหรือไม่ที่จะลบบทความนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้',
-      confirmText: 'ลบ',
-      cancelText: 'ยกเลิก',
-      onConfirm: async () => {
-        const success = await deleteBlog(blogId);
-        if (success) {
-          // Refresh the blogs list
-          fetchBlogs({ search: searchTerm });
-        }
-      }
-    });
-  };
+  // const handleDeleteBlog = async (blogId: string) => {
+  //   displayConfirmDialog({
+  //     title: 'ยืนยันการลบบทความ',
+  //     message: 'คุณแน่ใจหรือไม่ที่จะลบบทความนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้',
+  //     confirmText: 'ลบ',
+  //     cancelText: 'ยกเลิก',
+  //     onConfirm: async () => {
+  //       const success = await deleteBlog(blogId);
+  //       if (success) {
+  //         // Refresh the blogs list
+  //         fetchBlogs({ search: searchTerm });
+  //       }
+  //     }
+  //   });
+  // };
 
   const handleRefresh = () => {
     fetchBlogs({ search: searchTerm });

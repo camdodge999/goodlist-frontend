@@ -307,6 +307,7 @@ export default function SignupForm() {
           buttonText: "ไปที่หน้าโปรไฟล์",
           onButtonClick: () => router.push("/profile")
         });
+
         
         try {
           // Automatically log in the user with the credentials they just registered with
@@ -321,6 +322,10 @@ export default function SignupForm() {
             // Still redirect to home page even if auto-login fails
             // User can manually log in
           }
+
+          setTimeout(() => {
+            router.push("/profile");
+          }, 1000);
         } catch {
         }
       } else {

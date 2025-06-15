@@ -6,10 +6,10 @@ import { Blog } from '@/types/blog';
 interface BlogTableProps {
   readonly blogs: Blog[];
   readonly onEdit: (blog: Blog) => void;
-  readonly onDelete: (blogId: string) => void;
+  // readonly onDelete: (blogId: string) => void;
 }
 
-export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
+export default function BlogTable({ blogs, onEdit }: BlogTableProps) {
   const getStatusBadge = (status: string) => {
     const statusColors = {
       draft: 'bg-gray-100 text-gray-800',

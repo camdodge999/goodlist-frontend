@@ -116,7 +116,7 @@ async function updateUserEmail({
   } else if (result.statusCode === 409) {
     return {
       statusCode: 409,
-      message: "อีเมลใหม่ถูกใช้งานแล้ว",
+      message: "ไม่สามารถเปลี่ยนอีเมลได้ กรุณาลองอีกครั้ง",
       data: undefined
     };
   } else {

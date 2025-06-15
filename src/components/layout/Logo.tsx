@@ -13,7 +13,6 @@ export default function Logo() {
   };
 
 
-
   return (
     <div className="flex lg:flex-1">
       <Link href="/" className="-m-1.5 p-1.5 pb-0">
@@ -24,6 +23,7 @@ export default function Logo() {
           onError={handleImageError}
           src={logo}
           alt="Goodlistseller logo"
+          loading="eager"
           width={72}
           height={72}
           className="h-10 sm:h-16 w-auto object-contain"

@@ -9,7 +9,7 @@ import BlogGrid from "./BlogGrid";
 import { BlogPageSkeleton } from "./BlogPageSkeleton";
 
 interface BlogClientWrapperProps {
-  readonly initialData: BlogsResponse; 
+  readonly initialData?: BlogsResponse; 
   readonly initialSearchQuery: string;
 }
 
@@ -48,7 +48,7 @@ export default function BlogClientWrapper({
     if (urlSearchQuery !== searchQuery) {
       setSearchQueryLocal(urlSearchQuery);
     }
-  }, [searchParams]);
+  }, [searchParams, searchQuery]); // Added searchQuery dependency for completeness
 
   // Handler for search query changes with URL update
   const handleSearchChange = useCallback((query: string) => {
@@ -92,7 +92,7 @@ export default function BlogClientWrapper({
         status: 'published'
       });
     }
-  }, [searchQuery, currentPage, fetchBlogs, initialSearchQuery, isHydrated]);
+  }, [searchQuery, currentPage, initialSearchQuery, isHydrated]); // Removed fetchBlogs from dependencies to prevent auto-refetch on window focus
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -121,7 +121,13 @@ export default function BlogClientWrapper({
 
   // Calculate pagination for display
   const displayBlogs = blogs || [];
-  const displayPagination = pagination || initialData.pagination;
+  const displayPagination = pagination || initialData?.pagination || {
+    currentPage: 1,
+    totalPages: 1,
+    totalBlogs: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+  };
 
   return (
     <div className="blogs-page min-h-[calc(100vh-521px)]">

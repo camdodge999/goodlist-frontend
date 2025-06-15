@@ -15,6 +15,7 @@ export default function BlogPostPage() {
   const slug = params?.slug as string;
   const [blog, setBlog] = useState<Blog | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const { 
     fetchBlogBySlug, 
@@ -23,7 +24,7 @@ export default function BlogPostPage() {
   } = useBlog();
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug || isInitialized) return;
 
     const loadBlog = async () => {
       try {
@@ -35,14 +36,16 @@ export default function BlogPostPage() {
           setBlog(null);
           setNotFound(true);
         }
+        setIsInitialized(true);
       } catch (err) {
         console.error('Error loading blog:', err);
         setNotFound(true);
+        setIsInitialized(true);
       }
     };
 
     loadBlog();
-  }, [slug, fetchBlogBySlug]);
+  }, [slug, isInitialized]); // Removed fetchBlogBySlug from dependencies to prevent auto-refetch on window focus
 
   // Loading state
   if (loading) {

@@ -35,7 +35,6 @@ export interface Blog {
   updatedById: number;
 
   // Timestamp Fields
-  createdAt: string;
   updatedAt: string;
 
   // Engagement Metrics

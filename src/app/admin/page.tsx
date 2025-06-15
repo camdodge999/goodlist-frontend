@@ -44,8 +44,8 @@ export default async function Page() {
   const session = await requireAdmin();
 
   // Fetch stores data server-side
-  const initialStores = session.user.token 
-    ? await fetchAdminStoresServerSide(session.user.token)
+  const initialStores = session?.user?.token 
+    ? await fetchAdminStoresServerSide(session?.user?.token)
     : [];
 
   return <AdminPage initialStores={initialStores} />;

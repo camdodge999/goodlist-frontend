@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faSave, faEye } from '@fortawesome/free-solid-svg-icons';
-import { Blog, BlogFormData } from '@/types/blog';
+import { Blog, BlogFormData, BlogAsset } from '@/types/blog';
 import { useBlog } from '@/hooks/useBlog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import StatusDialog from '@/components/common/StatusDialog';
 import useShowDialog from '@/hooks/useShowDialog';
 import CSRFInput from '@/components/ui/csrf-input';
 import { BlogFormInput, validateBlogForm } from '@/validators/blog.schema';
+import { extractImagesFromMarkdown } from '@/utils/markdown-utils';
 
 interface UploadedImage {
   fileName: string;
@@ -26,6 +27,7 @@ interface UploadedImage {
   url: string;
   size: number;
   type: string;
+  file?: File; // Add optional File object for MIME handling
 }
 
 interface BlogFormClientProps {
@@ -60,8 +62,9 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     loading,
     createBlog,
     updateBlog,
-    getBlogById,
-    canManageBlogs
+    fetchBlogById,
+    canManageBlogs,
+    cleanupDraftImages
   } = useBlog({ adminOnly: true });
 
   // Dialog hooks
@@ -91,19 +94,38 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     tags: '',
     metaDescription: '',
     featured: false,
-    uploadedImages: []
+    uploadedImages: [] // Keep as string[] for validation
   });
 
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(!!blogId);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // Separate state for File objects
+  const [draftImages, setDraftImages] = useState<string[]>([]); // Track draft images for cleanup
   
   // Validation state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
+  // Add ref to track if component has been initialized
+  const hasInitialized = useRef(false);
+  const isPageRefresh = useRef(false);
+
   const isEditing = !!blogId;
+  
+  // Helper to determine the route context
+  const getRouteContext = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      if (pathname.includes('/blog-management/new')) {
+        return 'new';
+      } else if (pathname.includes('/blog-management/edit/')) {
+        return 'edit';
+      }
+    }
+    return isEditing ? 'edit' : 'new';
+  }, [isEditing]);
 
   // Validation helper function - memoized to prevent recreation
   const validateForm = useCallback((data: BlogFormInput): ValidationErrors => {
@@ -136,10 +158,124 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     window.scrollTo(0, 0);
   }, []);
 
+  // Cleanup draft images when component unmounts (user navigates away without saving)
+  useEffect(() => {
+    return () => {
+      // Only cleanup if there are unsaved draft images and the form wasn't submitted successfully
+      if (draftImages.length > 0 && !hasSubmitted) {
+        const routeContext = getRouteContext();
+        
+        // Different cleanup behavior based on route context:
+        // - For new blog creation (blog-management/new): cleanup unused draft images
+        // - For editing existing blog (blog-management/edit/[id]): be more conservative
+        let shouldCleanup = false;
+        
+        if (routeContext === 'new') {
+          // Always cleanup draft images when abandoning new blog creation
+          shouldCleanup = true;
+        } else if (routeContext === 'edit') {
+          // Only cleanup if we don't have an existing blog loaded (safety check)
+          shouldCleanup = !editingBlog;
+        }
+        
+        if (shouldCleanup) {
+          // Use a timeout to allow for navigation to complete
+          setTimeout(() => {
+            fetch('/api/blogs/cleanup-draft-images', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                imagePaths: draftImages,
+                action: 'cleanup'
+              }),
+            }).catch(error => {
+              console.error('Error cleaning up draft images on unmount:', error);
+            });
+          }, 1000);
+        }
+      }
+    };
+  }, [draftImages, hasSubmitted, getRouteContext, editingBlog]);
+
+  // Convert blog assets to UploadedImage format - memoized
+  const convertAssetsToUploadedImages = useCallback((assets: BlogAsset[]): UploadedImage[] => {
+    return assets.map(asset => ({
+      fileName: asset.fileName || asset.originalName || 'unknown',
+      path: asset.filePath,
+      url: asset.filePath.startsWith('/') ? asset.filePath : `/${asset.filePath}`,
+      size: 0, // Size not available from assets
+      type: 'image/jpeg' // Default type, could be improved
+    }));
+  }, []);
+
+  // Extract images from markdown content and convert to File objects
+  const extractImagesFromMarkdownContent = useCallback(async (content: string): Promise<UploadedImage[]> => {
+    const markdownImages = extractImagesFromMarkdown(content);
+    const uploadedImages: UploadedImage[] = [];
+
+    for (const markdownImage of markdownImages) {
+      try {
+        // Check if the image is a local uploaded image (starts with /uploads/)
+        if (markdownImage.src.startsWith('/uploads/')) {
+          // Fetch the image and convert to File object
+          const response = await fetch(markdownImage.src);
+          if (response.ok) {
+            const blob = await response.blob();
+            const fileName = markdownImage.src.split('/').pop() || 'image';
+            const file = new File([blob], fileName, { type: blob.type });
+            
+            uploadedImages.push({
+              fileName: fileName,
+              path: markdownImage.src.replace('/uploads/', 'uploads/'),
+              url: markdownImage.src,
+              size: file.size,
+              type: file.type,
+              file: file
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch image from markdown:', markdownImage.src, error);
+      }
+    }
+
+    return uploadedImages;
+  }, []);
+
   // Handle uploaded images from markdown editor - memoized
   const handleImageUpload = useCallback((images: UploadedImage[]) => {
     setUploadedImages(images);
+    // Update formData.uploadedImages with paths for validation
+    setFormData(prev => ({
+      ...prev,
+      uploadedImages: images.map(img => img.path)
+    }));
+    // Update uploadedFiles with File objects when available
+    setUploadedFiles(images.map(img => img.file).filter((file): file is File => file !== undefined));
+    
+    // Track draft images (only new uploads from uploads/blog directory)
+    const newDraftImages = images
+      .filter(img => img.url.startsWith('/uploads/blog/'))
+      .map(img => img.url);
+    setDraftImages(prev => {
+      const combined = [...prev, ...newDraftImages];
+      return [...new Set(combined)]; // Remove duplicates
+    });
   }, []);
+
+  // Helper function to cleanup draft images and update state
+  const handleCleanupDraftImages = useCallback(async (action: 'cleanup' | 'preserve' = 'cleanup') => {
+    if (draftImages.length === 0) return;
+
+    const success = await cleanupDraftImages(draftImages, action);
+    
+    if (success && action === 'cleanup') {
+      // Clear draft images list after successful cleanup
+      setDraftImages([]);
+    }
+  }, [draftImages, cleanupDraftImages]);
 
   // Check authentication and redirect if not admin
   useEffect(() => {
@@ -148,49 +284,96 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     }
   }, [loading, canManageBlogs, router]);
 
-  // Fetch blog data if editing
+  // Check if this is a page refresh vs navigation
   useEffect(() => {
-    if (blogId && canManageBlogs) {
-      const fetchBlog = async () => {
-        setIsFetching(true);
-        try {
-          const blog = await getBlogById(blogId);
-          if (blog) {
-            setEditingBlog(blog);
-            setFormData({
-              title: blog.title,
-              slug: blog.slug,
-              content: blog.content ?? '',
-              excerpt: blog.excerpt ?? '',  
-              status: blog.status,
-              tags: typeof blog.tags === 'string' ? blog.tags : blog.tags?.join(',') ?? '',
-              metaDescription: blog.metaDescription ?? '',
-              featured: blog.featured,
-              uploadedImages: []
-            });
-          } else {
+    // Check if this is a page refresh by looking at navigation type
+    if (typeof window !== 'undefined' && window.performance) {
+      const navigation = window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      isPageRefresh.current = navigation.type === 'reload';
+    }
+  }, []);
+
+  // Fetch blog data if editing - ONLY on page refresh
+  useEffect(() => {
+    if (blogId && canManageBlogs && !hasInitialized.current) {
+      // Only fetch if this is a page refresh or first load
+      if (isPageRefresh.current || !hasInitialized.current) {
+        const fetchBlog = async () => {
+          setIsFetching(true);
+          try {
+            const blog = await fetchBlogById(blogId);
+            if (blog) {
+              setEditingBlog(blog);
+              const existingAssets = blog.assets ?? [];
+              const existingUploadedImages = convertAssetsToUploadedImages(existingAssets);
+              
+              setFormData({
+                title: blog.title,
+                slug: blog.slug,
+                content: blog.content ?? '',
+                excerpt: blog.excerpt ?? '',  
+                status: blog.status,
+                tags: typeof blog.tags === 'string' ? blog.tags : blog.tags?.join(',') ?? '',
+                metaDescription: blog.metaDescription ?? '',
+                featured: blog.featured,
+                uploadedImages: existingAssets.map(asset => asset.filePath)
+              });
+              
+              // Extract images from markdown content first
+              const markdownImages = await extractImagesFromMarkdownContent(blog.content ?? '');
+              
+              // Combine existing assets with markdown images, prioritizing markdown images
+              const allImages = [...markdownImages];
+              
+              // Add any existing assets that aren't already in markdown
+              existingUploadedImages.forEach(existingImg => {
+                const alreadyExists = markdownImages.some(mdImg => mdImg.path === existingImg.path);
+                if (!alreadyExists) {
+                  allImages.push(existingImg);
+                }
+              });
+              
+              // Set the uploaded images for the markdown editor
+              setUploadedImages(allImages);
+              
+              // Set uploaded files from markdown images
+              setUploadedFiles(allImages.map(img => img.file).filter((file): file is File => file !== undefined));
+              
+              // Track existing draft images (only from uploads/blog directory)
+              const existingDraftImages = allImages
+                .filter(img => img.url.startsWith('/uploads/blog/'))
+                .map(img => img.url);
+              setDraftImages(existingDraftImages);
+            } else {
+              displayErrorDialog({
+                title: "เกิดข้อผิดพลาด",
+                message: "ไม่พบบทความที่ต้องการแก้ไข",
+                buttonText: "กลับไปจัดการบทความ",
+                onButtonClick: () => router.push('/blog-management')
+              });
+            }
+          } catch {
             displayErrorDialog({
               title: "เกิดข้อผิดพลาด",
-              message: "ไม่พบบทความที่ต้องการแก้ไข",
+              message: "ไม่สามารถโหลดข้อมูลบทความได้",
               buttonText: "กลับไปจัดการบทความ",
               onButtonClick: () => router.push('/blog-management')
             });
+          } finally {
+            setIsFetching(false);
+            hasInitialized.current = true;
           }
-        } catch {
-          displayErrorDialog({
-            title: "เกิดข้อผิดพลาด",
-            message: "ไม่สามารถโหลดข้อมูลบทความได้",
-            buttonText: "กลับไปจัดการบทความ",
-            onButtonClick: () => router.push('/blog-management')
-          });
-        } finally {
-          setIsFetching(false);
-        }
-      };
+        };
 
-      fetchBlog();
+        fetchBlog();
+      } else {
+        hasInitialized.current = true;
+      }
+    } else if (!blogId) {
+      // For new blog creation, mark as initialized immediately
+      hasInitialized.current = true;
     }
-  }, [blogId, canManageBlogs, getBlogById, router, displayErrorDialog]);
+  }, [blogId, canManageBlogs, fetchBlogById, router, displayErrorDialog, convertAssetsToUploadedImages, extractImagesFromMarkdownContent]);
 
   // Debounce slug input for better performance
   const debouncedSlug = useDebounce(formData.slug, 300);
@@ -274,32 +457,67 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
       // Add the markdown file
       formDataToSubmit.append('markdownFile', markdownFile);
       
-      // Add uploaded images paths
-      uploadedImages.forEach((img, index) => {
-        formDataToSubmit.append(`uploadedImages[${index}]`, img.path);
+      // Handle uploaded images - append File objects as an array
+      uploadedFiles.forEach((file, index) => {
+        formDataToSubmit.append(`markdownImage[${index}]`, file);
+      });
+      
+      // Also append image paths for server processing
+      formData.uploadedImages.forEach((imagePath, index) => {
+        formDataToSubmit.append(`imagePath[${index}]`, imagePath);
       });
 
       if (isEditing && editingBlog) {
-        // For updates, also use FormData
+        // For updates (blog-management/edit/[id])
         const updated = await updateBlog(editingBlog.id, formDataToSubmit);
         if (updated) {
+          // Handle draft image cleanup for EDITING existing blog
+          if (formData.status === 'published' || formData.status === 'archived') {
+            // If blog is published or archived, preserve the images (they're now permanent)
+            await handleCleanupDraftImages('preserve');
+          } else if (formData.status === 'deleted') {
+            // If blog is deleted, cleanup the draft images
+            await handleCleanupDraftImages('cleanup');
+          } else if (formData.status === 'draft') {
+            // For editing existing draft, preserve images for continued editing
+            await handleCleanupDraftImages('preserve');
+          }
+          
           displaySuccessDialog({
             title: "สำเร็จ",
             message: "อัพเดตบทความเรียบร้อยแล้ว",
             buttonText: "กลับไปจัดการบทความ",
             onButtonClick: () => router.push('/blog-management')
           });
+          setTimeout(() => {
+            router.push('/blog-management');
+          }, 1000);
         }
       } else {
-        // For creation, use FormData
+        // For creation (blog-management/new)
         const created = await createBlog(formDataToSubmit);
         if (created) {
+          // Handle draft image cleanup for CREATING new blog
+          if (formData.status === 'published' || formData.status === 'archived') {
+            // If new blog is published or archived, preserve the images (they're now permanent)
+            await handleCleanupDraftImages('preserve');
+          } else if (formData.status === 'deleted') {
+            // If new blog is deleted, cleanup the draft images
+            await handleCleanupDraftImages('cleanup');
+          } else if (formData.status === 'draft') {
+            // For new draft blog, preserve images for future editing
+            await handleCleanupDraftImages('preserve');
+          }
+          
           displaySuccessDialog({
             title: "สำเร็จ",
             message: "สร้างบทความเรียบร้อยแล้ว",
             buttonText: "กลับไปจัดการบทความ",
             onButtonClick: () => router.push('/blog-management')
           });
+          setTimeout(() => {
+            router.push('/blog-management');
+          }, 1000);
         }
       }
     } catch {
@@ -311,7 +529,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, hasSubmitted, validateForm, displayErrorDialog, isEditing, editingBlog, updateBlog, createBlog, uploadedImages, displaySuccessDialog, router]);
+  }, [formData, hasSubmitted, validateForm, displayErrorDialog, isEditing, editingBlog, updateBlog, createBlog, displaySuccessDialog, router, uploadedFiles, handleCleanupDraftImages]);
 
   const handlePreview = useCallback(() => {
     if (debouncedSlug) {
@@ -455,8 +673,8 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                   value={formData.content}
                   onChange={handleContentChange}
                   placeholder="เขียนเนื้อหาบทความของคุณในรูปแบบ Markdown..."
-                  minHeight="500px"
                   onImageUpload={handleImageUpload}
+                  initialUploadedImages={uploadedImages}
                 />
                 {getFieldError('content') && (
                   <p className="text-sm text-red-500">{getFieldError('content')}</p>

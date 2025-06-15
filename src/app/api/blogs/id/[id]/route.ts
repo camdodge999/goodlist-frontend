@@ -1,310 +1,286 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFileSync } from "fs";
-import { join } from "path";
 import { getToken } from "next-auth/jwt";
-import { BlogFormData } from "@/types/blog";
+import { Blog } from "@/types/blog";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { BodyResponse } from "@/types/response";
+import { blogFormSchema } from "@/validators/blog.schema";
 
-// Helper function to read markdown content
-const getMarkdownContent = (filename: string): string => {
-  try {
-    const filePath = join(process.cwd(), 'content', 'blogs', filename);
-    return readFileSync(filePath, 'utf8');
-  } catch (error) {
-    console.error(`Error reading markdown file ${filename}:`, error);
-    return `# ${filename}\n\nContent not available.`;
-  }
-};
 
-// Admin authentication check
+
+// Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
-  const token = await getToken({ req: request });
-  return {
-    isAuthenticated: !!token,
-    isAdmin: token?.role === 'admin' || token?.isAdmin === true,
-    user: token
-  };
-}
+  const authHeader = request.headers.get('Authorization');
 
-// Updated Blog interface to match the schema
-interface BlogData {
-  id: string;
-  title: string;
-  slug: string;
-  content?: string;
-  excerpt?: string;
-  linkPath?: string;
-  fileMarkdownPath?: string;
-  status: 'draft' | 'published' | 'archived' | 'deleted';
-  createdAt?: string;
-  userId: number;
-  createdById: number;
-  updatedById: number;
-  createdAt: string;
-  updatedAt: string;
-  viewCount: number;
-  likeCount: number;
-  shareCount: number;
-  commentCount: number;
-  tags?: string;
-  metaDescription?: string;
-  featured: boolean;
-  author: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  readTime?: number; // Computed field
-}
-
-// Updated mock blogs with store verification content
-const mockBlogs: BlogData[] = [
-  {
-    id: "550e8400-e29b-41d4-a716-446655440001",
-    title: "How to Verify Amazon Stores: Complete Safety Guide",
-    slug: "amazon-store-verification",
-    excerpt: "Learn how to identify legitimate Amazon sellers and avoid scams with our comprehensive verification guide.",
-    content: getMarkdownContent('amazon-store-verification.md'),
-    linkPath: "/blogs/amazon-store-verification",
-    fileMarkdownPath: "/content/blogs/amazon-store-verification.md",
-    status: "published",
-    createdAt: "2024-01-15T10:00:00Z",
-    userId: 1,
-    createdById: 1,
-    updatedById: 1,
-    createdAt: "2024-01-15T09:00:00Z",
-    updatedAt: "2024-01-15T10:00:00Z",
-    viewCount: 2150,
-    likeCount: 189,
-    shareCount: 45,
-    commentCount: 28,
-    tags: "amazon,verification,safety,online-shopping",
-    metaDescription: "Complete guide to verifying Amazon stores and avoiding scams while shopping online",
-    featured: true,
-    author: {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah@goodlist.com"
-    },
-    readTime: 8
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440002",
-    title: "eBay Seller Verification: Your Complete Safety Guide",
-    slug: "ebay-seller-verification",
-    excerpt: "Master the art of identifying trustworthy eBay sellers with our detailed verification checklist and safety tips.",
-    content: getMarkdownContent('ebay-seller-verification.md'),
-    linkPath: "/blogs/ebay-seller-verification",
-    fileMarkdownPath: "/content/blogs/ebay-seller-verification.md",
-    status: "published",
-    createdAt: "2024-01-10T14:30:00Z",
-    userId: 2,
-    createdById: 2,
-    updatedById: 2,
-    createdAt: "2024-01-10T13:00:00Z",
-    updatedAt: "2024-01-10T14:30:00Z",
-    viewCount: 1890,
-    likeCount: 156,
-    shareCount: 32,
-    commentCount: 19,
-    tags: "ebay,seller-verification,marketplace,safety",
-    metaDescription: "Learn how to verify eBay sellers and shop safely on the marketplace",
-    featured: false,
-    author: {
-      id: 2,
-      name: "Mike Chen",
-      email: "mike@goodlist.com"
-    },
-    readTime: 10
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440003",
-    title: "Shopify Store Safety: How to Verify Independent Online Stores",
-    slug: "shopify-store-safety",
-    excerpt: "Discover how to identify legitimate Shopify stores and protect yourself from scams when shopping at independent retailers.",
-    content: getMarkdownContent('shopify-store-safety.md'),
-    linkPath: "/blogs/shopify-store-safety",
-    fileMarkdownPath: "/content/blogs/shopify-store-safety.md",
-    status: "published",
-    createdAt: "2024-01-05T09:15:00Z",
-    userId: 3,
-    createdById: 3,
-    updatedById: 3,
-    createdAt: "2024-01-05T09:15:00Z",
-    updatedAt: "2024-01-05T09:15:00Z",
-    viewCount: 1456,
-    likeCount: 134,
-    shareCount: 28,
-    commentCount: 15,
-    tags: "shopify,store-verification,independent-stores,safety",
-    metaDescription: "Complete guide to verifying Shopify stores and shopping safely at independent retailers",
-    featured: false,
-    author: {
-      id: 3,
-      name: "Emma Rodriguez",
-      email: "emma@goodlist.com"
-    },
-    readTime: 12
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { isAuthenticated: false, isAdmin: false, error: 'No authorization header' };
   }
-];
+
+  try {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET
+    });
+
+    if (!token) {
+      return { isAuthenticated: false, isAdmin: false, error: 'Invalid token' };
+    }
+
+    const isAdmin = token.role === 'admin';
+    return { isAuthenticated: true, isAdmin, error: null };
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return { isAuthenticated: false, isAdmin: false, error: 'Auth verification failed' };
+  }
+}
+
+// API helper functions
+async function fetchBlogById(request: NextRequest, id: string): Promise<BodyResponse<{ blogDetail: Blog }>> {
+  const result = await fetchWithAuth<BodyResponse<{ blogDetail: Blog }>>({
+    request,
+    url: `${process.env.NEXTAUTH_URL!}/api/blogs/${id}`,
+    method: 'GET'
+  });
+
+  if (result.statusCode === 200) {
+    return result;
+  } else {
+    throw new Error(result?.message ?? "Failed to fetch blog");
+  }
+}
+
+async function updateBlogById(request: NextRequest, id: string, body: FormData): Promise<BodyResponse<{ blogDetail: Blog }>> {
+  const result = await fetchWithAuth<BodyResponse<{ blogDetail: Blog }>>({
+    request,
+    url: `${process.env.NEXTAUTH_URL!}/api/blogs/${id}`,
+    method: 'PUT',
+    body: body
+  });
+
+  if (result.statusCode === 200) {
+    return result;
+  } else {
+    throw new Error(result?.message ?? "Failed to update blog");
+  }
+}
+
+async function deleteBlogById(request: NextRequest, id: string): Promise<BodyResponse<unknown>> {
+  const result = await fetchWithAuth<BodyResponse<unknown>>({
+    request,
+    url: `${process.env.NEXTAUTH_URL!}/api/blogs/${id}`,
+    method: 'DELETE'
+  });
+
+  if (result.statusCode === 200) {
+    return result;
+  } else {
+    throw new Error(result?.message ?? "Failed to delete blog");
+  }
+}
+
 
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params;
-
-  const blog = mockBlogs.find(blog => blog.id === id);
-
-  if (!blog) {
-    return NextResponse.json(
-      { error: "Blog post not found" },
-      { status: 404 }
-    );
-  }
-
-  // Return blog with complete structure including assets and createdBy
-  const blogWithCompleteStructure = {
-    id: blog.id,
-    title: blog.title,
-    slug: blog.slug,
-    content: blog.content,
-    excerpt: blog.excerpt,
-    linkPath: blog.linkPath,
-    fileMarkdownPath: blog.fileMarkdownPath,
-    status: blog.status,
-    createdAt: blog.createdAt,
-    userId: blog.userId,
-    createdById: blog.createdById,
-    updatedById: blog.updatedById,
-    createdAt: blog.createdAt,
-    updatedAt: blog.updatedAt,
-    viewCount: blog.viewCount,
-    tags: blog.tags ? blog.tags.split(',').map(tag => tag.trim()) : [],
-    metaDescription: blog.metaDescription,
-    featured: blog.featured,
-    assets: [], // Mock empty assets array for now
-    createdBy: { displayName: blog.author?.name || 'Unknown Author' },
-    // Keep author for backward compatibility
-    author: blog.author,
-    // Include optional fields
-    likeCount: blog.likeCount,
-    shareCount: blog.shareCount,
-    commentCount: blog.commentCount,
-    readTime: blog.readTime
-  };
-
-  return NextResponse.json(blogWithCompleteStructure);
-}
-
-export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
 
-    // Check admin authentication
-    const authCheck = await checkAdminAuth(request);
-    if (!authCheck.isAuthenticated || !authCheck.isAdmin) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 401 }
-      );
-    }
+    const result = await fetchBlogById(request, id);
 
-    // Handle both JSON and FormData
-    let updateData: Partial<BlogFormData>;
-    const contentType = request.headers.get('content-type');
-    
-    if (contentType?.includes('multipart/form-data')) {
-      // Handle FormData
-      const formData = await request.formData();
-      updateData = {
-        title: formData.get('title') as string,
-        slug: formData.get('slug') as string,
-        content: formData.get('content') as string,
-        excerpt: formData.get('excerpt') as string || '',
-        status: formData.get('status') as 'draft' | 'published' | 'archived' | 'deleted' || 'draft',
-        tags: formData.get('tags') as string || '',
-        metaDescription: formData.get('metaDescription') as string || '',
-        featured: formData.get('featured') === 'true',
-        uploadedImages: []
-      };
-      
-      // Handle uploaded images array
-      const uploadedImages: string[] = [];
-      let index = 0;
-      while (formData.has(`uploadedImages[${index}]`)) {
-        uploadedImages.push(formData.get(`uploadedImages[${index}]`) as string);
-        index++;
+    if (result.statusCode === 200) {
+      if (!result.data?.blogDetail) {
+        return NextResponse.json(
+          { error: "Blog post not found" },
+          { status: 404 }
+        );
       }
-      updateData.uploadedImages = uploadedImages;
-    } else {
-      // Handle JSON
-      updateData = await request.json();
+
+      // Return blog with complete structure including assets and createdBy
+      const blog = result.data.blogDetail;
+      const blogWithCompleteStructure = {
+        id: blog.id,
+        title: blog.title,
+        slug: blog.slug,
+        content: blog.content,
+        excerpt: blog.excerpt,
+        linkPath: blog.linkPath,
+        fileMarkdownPath: blog.fileMarkdownPath,
+        status: blog.status,
+        createdAt: blog.createdAt,
+        userId: blog.userId,
+        createdById: blog.createdById,
+        updatedById: blog.updatedById,
+        updatedAt: blog.updatedAt,
+        viewCount: blog.viewCount,
+        tags: typeof blog.tags === 'string' ? blog.tags.split(',').map(tag => tag.trim()) : blog.tags || [],
+        metaDescription: blog.metaDescription,
+        featured: blog.featured,
+        assets: blog.assets || [],
+        createdBy: blog.createdBy || { displayName: blog.author?.displayName || 'Unknown Author' },
+        // Keep author for backward compatibility
+        author: blog.author,
+        // Include optional fields if they exist
+        ...(blog.createdAt && { createdAt: blog.createdAt }),
+        ...(blog.likeCount !== undefined && { likeCount: blog.likeCount }),
+        ...(blog.shareCount !== undefined && { shareCount: blog.shareCount }),
+        ...(blog.commentCount !== undefined && { commentCount: blog.commentCount }),
+        ...(blog.readTime !== undefined && { readTime: blog.readTime })
+      };
+
+      return NextResponse.json(blogWithCompleteStructure);
     }
 
-    // Find blog by ID
-    const blogIndex = mockBlogs.findIndex(blog => blog.id === id);
-    if (blogIndex === -1) {
+    return NextResponse.json(
+      { error: result.message || "Blog post not found" },
+      { status: 404 }
+    );
+  } catch (error) {
+    console.error('Error fetching blog:', error);
+    return NextResponse.json(
+      { error: "Failed to fetch blog post" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+): Promise<NextResponse<BodyResponse<Blog>>> {
+  try {
+    const { id } = await context.params;
+    const body = await request.formData();
+    
+    // First, fetch the existing blog to get current markdown file path
+    let existingBlog: Blog | null = null;
+    try {
+      const existingResult = await fetchBlogById(request, id);
+      if (existingResult.statusCode === 200 && existingResult.data?.blogDetail) {
+        existingBlog = existingResult.data.blogDetail;
+      }
+    } catch (error) {
+      console.log('Could not fetch existing blog for cleanup:', error);
+    }
+    
+    // Handle markdown file if provided
+    const markdownFile = body.get('markdownFile') as File | null;
+    // let fileMarkdownPath = '';
+    
+    if (markdownFile) {
+      // Save the markdown file to the content/blogs directory
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      const contentDir = path.join(process.cwd(), 'content', 'blogs');
+      
+      // Ensure directory exists
+      try {
+        await fs.access(contentDir);
+      } catch {
+        await fs.mkdir(contentDir, { recursive: true });
+      }
+      
+      // Remove old markdown file if it exists and is different from the new one
+      if (existingBlog?.fileMarkdownPath) {
+        try {
+          const oldFileName = existingBlog.fileMarkdownPath.replace('/content/blogs/', '');
+          const newFileName = markdownFile.name;
+          
+          // Only remove if the file names are different
+          if (oldFileName !== newFileName) {
+            const oldFilePath = path.join(contentDir, oldFileName);
+            await fs.unlink(oldFilePath);
+            console.log(`Removed old markdown file: ${oldFileName}`);
+          }
+        } catch (error) {
+          console.log('Could not remove old markdown file:', error);
+          // Continue with the process even if cleanup fails
+        }
+      }
+      
+      // Save the new file
+      const fileName = markdownFile.name;
+      const filePath = path.join(contentDir, fileName);
+      const buffer = Buffer.from(await markdownFile.arrayBuffer());
+      await fs.writeFile(filePath, buffer);
+      
+      // fileMarkdownPath = `/content/blogs/${fileName}`;
+    }
+    
+    // Convert FormData to plain object for validation
+    const data = {
+      title: body.get('title'),
+      slug: body.get('slug'),
+      content: body.get('content'),
+      excerpt: body.get('excerpt') || '',
+      linkPath: body.get('linkPath') || '',
+      status: body.get('status') || 'draft',
+      tags: body.get('tags') || '',
+      metaDescription: body.get('metaDescription') || '',
+      featured: body.get('featured') === 'true',
+      uploadedImages: []
+    };
+
+    // Zod validation
+    const resultZod = blogFormSchema.safeParse(data);
+    if (!resultZod.success) {
       return NextResponse.json(
-        { error: "Blog post not found" },
-        { status: 404 }
+        {
+          statusCode: 400,
+          message: resultZod.error.errors[0]?.message || "Invalid data",
+          data: undefined
+        },
+        { status: 400 }
       );
     }
 
-    const existingBlog = mockBlogs[blogIndex];
-    const now = new Date().toISOString();
+    const submitBody = new FormData();
+    submitBody.append('userId', body.get('userId') as string || '');
+    submitBody.append('title', body.get('title') as string);
+    submitBody.append('slug', body.get('slug') as string);
+    submitBody.append('content', body.get('content') as string);
+    submitBody.append('excerpt', body.get('excerpt') as string || '');
+    submitBody.append('linkPath', body.get('linkPath') as string || '');
+    submitBody.append('status', body.get('status') as string || 'draft');
+    submitBody.append('tags', body.get('tags') as string || '');
+    submitBody.append('metaDescription', body.get('metaDescription') as string || '');
+    submitBody.append('featured', body.get('featured') === 'true' ? 'true' : 'false');
+    submitBody.append('uploadedImages', body.get('uploadedImages') as string || '');
+    
+    // Append the actual markdown file if it exists, otherwise append empty string
+    if (markdownFile) {
+      submitBody.append('markdownFile', markdownFile);
+    } else {
+      submitBody.append('markdownFile', '');
+    }
 
-    // Update blog object
-    const updatedBlog: BlogData = {
-      ...existingBlog,
-      ...updateData,
-      updatedAt: now,
-      updatedById: 1, // Mock admin user ID
-      createdAt: updateData.status === 'published' && !existingBlog.createdAt ? now : existingBlog.createdAt,
-      readTime: updateData.content ? Math.ceil(updateData.content.length / 200) : existingBlog.readTime
-    };
+    const result = await updateBlogById(request, id, submitBody);
 
-    // Update in mock blogs array
-    mockBlogs[blogIndex] = updatedBlog;
+    if (result.statusCode === 200) {
+      return NextResponse.json({
+        statusCode: 200,
+        message: "Blog updated successfully",
+        data: result?.data?.blogDetail
+      }, { status: 200 });
+    } else {
+      return NextResponse.json(
+        {
+          statusCode: 400,
+          message: result?.message ?? "Failed to update blog",
+          data: undefined
+        },
+        { status: 400 }
+      );
+    }
 
-    // Return the updated blog with complete structure
-    const responseBlog = {
-      id: updatedBlog.id,
-      title: updatedBlog.title,
-      slug: updatedBlog.slug,
-      content: updatedBlog.content,
-      excerpt: updatedBlog.excerpt,
-      linkPath: updatedBlog.linkPath,
-      fileMarkdownPath: updatedBlog.fileMarkdownPath,
-      status: updatedBlog.status,
-      createdAt: updatedBlog.createdAt,
-      userId: updatedBlog.userId,
-      createdById: updatedBlog.createdById,
-      updatedById: updatedBlog.updatedById,
-      createdAt: updatedBlog.createdAt,
-      updatedAt: updatedBlog.updatedAt,
-      viewCount: updatedBlog.viewCount,
-      tags: updatedBlog.tags ? updatedBlog.tags.split(',').map(tag => tag.trim()) : [],
-      metaDescription: updatedBlog.metaDescription,
-      featured: updatedBlog.featured,
-      assets: [], // Mock empty assets array for now
-      createdBy: { displayName: updatedBlog.author?.name || 'Unknown Author' },
-      // Keep author for backward compatibility
-      author: updatedBlog.author,
-      // Include optional fields
-      likeCount: updatedBlog.likeCount,
-      shareCount: updatedBlog.shareCount,
-      commentCount: updatedBlog.commentCount,
-      readTime: updatedBlog.readTime
-    };
-
-    return NextResponse.json(responseBlog);
   } catch (error) {
-    console.error('Error updating blog:', error);
+    console.error("Error updating blog", error);
     return NextResponse.json(
-      { error: 'Failed to update blog' },
+      {
+        statusCode: 500,
+        message: "Internal server error",
+        data: undefined
+      },
       { status: 500 }
     );
   }
@@ -326,21 +302,47 @@ export async function DELETE(
       );
     }
 
-    // Find blog by ID
-    const blogIndex = mockBlogs.findIndex(blog => blog.id === id);
-    if (blogIndex === -1) {
+    // First, fetch the existing blog to get markdown file path for cleanup
+    let existingBlog: Blog | null = null;
+    try {
+      const existingResult = await fetchBlogById(request, id);
+      if (existingResult.statusCode === 200 && existingResult.data?.blogDetail) {
+        existingBlog = existingResult.data.blogDetail;
+      }
+    } catch (error) {
+      console.log('Could not fetch existing blog for cleanup:', error);
+    }
+
+    const result = await deleteBlogById(request, id);
+
+    if (result.statusCode === 200) {
+      // Clean up markdown file if it exists
+      if (existingBlog?.fileMarkdownPath) {
+        try {
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          
+          const fileName = existingBlog.fileMarkdownPath.replace('/content/blogs/', '');
+          const contentDir = path.join(process.cwd(), 'content', 'blogs');
+          const filePath = path.join(contentDir, fileName);
+          
+          await fs.unlink(filePath);
+          console.log(`Removed markdown file after blog deletion: ${fileName}`);
+        } catch (error) {
+          console.log('Could not remove markdown file after deletion:', error);
+          // Continue with success response even if cleanup fails
+        }
+      }
+
       return NextResponse.json(
-        { error: "Blog post not found" },
-        { status: 404 }
+        { message: 'Blog post deleted successfully' },
+        { status: 200 }
       );
     }
 
-    // Remove from mock blogs array
-    mockBlogs.splice(blogIndex, 1);
-
     return NextResponse.json(
-      { message: 'Blog post deleted successfully' },
-      { status: 200 }
+      { error: result.message || 'Failed to delete blog' },
+      { status: 400 }
     );
   } catch (error) {
     console.error('Error deleting blog:', error);

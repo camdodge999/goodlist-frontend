@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Blog, BlogFormData, BlogsResponse, BlogSearchParams } from '@/types/blog';
+import { Blog, BlogsResponse, BlogSearchParams } from '@/types/blog';
 import { useCSRFForm } from '@/hooks/useCSRFToken';
 import { BlogFormInput } from '@/validators/blog.schema';
 
@@ -30,10 +30,11 @@ interface UseBlogReturn {
   // Actions
   fetchBlogs: (params?: BlogSearchParams) => Promise<void>;
   fetchBlogBySlug: (slug: string) => Promise<Blog | null>;
-  getBlogById: (id: string) => Promise<Blog | null>;
+  fetchBlogById: (id: string) => Promise<Blog | null>;
   createBlog: (blogData: BlogFormInput | FormData) => Promise<Blog | null>;
   updateBlog: (id: string, blogData: Partial<BlogFormInput> | FormData) => Promise<Blog | null>;
   deleteBlog: (id: string) => Promise<boolean>;
+  cleanupDraftImages: (imagePaths: string[], action?: 'cleanup' | 'preserve') => Promise<boolean>;
   
   // Auth helpers
   isAuthenticated: boolean;
@@ -162,7 +163,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
   }, [requireAuth, adminOnly, getAuthHeadersForGet]);
 
   // Fetch single blog by ID
-  const getBlogById = useCallback(async (id: string): Promise<Blog | null> => {
+  const fetchBlogById = useCallback(async (id: string): Promise<Blog | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -265,6 +266,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
         headers = {};
         if (session?.user?.token) {
           headers.Authorization = `Bearer ${session.user.token}`;
+          requestBody.append('userId', session.user.id ?? '');
         }
       } else {
         // Handle regular object - use JSON with CSRF token
@@ -272,7 +274,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
         headers = getAuthHeaders();
       }
 
-      const response = await fetch(`/api/blogs/${id}`, {
+      const response = await fetch(`/api/blogs/id/${id}`, {
         method: 'PUT',
         headers,
         body: requestBody,
@@ -333,6 +335,36 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     }
   }, [checkAuthRequirements, canManageBlogs, getAuthHeaders, currentBlog]);
 
+  // Cleanup draft images
+  const cleanupDraftImages = useCallback(async (imagePaths: string[], action: 'cleanup' | 'preserve' = 'cleanup'): Promise<boolean> => {
+    if (imagePaths.length === 0) return true;
+
+    try {
+      const response = await fetch('/api/blogs/cleanup-draft-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imagePaths,
+          action
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Draft images cleanup result:', result);
+        return true;
+      } else {
+        console.error('Failed to cleanup draft images:', response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error cleaning up draft images:', error);
+      return false;
+    }
+  }, []);
+
   return {
     // Data
     blogs,
@@ -344,10 +376,11 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
     // Actions
     fetchBlogs,
     fetchBlogBySlug,
-    getBlogById,
+    fetchBlogById,
     createBlog,
     updateBlog,
     deleteBlog,
+    cleanupDraftImages,
     
     // Auth helpers
     isAuthenticated,

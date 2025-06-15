@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFileSync } from "fs";
-import { join } from "path";
 import { getToken } from "next-auth/jwt";
 import { Blog } from "@/types/blog";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { BodyResponse } from "@/types/response";
 import { blogFormSchema } from "@/validators/blog.schema";
 
-// Helper function to read markdown content
-const getMarkdownContent = (filename: string): string => {
-  try {
-    const filePath = join(process.cwd(), 'content', 'blogs', filename);
-    return readFileSync(filePath, 'utf8');
-  } catch (error) {
-    console.error(`Error reading markdown file ${filename}:`, error);
-    return `# ${filename}\n\nContent not available.`;
-  }
-};
+
 
 // Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
@@ -74,8 +63,8 @@ async function updateBlogBySlug(request: NextRequest, slug: string, body: FormDa
   }
 }
 
-async function deleteBlogBySlug(request: NextRequest, slug: string): Promise<BodyResponse<any>> {
-  const result = await fetchWithAuth<BodyResponse<any>>({
+async function deleteBlogBySlug(request: NextRequest, slug: string): Promise<BodyResponse<unknown>> { 
+  const result = await fetchWithAuth<BodyResponse<unknown>>({
     request,
     url: `${process.env.NEXTAUTH_URL!}/api/blogs/slug/${slug}`,
     method: 'DELETE'
@@ -132,8 +121,6 @@ export async function GET(
         // Include optional fields if they exist
         ...(blog.createdAt && { createdAt: blog.createdAt }),
         ...(blog.likeCount !== undefined && { likeCount: blog.likeCount }),
-        ...(blog.shareCount !== undefined && { shareCount: blog.shareCount }),
-        ...(blog.commentCount !== undefined && { commentCount: blog.commentCount }),
         ...(blog.readTime !== undefined && { readTime: blog.readTime })
       };
 
@@ -247,8 +234,6 @@ export async function PUT(
         // Include optional fields if they exist
         ...(blog?.createdAt && { createdAt: blog.createdAt }),
         ...(blog?.likeCount !== undefined && { likeCount: blog.likeCount }),
-        ...(blog?.shareCount !== undefined && { shareCount: blog.shareCount }),
-        ...(blog?.commentCount !== undefined && { commentCount: blog.commentCount }),
         ...(blog?.readTime !== undefined && { readTime: blog.readTime })
       };
 

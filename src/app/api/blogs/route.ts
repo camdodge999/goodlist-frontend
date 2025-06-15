@@ -41,7 +41,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     
     // Handle markdown file if provided
     const markdownFile = body.get('markdownFile') as File | null;
-    let fileMarkdownPath = '';
+    // let fileMarkdownPath = '';
     
     if (markdownFile) {
       // Save the markdown file to the content/blogs directory
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       const buffer = Buffer.from(await markdownFile.arrayBuffer());
       await fs.writeFile(filePath, buffer);
       
-      fileMarkdownPath = `/content/blogs/${fileName}`;
+      // fileMarkdownPath = `/content/blogs/${fileName}`;
     }
     
     // Convert FormData to plain object for validation

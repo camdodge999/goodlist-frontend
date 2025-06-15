@@ -12,7 +12,7 @@ interface BlogGridProps {
   readonly isLoading?: boolean;
 }
 
-export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProps) {  
+export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return "No date";
     return dayjs(dateString).format("MMMM D, YYYY");
@@ -29,7 +29,7 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
   const calculateReadTime = (content?: string, fallbackReadTime?: number): number => {
     if (fallbackReadTime) return fallbackReadTime;
     if (!content) return 1;
-    
+
     const wordsPerMinute = 200;
     const wordCount = content.split(/\s+/).length;
     return Math.ceil(wordCount / wordsPerMinute);
@@ -46,7 +46,7 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            
+
             <h3 className="text-2xl font-semibold text-gray-900 mb-3">
               No Store Guides Found
             </h3>
@@ -69,15 +69,15 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          
+
           <h3 className="text-3xl font-bold text-gray-900 mb-6">
             Learn How to Shop Safely Online
           </h3>
-          
+
           <p className="text-xl text-gray-600 mb-10">
             Discover comprehensive guides to verify stores and protect yourself from scams
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
             <div className="bg-green-50 rounded-xl p-8">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
@@ -109,16 +109,16 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
               <p className="text-red-800">Recognize common scam tactics and protect your money and personal data</p>
             </div>
           </div>
-          
+
           <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/verify" 
+            <Link
+              href="/verify"
               className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Verify a Store Now
             </Link>
-            <Link 
-              href="/store" 
+            <Link
+              href="/store"
               className="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Browse Verified Stores
@@ -140,19 +140,19 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
             <div className="flex flex-col lg:flex-row">
               {/* Image skeleton */}
               <div className="lg:w-80 h-64 lg:h-auto bg-gray-200"></div>
-              
+
               {/* Content skeleton */}
               <div className="flex-1 p-8">
                 <div className="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2 w-5/6"></div>
                 <div className="h-4 bg-gray-200 rounded mb-6 w-2/3"></div>
-                
+
                 <div className="flex gap-2 mb-6">
                   <div className="h-6 bg-gray-200 rounded-full w-20"></div>
                   <div className="h-6 bg-gray-200 rounded-full w-24"></div>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <div className="h-4 bg-gray-200 rounded w-32"></div>
                   <div className="h-4 bg-gray-200 rounded w-20"></div>
@@ -174,11 +174,11 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
       {blogs.map((blog) => {
         const tagsArray = getTagsArray(blog.tags);
         const readTime = calculateReadTime(blog.content, blog.readTime);
-        const authorName = blog.createdBy?.displayName || blog.author?.displayName || blog.author?.name || 'Unknown Author';
-        
+        const authorName = blog.createdBy?.displayName || blog.author?.displayName || 'Unknown Author';
+
         // Extract hero image from markdown content
         const heroImage = blog.content ? getFirstImageFromMarkdown(blog.content) : null;
-        
+
         // Generate enhanced excerpt from markdown if not provided
         const displayExcerpt = blog.excerpt || (blog.content ? generateExcerptFromMarkdown(blog.content, 180) : '');
 
@@ -205,7 +205,7 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
                     </svg>
                   </div>
                 )}
-                
+
                 {/* Featured badge overlay */}
                 {blog.featured && (
                   <div className="absolute top-4 left-4">
@@ -226,7 +226,7 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
                   </h2>
 
                   <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                    {displayExcerpt}
+                    {displayExcerpt.slice(0, 60)}{displayExcerpt.length > 60 ? '...' : ''}
                   </p>
 
                   {/* Tags */}
@@ -253,14 +253,9 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {authorName.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
                       <span className="text-sm font-medium text-gray-700">{authorName}</span>
                     </div>
-                    
+
                     <div className="text-sm text-gray-500">
                       {formatDate(blog.createdAt)}
                     </div>
@@ -273,7 +268,7 @@ export default function BlogGrid({ blogs, searchQuery, isLoading }: BlogGridProp
                       </svg>
                       {readTime} min read
                     </span>
-                    
+
                     {blog.viewCount > 0 && (
                       <span className="flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

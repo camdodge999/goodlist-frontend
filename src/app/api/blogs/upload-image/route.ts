@@ -1,37 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 
-// Helper function to check admin authentication
-async function checkAdminAuth(request: NextRequest) {
-  try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    
-    if (!token || !token.token) {
-      return { isAuthenticated: false, isAdmin: false };
-    }
-
-    // For now, we'll assume any authenticated user with a token is an admin
-    // In a real implementation, you'd check the user's role from the backend
-    return { isAuthenticated: true, isAdmin: true };
-  } catch {
-    return { isAuthenticated: false, isAdmin: false };
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
-    // Check admin authentication
-    const authCheck = await checkAdminAuth(request);
-    if (!authCheck.isAuthenticated || !authCheck.isAdmin) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 401 }
-      );
-    }
-
     const formData = await request.formData();
     const file = formData.get('image') as File;
 
@@ -67,10 +40,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique filename
-    const timestamp = Date.now();
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const fileExtension = file.name.split('.').pop() || 'jpg';
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "");
-    const fileName = `${sanitizedName}-${timestamp}.${fileExtension}`;
+    const fileName = `image-${uniqueSuffix}.${fileExtension}`;
     const filePath = join(uploadDir, fileName);
 
     // Convert file to buffer and save

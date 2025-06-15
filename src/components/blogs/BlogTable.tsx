@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEdit } from '@fortawesome/free-solid-svg-icons';
+// import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { Blog } from '@/types/blog';
 
 interface BlogTableProps {

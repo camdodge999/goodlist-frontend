@@ -18,7 +18,6 @@ export default function FAQPage() {
   const generalFaqs = faqs.filter(faq => faq.category === 'general');
 
   // Thai language content
-  const pageTitle = 'คำถามที่พบบ่อย';
   const pageDescription = 'ค้นหาคำตอบสำหรับคำถามทั่วไปเกี่ยวกับนโยบายและการใช้งานของเรา';
 
   // Section titles in Thai
@@ -48,8 +47,8 @@ export default function FAQPage() {
     <div className="container mx-auto py-12 px-4 md:px-6 mb-16">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {pageTitle}
+          <h1 className="text-4xl font-bold pt-4 mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            คำถามที่พบบ่อย
           </h1>
           <p className="text-gray-600 text-lg">{pageDescription}</p>
         </div>

@@ -19,7 +19,7 @@ import SafetyTipCard from './SafetyTipsCard';
 // Get popular FAQs
 const popularFaqs = [
   faqs.find(faq => faq.id === "what-is-goodlist"),
-  faqs.find(faq => faq.id === "data-security"),
+  faqs.find(faq => faq.id === "data-retention"),
   faqs.find(faq => faq.id === "privacy-policy"),
 ].filter(Boolean) as FAQ[];
 

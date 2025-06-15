@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
     // Validate and sanitize the cleaned path parameter
     const pathValidation = validatePath(cleanPath);
 
-    console.log("Path validation result:", pathValidation);
     if (!pathValidation.isValid) {
       console.warn(`🚨 SSRF attempt blocked: ${pathValidation.error} - Path: ${cleanPath}`);
       return NextResponse.json({
@@ -59,8 +58,6 @@ export async function GET(request: NextRequest) {
 
     const fullUrl = `${backendUrl}/${pathValidation.sanitizedPath}`;
 
-    console.log("Final backend URL:", fullUrl);
-
     // Use secure fetch with SSRF protection
     const imageResponse = await fetch(fullUrl, {
       headers: {
@@ -68,7 +65,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log(imageResponse);
 
     if (!imageResponse.ok) {
       return NextResponse.json({ status: 'error', message: 'Image not found' }, { status: 404 });

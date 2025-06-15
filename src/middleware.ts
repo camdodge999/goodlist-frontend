@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest) {
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${STATIC_SCRIPT_HASHES.join(' ')} ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ;
-    style-src 'self' 'nonce-${nonce}' ${STATIC_STYLE_HASHES.join(' ')} ${process.env.NODE_ENV === 'development' ? "'unsafe-eval' 'unsafe-hashes'" : ""} ;
+    style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${STATIC_STYLE_HASHES.join(' ')} ${process.env.NODE_ENV === 'development' ? "'unsafe-eval' 'unsafe-hashes'" : ""} ;
     img-src 'self' blob: data:;
     script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic' ${STATIC_SCRIPT_HASHES.join(' ')} ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ;
     font-src 'self';

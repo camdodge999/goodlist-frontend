@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       { statusCode: 400, message: result.message, data: undefined },
       { status: 400 }
     );
-  } catch (error) {
+  } catch  {
     return NextResponse.json(
       { statusCode: 500, message: "Internal server error", data: undefined },
       { status: 500 }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
       );
     }
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         statusCode: 500,

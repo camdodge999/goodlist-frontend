@@ -202,9 +202,6 @@ export const buildCSPDirectives = (config: CSPConfig = {}): Record<string, strin
   } else {
     // Production approach: nonce-first with hash fallbacks
     if (nonce) {
-      
-      console.log(`'nonce-${nonce}'`);
-
       styleSrc.push(`'nonce-${nonce}'`);
     }
     

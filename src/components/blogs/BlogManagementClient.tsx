@@ -27,12 +27,12 @@ export default function BlogManagementClient() {
     loading,
     error,
     fetchBlogs,
-    deleteBlog,
+    // deleteBlog,
     canManageBlogs
   } = useBlog({ adminOnly: true });
 
   const {
-    displayConfirmDialog,
+    // displayConfirmDialog,
     showConfirmDialog,
     setShowConfirmDialog,
     confirmTitle,

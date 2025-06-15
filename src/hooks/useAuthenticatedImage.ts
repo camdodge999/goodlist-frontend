@@ -18,7 +18,7 @@ export function useAuthenticatedImage(imageUrl: string | null | undefined) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/images/uploads?path=${encodeURIComponent(imageUrl)}`, {
+        const response = await fetch(`/api/images/uploads?path=${imageUrl}`, {
           headers: session?.user?.token ? {
             'Authorization': `Bearer ${session?.user?.token}`
           } : {}
@@ -40,23 +40,7 @@ export function useAuthenticatedImage(imageUrl: string | null | undefined) {
     };
 
     fetchAuthenticatedImage();
-
-    // Cleanup function to revoke object URL
-    return () => {
-      if (authenticatedUrl && authenticatedUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(authenticatedUrl);
-      }
-    };
   }, [imageUrl, session?.user?.token]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (authenticatedUrl && authenticatedUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(authenticatedUrl);
-      }
-    };
-  }, []);
 
   return { authenticatedUrl, isLoading, error };
 } 

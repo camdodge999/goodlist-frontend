@@ -26,15 +26,14 @@ export default function useNavigation() {
       { name: "ร้านค้า", href: "/stores", icon: faStore },
       { name: "รายงานร้านค้า", href: "/report", icon: faExclamation },
       { name: "บทความ", href: "/blogs", icon: faNewspaper },
+      { name: "ยืนยันตัวตน", href: "/verify", icon: faCheck },
     ];
 
     // Use currentUser from UserContext if available, otherwise fall back to session
     const user = currentUser || (session?.user as unknown as User);
 
     if (user) {
-      const userItems: NavItem[] = [
-        { name: "ยืนยันตัวตน", href: "/verify", icon: faCheck },
-      ];
+      const userItems: NavItem[] = [];
 
       if (user.role === "admin") {
         userItems.push({ name: "จัดการบทความ", href: "/blog-management", icon: faNewspaper });

@@ -25,7 +25,8 @@ const STATIC_STYLE_HASHES = [
   "'sha256-fFiwGJFfGZ3i0Vt+xXYQgf88NKsgAfBwvY2aBowdoj4='",
   "'sha256-PhrR5O1xWiklTp5YfH8xWeig83Y/rhbrdb5whLn1pSg='",
   "'sha256-4RS22DYeB7U14dra4KcQYxmwt5HkOInieXK1NUMBmQI='",
-  "'sha256-4/2nIlfwIVTJ1+JcNQ6LkeVWzNS148LKAJeL5yofdN4='"
+  "'sha256-4/2nIlfwIVTJ1+JcNQ6LkeVWzNS148LKAJeL5yofdN4='",
+  "'sha256-4RS22DYeB7U14dra4KcQYxmwt5HkOInieXK1NUMBmQI='",
 ];
 
 const STATIC_SCRIPT_HASHES = [
@@ -89,10 +90,10 @@ export async function middleware(request: NextRequest) {
   // Build CSP header with both nonces and SHA256 hashes
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'  ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ${STATIC_SCRIPT_HASHES.join(' ')};
-    style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ""} ${STATIC_STYLE_HASHES.join(' ')};
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${STATIC_SCRIPT_HASHES.join(' ')} ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ;
+    style-src 'self' 'nonce-${nonce}' ${STATIC_STYLE_HASHES.join(' ')} ${process.env.NODE_ENV === 'development' ? "'unsafe-eval' 'unsafe-hashes'" : ""} ;
     img-src 'self' blob: data:;
-    script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'  ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ${STATIC_SCRIPT_HASHES.join(' ')};
+    script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic' ${STATIC_SCRIPT_HASHES.join(' ')} ${process.env.NODE_ENV === 'development' ? "'unsafe-inline' 'unsafe-eval'" : ""} ;
     font-src 'self';
     connect-src 'self';
     object-src 'none';

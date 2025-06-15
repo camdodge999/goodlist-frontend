@@ -39,33 +39,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
   try {
     const body = await request.formData();
     
-    // Handle markdown file if provided
-    const markdownFile = body.get('markdownFile') as File | null;
-    // let fileMarkdownPath = '';
-    
-    if (markdownFile) {
-      // Save the markdown file to the content/blogs directory
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      const contentDir = path.join(process.cwd(), 'content', 'blogs');
-      
-      // Ensure directory exists
-      try {
-        await fs.access(contentDir);
-      } catch {
-        await fs.mkdir(contentDir, { recursive: true });
-      }
-      
-      // Save the file
-      const fileName = markdownFile.name;
-      const filePath = path.join(contentDir, fileName);
-      const buffer = Buffer.from(await markdownFile.arrayBuffer());
-      await fs.writeFile(filePath, buffer);
-      
-      // fileMarkdownPath = `/content/blogs/${fileName}`;
-    }
-    
     // Convert FormData to plain object for validation
     const data = {
       title: body.get('title'),
@@ -106,13 +79,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<BodyRespo
     submitBody.append('featured', body.get('featured') === 'true' ? 'true' : 'false');
     submitBody.append('uploadedImages', body.get('uploadedImages') as string || '');
     
-    // Append the actual markdown file if it exists, otherwise append empty string
+    // Handle markdown file if provided
+    const markdownFile = body.get('markdownFile') as File | null;
     if (markdownFile) {
       submitBody.append('markdownFile', markdownFile);
     } else {
       submitBody.append('markdownFile', '');
-    } 
-
+    }
 
     const result = await createBlog(request, submitBody);
 

@@ -36,7 +36,6 @@ export const sitemapSections: SitemapSection[] = [
         title: 'ช่วยเหลือ',
         links: [
             { name: 'คำถามที่พบบ่อย', url: '/faq' },
-            { name: 'ติดต่อเรา', url: '/contact' },
         ]
     }
 ];

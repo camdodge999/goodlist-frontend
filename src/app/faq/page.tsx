@@ -138,10 +138,10 @@ export default function FAQPage() {
           <h3 className="text-2xl font-semibold mb-3">{contactTitle}</h3>
           <p className="mb-6 text-white/90">{contactDescription}</p>
           <Link 
-            href="/contact" 
+            href="https://www.facebook.com/goodlistseller" 
             className="inline-block bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors shadow-md"
           >
-            {contactButtonText}
+            {contactButtonText} 
           </Link>
         </div>
       </div>

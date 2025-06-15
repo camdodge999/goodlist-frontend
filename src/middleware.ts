@@ -32,18 +32,20 @@ const STATIC_SCRIPT_HASHES = [
   "'sha256-4RS22DYeB7U14dra4KcQYxmwt5HkOInieXK1NUMBmQI='", // webpack nonce script pattern
 ];
 
+const authPages = ['/login', '/register', '/logout', '/verify', '/blog-management', '/blog-management/new', '/blog-management/edit', '/profile'];
+
 /**
  * Generate a secure nonce using Web Crypto API (Edge Runtime compatible)
  */
 function generateNonce(): string {
   // Use crypto.randomUUID() which is supported in Edge Runtime
   const uuid = crypto.randomUUID();
-  
+
   // Convert UUID to base64 for nonce
   // Edge Runtime compatible approach
   const encoder = new TextEncoder();
   const data = encoder.encode(uuid);
-  
+
   // Convert to base64 manually since Buffer is not available in Edge Runtime
   let binary = '';
   for (let i = 0; i < data.length; i++) {
@@ -51,15 +53,15 @@ function generateNonce(): string {
   }
 
   const convert = btoa(binary)
-  
+
   return convert;
 }
 
 export async function middleware(request: NextRequest) {
   // Handle CSRF protection first for API routes and form submissions
-  if (request.nextUrl.pathname.startsWith('/api/') || 
-      (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS')) {
-    
+  if (request.nextUrl.pathname.startsWith('/api/') ||
+    (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS')) {
+
     // Skip CSRF for certain API routes that don't need it
     const skipCSRFPaths = [
       '/api/csrf-token',
@@ -68,11 +70,11 @@ export async function middleware(request: NextRequest) {
       '/api/auth/csrf',
       '/api/csp-report'
     ];
-    
-    const shouldSkipCSRF = skipCSRFPaths.some(path => 
+
+    const shouldSkipCSRF = skipCSRFPaths.some(path =>
       request.nextUrl.pathname.startsWith(path)
     );
-    
+
     if (!shouldSkipCSRF) {
       const csrfResponse = await handleCSRFProtection(request);
       if (csrfResponse && csrfResponse.status === 403) {
@@ -83,7 +85,7 @@ export async function middleware(request: NextRequest) {
 
   // Generate nonce using Edge Runtime compatible method
   const nonce = generateNonce();
-  
+
   // Build CSP header with both nonces and SHA256 hashes
   const cspHeader = `
     default-src 'self';
@@ -103,7 +105,7 @@ export async function middleware(request: NextRequest) {
     manifest-src 'self';
     upgrade-insecure-requests;
   `;
-  
+
   // Replace newline characters and spaces (Next.js docs approach)
   const contentSecurityPolicyHeaderValue = cspHeader
     .replace(/\s{2,}/g, ' ')
@@ -137,11 +139,9 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  
-  // Enhanced security headers for authentication-related pages
-  const authPages = ['/login', '/register', '/logout', '/verify', '/blog-management', '/blog-management/new', '/blog-management/edit'];
+
   const isAuthPage = authPages.some(page => request.nextUrl.pathname.startsWith(page));
-  
+
   if (isAuthPage) {
     // Additional security for auth pages to prevent information leakage
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -150,14 +150,14 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Redirect-Security', 'minimal-response');
     response.headers.set('X-Auth-Page', 'true');
   }
-  
+
   // CSP Reporting (enhanced)
   response.headers.set('Report-To', JSON.stringify({
     group: 'csp-endpoint',
     max_age: 86400,
     endpoints: [{ url: '/api/csp-report' }]
   }));
-  
+
   // Development logging with hash information
   if (process.env.NODE_ENV === 'development') {
     console.log('🔒 CSP Policy Applied (Edge Runtime Compatible):', {
@@ -172,15 +172,40 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const userAgent = request.headers.get('user-agent') || '';
     const referer = request.headers.get('referer') || '';
-    const clientIP = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
-    
-    const suspiciousPatterns = [/curl/i, /wget/i, /python/i, /scanner/i, /bot/i];
+    const clientIP = request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
+    const suspiciousPatterns = [
+      /curl/i,
+      /wget/i,
+      /python/i,
+      /scanner/i,
+      /bot/i,
+      /postman/i, 
+      /insomnia/i, 
+      /insomnia-rest-client/i, 
+      /insomnia-rest-client-app/i, 
+      /insomnia-rest-client-app-mac/i, 
+      /insomnia-rest-client-app-linux/i, 
+      /insomnia-rest-client-app-windows/i,
+      /selenium/i,
+      /phantomjs/i,
+      /puppeteer/i,
+      /headless/i,
+      /mechanize/i,
+      /scrapy/i,
+      /playwright/i,
+      /node-fetch/i,
+      /http-client/i,
+      /masscan/i,
+      /cfnetwork/i, // Often used by Apple tools/scripts
+    ];
     const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(userAgent));
-    
+
     if (isSuspicious && !referer.includes(request.nextUrl.origin)) {
       console.warn(`🚨 Suspicious API request detected: ${request.nextUrl.pathname} from ${clientIP} - User-Agent: ${userAgent}`);
+      return new NextResponse('Invalid request', { status: 403 });
     }
 
     if (request.nextUrl.pathname === '/api/images/uploads') {

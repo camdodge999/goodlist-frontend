@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Session } from "next-auth";
 import { useUser } from "@/contexts/UserContext";
 import { useStore } from "@/contexts/StoreContext";
 import useShowDialog from "@/hooks/useShowDialog";
@@ -20,7 +21,11 @@ import VerificationForm from "@/components/verify/VerificationForm";
 import { VerificationFormSchema } from "@/validators/verify.schema";
 import { Store } from "@/types/stores";
 
-export default function VerifyPageClient() {
+interface VerifyPageClientProps {
+  session: Session;
+}
+
+export default function VerifyPageClient({ session: serverSession }: VerifyPageClientProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { fetchUserProfile, isLoading: userLoading, userStores } = useUser();
@@ -51,21 +56,24 @@ export default function VerifyPageClient() {
     handleErrorClose,
   } = useShowDialog();
 
+  // Use server session or client session, preferring server session for immediate availability
+  const activeSession = serverSession || session;
+
   // Initialize user data when component mounts or session changes
   useEffect(() => {
-    // Redirect to login if not authenticated
-    if (status === "unauthenticated") {
+    // Redirect to login if not authenticated (fallback check)
+    if (status === "unauthenticated" && !serverSession) {
       router.push("/login");
       return;
     }
 
     // Only fetch user profile if authenticated and not already fetched
-    if (status === "authenticated" && session?.user?.id && !initialFetchComplete.current) {
+    if (activeSession?.user?.id && !initialFetchComplete.current) {
       // Set initialFetchComplete immediately to prevent double fetches
       initialFetchComplete.current = true;
-      fetchUserProfile(session.user.id);
+      fetchUserProfile(activeSession.user.id);
     }
-  }, [status, session, router]);
+  }, [status, activeSession, router, serverSession]);
 
   // Get the oldest store (first store created)
   const getOldestStore = (): Store | null => {
@@ -115,7 +123,7 @@ export default function VerifyPageClient() {
     setSavedFiles(files);
     
     try {
-      if (!session?.user?.id) {
+      if (!activeSession?.user?.id) {
         throw new Error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบอีกครั้ง");
       }
 
@@ -125,7 +133,7 @@ export default function VerifyPageClient() {
       const submitFormData = new FormData();
 
       // Add form fields - ensure all values are strings
-      submitFormData.append('userId', session.user.id.toString());
+      submitFormData.append('userId', activeSession.user.id.toString());
       submitFormData.append('storeName', formData.storeName);
       submitFormData.append('email', formData.email || '');
       submitFormData.append('bankAccount', formData.bankAccount || '');
@@ -177,7 +185,8 @@ export default function VerifyPageClient() {
     setShowForm(true);
   };
 
-  if (userLoading || status === "loading") {
+  // Optimize loading state - only show loading if we don't have server session and client session is still loading
+  if (userLoading || (!serverSession && status === "loading")) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
@@ -189,7 +198,7 @@ export default function VerifyPageClient() {
   const oldestStore = getOldestStore();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-[calc(100vh-100px)] bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow-lg rounded-lg overflow-hidden p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
@@ -213,7 +222,7 @@ export default function VerifyPageClient() {
               )}
               
               <VerificationForm
-                initialData={saveFormData || { email: session?.user?.email || "" }}
+                initialData={saveFormData || { email: activeSession?.user?.email || "" }}
                 savedFiles={savedFiles}
                 onSubmit={handleFormSubmit}
                 isSubmitting={isLoading}

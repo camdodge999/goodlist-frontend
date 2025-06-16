@@ -345,6 +345,9 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                 buttonText: "กลับไปจัดการบทความ",
                 onButtonClick: () => router.push('/blog-management')
               });
+              setTimeout(() => {
+                router.push('/blog-management');
+              }, 1000);
             }
           } catch {
             displayErrorDialog({

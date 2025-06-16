@@ -728,7 +728,6 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                       <SelectItem value="draft">ร่าง</SelectItem>
                       <SelectItem value="published">เผยแพร่</SelectItem>
                       <SelectItem value="archived">จัดเก็บ</SelectItem>
-                      <SelectItem value="deleted">ลบ</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

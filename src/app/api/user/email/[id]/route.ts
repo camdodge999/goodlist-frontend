@@ -120,6 +120,6 @@ async function updateUserEmail({
       data: undefined
     };
   } else {
-    throw new Error(result.message || "Failed to update email");
+    throw new Error(result.message ?? "Failed to update email");
   }
 } 

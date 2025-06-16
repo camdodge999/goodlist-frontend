@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faSave, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faSave, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { Blog, BlogFormData, BlogAsset } from '@/types/blog';
 import { useBlog } from '@/hooks/useBlog';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import BlogFormSkeleton from '@/components/blogs/BlogFormSkeleton';
 import StatusDialog from '@/components/common/StatusDialog';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import useShowDialog from '@/hooks/useShowDialog';
 import CSRFInput from '@/components/ui/csrf-input';
 import { BlogFormInput, validateBlogForm } from '@/validators/blog.schema';
@@ -39,23 +40,6 @@ interface ValidationErrors {
   [key: string]: string;
 }
 
-// Custom debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 export default function BlogFormClient({ blogId }: BlogFormClientProps) {
   const router = useRouter();
   const {
@@ -63,6 +47,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     createBlog,
     updateBlog,
     fetchBlogById,
+    deleteBlog,
     canManageBlogs,
     cleanupDraftImages
   } = useBlog({ adminOnly: true });
@@ -79,8 +64,17 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     errorMessage,
     errorTitle,
     errorButtonText,
+    showConfirmDialog,
+    setShowConfirmDialog,
+    confirmTitle,
+    confirmMessage,
+    confirmButtonText,
+    cancelButtonText,
+    onConfirmButtonClick,
+    onCancelButtonClick,
     displaySuccessDialog,
     displayErrorDialog,
+    displayConfirmDialog,
     handleSuccessClose,
     handleErrorClose,
   } = useShowDialog();
@@ -103,7 +97,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // Separate state for File objects
   const [draftImages, setDraftImages] = useState<string[]>([]); // Track draft images for cleanup
-  
+
   // Validation state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -113,7 +107,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
   const isPageRefresh = useRef(false);
 
   const isEditing = !!blogId;
-  
+
   // Helper to determine the route context
   const getRouteContext = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -164,12 +158,12 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
       // Only cleanup if there are unsaved draft images and the form wasn't submitted successfully
       if (draftImages.length > 0 && !hasSubmitted) {
         const routeContext = getRouteContext();
-        
+
         // Different cleanup behavior based on route context:
         // - For new blog creation (blog-management/new): cleanup unused draft images
         // - For editing existing blog (blog-management/edit/[id]): be more conservative
         let shouldCleanup = false;
-        
+
         if (routeContext === 'new') {
           // Always cleanup draft images when abandoning new blog creation
           shouldCleanup = true;
@@ -177,7 +171,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
           // Only cleanup if we don't have an existing blog loaded (safety check)
           shouldCleanup = !editingBlog;
         }
-        
+
         if (shouldCleanup) {
           // Use a timeout to allow for navigation to complete
           setTimeout(() => {
@@ -225,7 +219,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
             const blob = await response.blob();
             const fileName = markdownImage.src.split('/').pop() || 'image';
             const file = new File([blob], fileName, { type: blob.type });
-            
+
             uploadedImages.push({
               fileName: fileName,
               path: markdownImage.src.replace('/uploads/', 'uploads/'),
@@ -254,7 +248,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     }));
     // Update uploadedFiles with File objects when available
     setUploadedFiles(images.map(img => img.file).filter((file): file is File => file !== undefined));
-    
+
     // Track draft images (only new uploads from uploads/blog directory)
     const newDraftImages = images
       .filter(img => img.url.startsWith('/uploads/blog/'))
@@ -270,7 +264,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     if (draftImages.length === 0) return;
 
     const success = await cleanupDraftImages(draftImages, action);
-    
+
     if (success && action === 'cleanup') {
       // Clear draft images list after successful cleanup
       setDraftImages([]);
@@ -306,25 +300,25 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
               setEditingBlog(blog);
               const existingAssets = blog.assets ?? [];
               const existingUploadedImages = convertAssetsToUploadedImages(existingAssets);
-              
+
               setFormData({
                 title: blog.title,
                 slug: blog.slug,
                 content: blog.content ?? '',
-                excerpt: blog.excerpt ?? '',  
+                excerpt: blog.excerpt ?? '',
                 status: blog.status,
                 tags: typeof blog.tags === 'string' ? blog.tags : blog.tags?.join(',') ?? '',
                 metaDescription: blog.metaDescription ?? '',
                 featured: blog.featured,
                 uploadedImages: existingAssets.map(asset => asset.filePath)
               });
-              
+
               // Extract images from markdown content first
               const markdownImages = await extractImagesFromMarkdownContent(blog.content ?? '');
-              
+
               // Combine existing assets with markdown images, prioritizing markdown images
               const allImages = [...markdownImages];
-              
+
               // Add any existing assets that aren't already in markdown
               existingUploadedImages.forEach(existingImg => {
                 const alreadyExists = markdownImages.some(mdImg => mdImg.path === existingImg.path);
@@ -332,13 +326,13 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                   allImages.push(existingImg);
                 }
               });
-              
+
               // Set the uploaded images for the markdown editor
               setUploadedImages(allImages);
-              
+
               // Set uploaded files from markdown images
               setUploadedFiles(allImages.map(img => img.file).filter((file): file is File => file !== undefined));
-              
+
               // Track existing draft images (only from uploads/blog directory)
               const existingDraftImages = allImages
                 .filter(img => img.url.startsWith('/uploads/blog/'))
@@ -374,9 +368,6 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
       hasInitialized.current = true;
     }
   }, [blogId, canManageBlogs, fetchBlogById, router, displayErrorDialog, convertAssetsToUploadedImages, extractImagesFromMarkdownContent]);
-
-  // Debounce slug input for better performance
-  const debouncedSlug = useDebounce(formData.slug, 300);
 
   // Auto-generate slug from title (immediate, not debounced)
   useEffect(() => {
@@ -419,14 +410,14 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Mark that form has been submitted
     setHasSubmitted(true);
-    
+
     // Validate form before submission (use current formData, not debounced)
     const errors = validateForm(formData);
     setValidationErrors(errors);
-    
+
     if (Object.keys(errors).length > 0) {
       return;
     }
@@ -436,14 +427,14 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     try {
       // Create FormData instance
       const formDataToSubmit = new FormData();
-      
+
       // Create markdown file from content
       const markdownContent = formData.content;
       const markdownFileName = `${formData.slug || 'blog'}.md`;
       const markdownFile = new File([markdownContent], markdownFileName, {
         type: 'text/markdown'
       });
-      
+
       // Add all form fields to FormData
       formDataToSubmit.append('title', formData.title);
       formDataToSubmit.append('slug', formData.slug);
@@ -453,15 +444,15 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
       formDataToSubmit.append('tags', formData.tags || '');
       formDataToSubmit.append('metaDescription', formData.metaDescription || '');
       formDataToSubmit.append('featured', formData.featured.toString());
-      
+
       // Add the markdown file
       formDataToSubmit.append('markdownFile', markdownFile);
-      
+
       // Handle uploaded images - append File objects as an array
       uploadedFiles.forEach((file, index) => {
         formDataToSubmit.append(`markdownImage[${index}]`, file);
       });
-      
+
       // Also append image paths for server processing
       formData.uploadedImages.forEach((imagePath, index) => {
         formDataToSubmit.append(`imagePath[${index}]`, imagePath);
@@ -482,7 +473,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
             // For editing existing draft, preserve images for continued editing
             await handleCleanupDraftImages('preserve');
           }
-          
+
           displaySuccessDialog({
             title: "สำเร็จ",
             message: "อัพเดตบทความเรียบร้อยแล้ว",
@@ -508,7 +499,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
             // For new draft blog, preserve images for future editing
             await handleCleanupDraftImages('preserve');
           }
-          
+
           displaySuccessDialog({
             title: "สำเร็จ",
             message: "สร้างบทความเรียบร้อยแล้ว",
@@ -531,17 +522,45 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
     }
   }, [formData, hasSubmitted, validateForm, displayErrorDialog, isEditing, editingBlog, updateBlog, createBlog, displaySuccessDialog, router, uploadedFiles, handleCleanupDraftImages]);
 
-  const handlePreview = useCallback(() => {
-    if (debouncedSlug) {
-      window.open(`/blogs/${debouncedSlug}`, '_blank');
-    } else {
-      displayErrorDialog({
-        title: "คำเตือน",
-        message: "กรุณาเพิ่ม slug เพื่อดูตัวอย่างบทความ",
-        buttonText: "ตกลง"
-      });
-    }
-  }, [debouncedSlug, displayErrorDialog]);
+    // const handlePreview = useCallback(() => {
+    //   if (debouncedSlug) {
+    //     window.open(`/blogs/${debouncedSlug}`, '_blank');
+    //   } else {
+    //     displayErrorDialog({
+    //       title: "คำเตือน",
+    //       message: "กรุณาเพิ่ม slug เพื่อดูตัวอย่างบทความ",
+    //       buttonText: "ตกลง"
+    //     });
+    //   }
+    // }, [debouncedSlug, displayErrorDialog]);
+
+  const handleDeleteBlog = useCallback(() => {
+    if (!editingBlog) return;
+    
+    displayConfirmDialog({
+      title: 'ยืนยันการลบบทความ',
+      message: 'คุณแน่ใจหรือไม่ที่จะลบบทความนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้',
+      confirmText: 'ลบ',
+      cancelText: 'ยกเลิก',
+      onConfirm: async () => {
+        const success = await deleteBlog(editingBlog.id);
+        if (success) {
+          // Handle draft image cleanup after deletion
+          await handleCleanupDraftImages('cleanup');
+          
+          displaySuccessDialog({
+            title: "สำเร็จ",
+            message: "ลบบทความเรียบร้อยแล้ว",
+            buttonText: "กลับไปจัดการบทความ",
+            onButtonClick: () => router.push('/blog-management')
+          });
+          setTimeout(() => {
+            router.push('/blog-management');
+          }, 1000);
+        }
+      }
+    });
+  }, [editingBlog, displayConfirmDialog, deleteBlog, handleCleanupDraftImages, displaySuccessDialog, router]);
 
   // Helper function to get error message for a field (only show if submitted) - memoized
   const getFieldError = useCallback((fieldName: string): string | undefined => {
@@ -607,7 +626,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>ข้อมูลบทความ</CardTitle>  
+              <CardTitle>ข้อมูลบทความ</CardTitle>
               <CardDescription>
                 รายละเอียดสำคัญเกี่ยวกับบทความของคุณ
               </CardDescription>
@@ -633,7 +652,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
                     id="slug"
                     value={formData.slug}
                     onChange={handleInputChange('slug')}
-                    placeholder="url-ของ-บทความ"  
+                    placeholder="url-ของ-บทความ"
                     className={hasFieldError('slug') ? 'border-red-500' : ''}
                   />
                   {getFieldError('slug') && (
@@ -758,8 +777,18 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
           </Card>
 
           {/* Actions */}
-          <div className="flex justify-between items-center pt-6 border-t">
-            <Button
+          <div className={`flex ${isEditing ? 'justify-between' : 'justify-end'} items-center pt-6 border-t`}>
+            {isEditing && editingBlog && (
+              <Button
+                type="button"
+                onClick={handleDeleteBlog}
+                className="flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
+              >
+                <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                <span>ลบบทความ</span>
+              </Button>
+            )}
+            {/* <Button
               type="button"
               variant="outline"
               onClick={handlePreview}
@@ -768,7 +797,7 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
             >
               <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
               <span>ตรวจสอบบทความก่อนเผยแพร่</span>
-            </Button>
+            </Button> */}
 
             <div className="flex gap-3">
               <Button
@@ -815,6 +844,18 @@ export default function BlogFormClient({ blogId }: BlogFormClientProps) {
         message={errorMessage}
         buttonText={errorButtonText}
         onButtonClick={handleErrorClose}
+      />
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        setIsOpen={setShowConfirmDialog}
+        title={confirmTitle}
+        message={confirmMessage}
+        confirmText={confirmButtonText}
+        cancelText={cancelButtonText}
+        onConfirm={onConfirmButtonClick}
+        onCancel={onCancelButtonClick}
       />
     </div>
   );

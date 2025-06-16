@@ -311,7 +311,7 @@ export function useBlog(options: UseBlogOptions = {}): UseBlogReturn {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/blogs/${id}`, {
+      const response = await fetch(`/api/blogs/id/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

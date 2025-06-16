@@ -19,6 +19,7 @@ import BlogStatsCards from '@/components/blogs/BlogStatsCards';
 import BlogTable from '@/components/blogs/BlogTable';
 import useShowDialog from '@/hooks/useShowDialog';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
+import StatusDialog from '@/components/common/StatusDialog';
 
 export default function BlogManagementClient() {
   const router = useRouter();
@@ -27,12 +28,11 @@ export default function BlogManagementClient() {
     loading,
     error,
     fetchBlogs,
-    // deleteBlog,
+    deleteBlog,
     canManageBlogs
   } = useBlog({ adminOnly: true });
 
   const {
-    // displayConfirmDialog,
     showConfirmDialog,
     setShowConfirmDialog,
     confirmTitle,
@@ -40,7 +40,22 @@ export default function BlogManagementClient() {
     confirmButtonText,
     cancelButtonText,
     onConfirmButtonClick,
-    onCancelButtonClick
+    onCancelButtonClick,
+    displayConfirmDialog,
+    showSuccessDialog,
+    setShowSuccessDialog,
+    successMessage,
+    successTitle,
+    successButtonText,
+    showErrorDialog,
+    setShowErrorDialog,
+    errorMessage,
+    errorTitle,
+    errorButtonText,
+    displaySuccessDialog,
+    displayErrorDialog,
+    handleSuccessClose,
+    handleErrorClose,
   } = useShowDialog();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,21 +94,34 @@ export default function BlogManagementClient() {
     router.push(`/blog-management/edit/${blog.id}`);
   };
 
-  // const handleDeleteBlog = async (blogId: string) => {
-  //   displayConfirmDialog({
-  //     title: 'ยืนยันการลบบทความ',
-  //     message: 'คุณแน่ใจหรือไม่ที่จะลบบทความนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้',
-  //     confirmText: 'ลบ',
-  //     cancelText: 'ยกเลิก',
-  //     onConfirm: async () => {
-  //       const success = await deleteBlog(blogId);
-  //       if (success) {
-  //         // Refresh the blogs list
-  //         fetchBlogs({ search: searchTerm });
-  //       }
-  //     }
-  //   });
-  // };
+  const handleDeleteBlog = async (blogId: string) => {
+    displayConfirmDialog({
+      title: 'ยืนยันการลบบทความ',
+      message: 'คุณแน่ใจหรือไม่ที่จะลบบทความนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้',
+      confirmText: 'ลบ',
+      cancelText: 'ยกเลิก',
+      onConfirm: async () => {
+        const success = await deleteBlog(blogId);
+        if (success) {
+          // Show success dialog
+          displaySuccessDialog({
+            title: 'สำเร็จ',
+            message: 'ลบบทความเรียบร้อยแล้ว',
+            buttonText: 'ตกลง'
+          });
+          // Refresh the blogs list
+          fetchBlogs({ search: searchTerm });
+        } else {
+          // Show error dialog
+          displayErrorDialog({
+            title: 'เกิดข้อผิดพลาด',
+            message: 'ไม่สามารถลบบทความได้ กรุณาลองใหม่อีกครั้ง',
+            buttonText: 'ตกลง'
+          });
+        }
+      }
+    });
+  };
 
   const handleRefresh = () => {
     fetchBlogs({ search: searchTerm });
@@ -222,7 +250,7 @@ export default function BlogManagementClient() {
         <BlogTable 
           blogs={filteredBlogs}
           onEdit={handleEditBlog}
-          // onDelete={handleDeleteBlog}
+          onDelete={handleDeleteBlog}
         />
 
         {/* Confirmation Dialog */}
@@ -235,6 +263,28 @@ export default function BlogManagementClient() {
           cancelText={cancelButtonText}
           onConfirm={onConfirmButtonClick}
           onCancel={onCancelButtonClick}
+        />
+
+        {/* Success Dialog */}
+        <StatusDialog
+          isOpen={showSuccessDialog}
+          setIsOpen={setShowSuccessDialog}
+          type="success"
+          message={successMessage}
+          title={successTitle}
+          buttonText={successButtonText}
+          onButtonClick={handleSuccessClose}
+        />
+
+        {/* Error Dialog */}
+        <StatusDialog
+          isOpen={showErrorDialog}
+          setIsOpen={setShowErrorDialog}
+          type="error"
+          message={errorMessage}
+          title={errorTitle}
+          buttonText={errorButtonText}
+          onButtonClick={handleErrorClose}
         />
       </div>
     </div>

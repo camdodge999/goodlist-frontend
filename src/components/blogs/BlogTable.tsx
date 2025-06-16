@@ -1,15 +1,15 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEdit } from '@fortawesome/free-solid-svg-icons';
-// import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { Blog } from '@/types/blog';
 
 interface BlogTableProps {
   readonly blogs: Blog[];
   readonly onEdit: (blog: Blog) => void;
-  // readonly onDelete: (blogId: string) => void;
+  readonly onDelete: (blogId: string) => void;
 }
 
-export default function BlogTable({ blogs, onEdit }: BlogTableProps) {
+export default function BlogTable({ blogs, onEdit, onDelete }: BlogTableProps) {
   const getStatusBadge = (status: string) => {
     const statusColors = {
       draft: 'bg-gray-100 text-gray-800',
@@ -26,7 +26,7 @@ export default function BlogTable({ blogs, onEdit }: BlogTableProps) {
       published: 'เผยแพร่แล้ว',
       archived: 'จัดเก็บแล้ว',
       deleted: 'ลบ'
-    };  
+    };
     return statusBlog[status as keyof typeof statusBlog] || statusBlog.draft;
   };
 
@@ -127,14 +127,14 @@ export default function BlogTable({ blogs, onEdit }: BlogTableProps) {
                     >
                       <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
                     </button>
-                    {/* <button
+                    <button
                       onClick={() => onDelete(blog.id)}
                       className="text-red-600 hover:text-red-900 cursor-pointer px-2 py-1 rounded hover:bg-red-50 transition-colors"
                       title="Delete blog post"
                       aria-label={`Delete blog post: ${blog.title}`}
                     >
                       <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-                    </button> */}
+                    </button>
                   </div>
                 </td>
               </tr>

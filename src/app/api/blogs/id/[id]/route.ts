@@ -1,37 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { Blog } from "@/types/blog";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { BodyResponse } from "@/types/response";
 import { blogFormSchema } from "@/validators/blog.schema";
 
-
-
-// Helper function to check admin authentication
-async function checkAdminAuth(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { isAuthenticated: false, isAdmin: false, error: 'No authorization header' };
-  }
-
-  try {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET
-    });
-
-    if (!token) {
-      return { isAuthenticated: false, isAdmin: false, error: 'Invalid token' };
-    }
-
-    const isAdmin = token.role === 'admin';
-    return { isAuthenticated: true, isAdmin, error: null };
-  } catch (error) {
-    console.error('Auth check error:', error);
-    return { isAuthenticated: false, isAdmin: false, error: 'Auth verification failed' };
-  }
-}
 
 // API helper functions
 async function fetchBlogById(request: NextRequest, id: string): Promise<BodyResponse<{ blogDetail: Blog }>> {
@@ -237,15 +209,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-    
-    // Check admin authentication
-    const authCheck = await checkAdminAuth(request);
-    if (!authCheck.isAuthenticated || !authCheck.isAdmin) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 401 }
-      );
-    }
 
     const result = await deleteBlogById(request, id);
 

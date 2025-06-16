@@ -16,7 +16,7 @@ const headers = [
 ];
 
 const nextConfig = (phase: string): NextConfig => {
-  
+
   if (phase === PHASE_DEVELOPMENT_SERVER) {
     console.log('🚀 Development server starting...');
   }
@@ -39,7 +39,17 @@ const nextConfig = (phase: string): NextConfig => {
         },
         {
           protocol: "https",
+          hostname: "goodlistseller.com",
+          pathname: "/image/*",
+        },
+        {
+          protocol: "https",
           hostname: "localhost",
+          pathname: "/image/*",
+        },
+        {
+          protocol: "https",
+          hostname: "api.goodlistseller.com",
           pathname: "/**",
         },
         {
@@ -68,7 +78,7 @@ const nextConfig = (phase: string): NextConfig => {
             { key: "Access-Control-Allow-Credentials", value: "true" },
             {
               key: "Access-Control-Allow-Origin",
-              value: `${process.env.NEXTAUTH_URL }`,
+              value: `${process.env.NEXTAUTH_URL}`,
             },
             { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,DELETE,OPTIONS" },
             { key: "Access-Control-Allow-Headers", value: headers.join(", ") },
@@ -93,22 +103,22 @@ const nextConfig = (phase: string): NextConfig => {
         },
       ];
     },
-    
+
   };
 
   return nextConfigOptions;
 };
 
 const securityHeadersConfig = (phase: string) => {
-  
+
   // Use report-only in development, enforce in production
   const isDevelopment = phase === PHASE_DEVELOPMENT_SERVER;
-  
+
   const cspHeader = () => {
     const nonce = generateSecureNonce();
-    
+
     const upgradeInsecure = (!isDevelopment) ? 'upgrade-insecure-requests;' : '';
-    
+
     // Fallback CSP configuration (when middleware doesn't handle it)
     // Following Next.js documentation recommendations
     const cspDirectives = `
@@ -130,7 +140,7 @@ const securityHeadersConfig = (phase: string) => {
       report-to csp-endpoint;
       ${upgradeInsecure}
     `;
-    
+
     // Clean up the CSP string
     return cspDirectives
       .replace(/\s{2,}/g, ' ')
@@ -139,7 +149,7 @@ const securityHeadersConfig = (phase: string) => {
 
   // Security headers for production/preview only
   const extraSecurityHeaders = [];
-  
+
   if (!isDevelopment) {
     extraSecurityHeaders.push({
       key: 'Strict-Transport-Security',
